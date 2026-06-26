@@ -1,0 +1,97 @@
+# brief
+
+**Doc-driven development as a governance system.** Architectural decisions become
+versioned, addressable, and *read-only to the coding loop* — so your design docs stay
+true instead of rotting.
+
+## The idea
+
+In normal development, code is the source of truth and docs lag it — so docs drift
+*invisibly*: nothing breaks when a doc is wrong. `brief` inverts that:
+
+- **Decisions are authoritative state**, written as governance docs in `.brief/docs/`.
+- **Code conforms to decisions** and references them by a stable handle:
+  `doc://<project>/<doc-id>@<rev>#<anchor>`.
+- **A decision is read-only to coding work.** An agent (or human) can't quietly rewrite a
+  decision to make a change fit. To change one, you propose an **amendment** and a human
+  **ratifies** it — *separation of powers: the party being checked can't edit the check.*
+
+Drift stops being "docs silently diverged from code" (undetectable) and becomes "code
+diverged from spec" — which is testable.
+
+## Does it actually work?
+
+We tested it adversarially before building most of it. On a real Rust codebase (8 real
+architectural decisions), coding agents were given tasks that **contradicted firm
+decisions**, and we measured whether they'd quietly rewrite the decision to ratify their
+own code:
+
+- Naive "docs are editable truth" framing → agents reversed the decision **4 / 4 times**.
+- Separation-of-powers framing (decisions read-only) → **0 reversals**; every agent stopped
+  and filed an amendment — including on a weaker model (**0 / 8 reversals across two model
+  tiers**).
+
+The convention does the persuading; the gate + CI are the backstop. (Validation methodology
+and data are kept private for now.)
+
+## Install
+
+```sh
+uv tool install git+https://github.com/vu1n/brief
+brief --help
+```
+
+## Quickstart
+
+```sh
+brief init --with-skills              # scaffold .brief/, inject the convention, install skills
+# author a decision in .brief/docs/<id>.md (frontmatter + <!-- brief:anchor --> + the invariant)
+brief publish my-decision             # freeze revision v0001
+# reference it from code:   // Context: doc://<project>/my-decision@latest#<anchor>
+brief check                           # run before committing (CI runs the same on PRs)
+brief pin                             # freeze @latest -> @0001 in your staged code
+```
+
+When a task can't be done without changing a ratified decision:
+
+```sh
+# write .brief/amendments/<anchor>.md + "<anchor> amend-proposed: ..." in .brief/SIGNOFF, then STOP
+brief ratify <anchor> --by you        # (human) accept it: publishes a new revision, archives the proposal
+```
+
+## The governance stack
+
+| Layer | What | Where it lives |
+|-------|------|----------------|
+| **L0** | mechanical gate: decisions read-only; conformance asserted | `brief check` (local self-check + CI) |
+| **L1** | independent verifier audits a conformance claim or amendment | the `brief-review` skill (spawns a fresh agent) |
+| **L2** | conformance tests enforce testable invariants | your project's own tests (`test://`) |
+| **L3** | human ratifies amendments | `brief ratify` + PR review |
+
+Only L0 must be code; only CI must enforce it. The heavy lifting is the **behavior layer**:
+the always-on convention (`brief init` injects it into your `AGENTS.md`) plus on-demand
+skills. `brief` itself is a few deterministic primitives an agent calls, not an app a human
+operates.
+
+## CLI
+
+- `brief resolve <ref>` — ref → file, anchor, lines, body, hash (+ stale flag)
+- `brief check [--base <ref>]` — the L0 gate (staged locally; a commit range in CI)
+- `brief pin [files]` — freeze `@latest`/`@current` code refs to a concrete revision
+- `brief publish <doc-id>` — mint the next immutable revision
+- `brief ratify <anchor>` — accept an amendment → new revision, archive the proposal
+- `brief init` — scaffold + inject the convention (`--with-skills`, `--ci`, `--hook`)
+
+## Status
+
+MVP. **Built + validated:** resolver, separation-of-powers gate, CI enforcement, behavior
+layer (convention + skills), revisions/publish, stale-by-hash, the amendment↔ratify loop,
+pin. **Deferred until proven needed:** `pack`, full-text `search`/`index`, a generated human
+`site`. Design of record: [`docs/DESIGN.md`](docs/DESIGN.md). Agent/contributor guide:
+[`AGENTS.md`](AGENTS.md).
+
+## Set up brief in your own project
+
+Paste [`docs/setup-prompt.md`](docs/setup-prompt.md) into your coding agent from the root of
+the repo you want to govern. It installs brief, runs `brief init`, captures your first
+decisions from the existing code, and wires them up.

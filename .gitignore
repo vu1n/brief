@@ -1,0 +1,17 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+dist/
+build/
+*.egg-info/
+
+# brief derived index (rebuildable)
+**/.brief/brief.sqlite
+
+# experiment isolated working clones
+experiments/work/
+
+# os
+.DS_Store
