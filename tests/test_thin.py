@@ -214,6 +214,57 @@ def test_check_staged_broken_ref(tmp_path):
     assert any(x.kind == "broken-ref" for x in v)
 
 
+_REF = "// Context: doc://acme/ADR-001-backend@current#sandbox-backend-single-only\n"
+
+
+def test_ref_only_add_is_exempt_from_conformance(tmp_path):
+    # Adding ONLY a doc-ref comment to governed code is a pointer, not behavior — it needs
+    # no conforms sign-off. (This is what closes the wire-the-back-refs churn.)
+    repo = tmp_path
+    _init(repo)
+    make_brief(repo)
+    write(repo / "src" / "sandbox" / "single" / "mod.rs", "// initial\nfn f() {}\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "init")
+
+    (repo / "src" / "sandbox" / "single" / "mod.rs").write_text(_REF + "// initial\nfn f() {}\n")
+    _git(repo, "add", "-A")  # no SIGNOFF entry
+    assert check_staged(repo, repo / ".brief") == []
+
+
+def test_ref_add_with_real_change_still_needs_conformance(tmp_path):
+    # A real code change riding alongside the ref re-arms the gate — code can't hide behind a ref.
+    repo = tmp_path
+    _init(repo)
+    make_brief(repo)
+    write(repo / "src" / "sandbox" / "single" / "mod.rs", "// initial\nfn f() {}\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "init")
+
+    (repo / "src" / "sandbox" / "single" / "mod.rs").write_text(_REF + "// initial\nfn f() { do_it(); }\n")
+    _git(repo, "add", "-A")
+    v = check_staged(repo, repo / ".brief")
+    assert any(x.kind == "needs-conformance" for x in v)
+
+
+def test_ref_only_but_broken_ref_still_flagged(tmp_path):
+    # The exemption covers needs-conformance, NOT broken-ref: a ref must still resolve.
+    repo = tmp_path
+    _init(repo)
+    make_brief(repo)
+    write(repo / "src" / "sandbox" / "single" / "mod.rs", "// initial\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "init")
+
+    (repo / "src" / "sandbox" / "single" / "mod.rs").write_text(
+        "// Context: doc://acme/ADR-001-backend@current#no-such-anchor\n// initial\n"
+    )
+    _git(repo, "add", "-A")
+    v = check_staged(repo, repo / ".brief")
+    assert any(x.kind == "broken-ref" for x in v)
+    assert not any(x.kind == "needs-conformance" for x in v)
+
+
 # --- init ---
 
 def test_init_scaffolds(tmp_path):

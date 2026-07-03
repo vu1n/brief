@@ -46,3 +46,9 @@ ratify your own code is the one failure this system exists to prevent.)
 
 A human ratifies the amendment (optionally advised by the `brief-review` skill); only then
 does the decision move to a new revision and the code land.
+
+**After ratification, run `brief doctor`.** The new revision changes the anchor's hash, so
+every code ref pinned to the *old* revision is now `stale-ref` — the code was written
+against a decision that has since moved. doctor lists each one; re-verify the code still
+conforms and re-pin (`brief pin`). This is the drift a ratify silently creates, caught
+mechanically instead of by a human noticing.

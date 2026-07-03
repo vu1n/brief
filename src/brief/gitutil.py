@@ -41,9 +41,28 @@ def added_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
     return [ln[1:] for ln in out.splitlines() if ln.startswith("+") and not ln.startswith("+++")]
 
 
+def removed_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
+    """Removed (-) lines for one path, staged (base=None) or over base..HEAD."""
+    args = ["diff", "-U0", base, "HEAD", "--", path] if base else ["diff", "--cached", "-U0", "--", path]
+    try:
+        out = _git(repo, *args)
+    except subprocess.CalledProcessError:
+        return []
+    return [ln[1:] for ln in out.splitlines() if ln.startswith("-") and not ln.startswith("---")]
+
+
 def content_at(repo: Path, path: str, ref: str) -> str:
     """Content of a path at a ref (e.g. the baseline), or '' if absent."""
     try:
         return _git(repo, "show", f"{ref}:{path}")
     except subprocess.CalledProcessError:
         return ""
+
+
+def tracked_files(repo: Path) -> list[str]:
+    """Every git-tracked path (repo-relative). Empty if not a repo. For whole-repo scans."""
+    try:
+        out = _git(repo, "ls-files")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+    return [ln for ln in out.splitlines() if ln.strip()]

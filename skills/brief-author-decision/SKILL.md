@@ -51,3 +51,16 @@ related_code:           # the governed surface — globs, not every file
 
 Reference it from code with a short `// Context: doc://<project>/<doc-id>@latest#<anchor>`
 instead of re-explaining it. The pre-commit gate verifies the ref resolves.
+
+Then **run `brief doctor`** and close what it reports for this decision — it is how you
+confirm you actually wired it, not just wrote it:
+
+- `active-unwired` → you set `status: active` but no governed file references it. Add the
+  `// Context:` ref.
+- `active-unpublished` → an active decision with no frozen revision; `@latest` still points
+  at a mutable doc. Run `brief publish <doc-id>`, then `brief pin`.
+- `draft-governing-code` → code already leans on this decision while it's still `draft`
+  (informational). When it firms up, promote + publish + pin.
+
+`doctor` is advisory (won't block), but leaving its findings for a human review to catch is
+the failure mode this closes.

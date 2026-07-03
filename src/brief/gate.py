@@ -10,6 +10,9 @@ the coding loop may rewrite. So the gate enforces:
 2. needs-conformance — when governed code changes, the author must record either
                      `<anchor> conforms: <why>` (code still satisfies the decision)
                      or `<anchor> amend-proposed: <why>` in .brief/SIGNOFF.
+                     Exempt: a change that only ADDS doc-ref comment lines (e.g. wiring a
+                     `// Context:` back-ref) is a pointer, not behavior, so it needs no
+                     sign-off. Any non-ref added line or any removal re-arms the check.
 3. amendment-required — `amend-proposed` blocks the commit: code that needs a
                      ratified decision changed cannot land until the amendment is
                      ratified. (A correct *escalation*, not a rule violation.)
@@ -66,6 +69,20 @@ def _is_locked(status: str | None) -> bool:
     return (status or "").lower() in LOCKED_STATUSES
 
 
+def _ref_only_change(repo: Path, path: str, rng: str | None) -> bool:
+    """True if a governed file's change is *only* the addition of doc-ref comment lines
+    (e.g. `// Context: doc://…`) and removes nothing. Such an edit adds a pointer, not
+    behavior — it cannot violate a behavioral invariant — so it is exempt from
+    needs-conformance. Any non-ref added line, or any removal, re-arms the gate, so a real
+    change can't hide behind a ref. (broken-ref is still checked separately.)"""
+    added = gitutil.added_lines(repo, path, rng)
+    if not added:
+        return False
+    if any(not find_refs(line) for line in added):
+        return False
+    return not gitutil.removed_lines(repo, path, rng)
+
+
 @dataclass
 class Violation:
     kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref
@@ -82,8 +99,12 @@ def evaluate(
     conforms: set[str],
     amend_proposed: set[str],
     bad_refs: list[tuple[str, str]] | None = None,
+    exempt: set[str] | None = None,
 ) -> list[Violation]:
-    """Pure core. `locked_edits` = doc_ids of locked decisions modified in this commit."""
+    """Pure core. `locked_edits` = doc_ids of locked decisions modified in this commit.
+    `exempt` = code files whose change is ref-only (comment pointer, no behavior) and so
+    does not trigger needs-conformance."""
+    exempt = exempt or set()
     code_changes = [f for f in changed_files if not _is_brief_path(f)]
     violations: list[Violation] = []
 
@@ -101,7 +122,10 @@ def evaluate(
             continue  # only locked decisions gate code; drafts are still forming
         if d.doc_id in locked_edits:
             continue  # already reported as ratified-edit
-        governed = [f for f in code_changes if any(glob_match(g, f) for g in d.related_code)]
+        governed = [
+            f for f in code_changes
+            if f not in exempt and any(glob_match(g, f) for g in d.related_code)
+        ]
         if not governed:
             continue
         for a in d.anchors:
@@ -180,6 +204,7 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
                 amend.add(m.group(1))
 
     bad_refs: list[tuple[str, str]] = []
+    exempt: set[str] = set()
     for f in changed:
         if _is_brief_path(f):
             continue
@@ -189,8 +214,11 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
                     resolve(r, brief_dir)
                 except Exception as e:  # ResolveError / ValueError
                     bad_refs.append((str(r), str(e)))
+        # a pure ref-add is a pointer, not behavior → exempt from needs-conformance
+        if _ref_only_change(repo, f, rng):
+            exempt.add(f)
 
-    return evaluate(changed, locked_edits, index, conforms, amend, bad_refs)
+    return evaluate(changed, locked_edits, index, conforms, amend, bad_refs, exempt)
 
 
 # Back-compat alias: staged check is `check(..., base=None)`.

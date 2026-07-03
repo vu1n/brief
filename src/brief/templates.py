@@ -29,6 +29,12 @@ Decisions are **ratified constraints, not editable notes**. Develop *to* them:
 **Before committing, run `brief check`** (resolve anything it flags) and `brief pin`
 (freeze any `@latest`/`@current` refs you wrote to a concrete revision). CI runs the same
 check on PRs — that is the backstop; don't bypass it.
+
+**After authoring/publishing a decision — or before opening a PR — run `brief doctor`**
+and close what it flags (wire a `// Context:` ref into governed code, pin a floating ref,
+publish a draft you now rely on, re-verify a ref the latest revision made stale). It is
+advisory, not a gate: it exists so *you* catch latent drift instead of leaving it for a
+human to notice later.
 """
 
 CI_WORKFLOW = """\
@@ -45,5 +51,8 @@ jobs:
       - name: brief governance gate
         # once brief is published: `uvx brief check ...`; until then install from source.
         run: uvx brief check --base "origin/${{ github.base_ref }}"
+      - name: brief doctor (advisory — latent drift; does not block)
+        if: always()   # surface drift even when the gate blocks, for the human PR view
+        run: uvx brief doctor --repo .
 """
 

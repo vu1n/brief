@@ -23,8 +23,10 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `resolve.py` | ref → file/anchor across revisions; stale-by-anchor-hash |
 | `versions.py` | `publish` frozen `vNNNN` snapshots + `aliases.yaml` (`latest`) |
 | `gate.py` | the L0 gate (separation of powers): `check(repo, brief_dir, base=None)` |
+| `doctor.py` | advisory lint (repo-wide): latent drift the gate doesn't block — unwired / unpublished / unpinned / stale refs. Machine-first `Report`, `--strict` opt-in |
 | `ratify.py` | the authorized decision change (publish new revision + archive amendment) |
 | `pin.py` | rewrite `@latest`/`@current` → concrete revision in code |
+| `scan.py` | `brief backfill` scanner: inventory docs (genre/status/tracked) + code signals + module tree into a context map |
 | `init.py` / `templates.py` | `brief init` + the injected convention / CI workflow |
 | `gitutil.py` | minimal git plumbing (staged + range modes) |
 | `cli.py` | Typer entrypoint |

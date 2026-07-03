@@ -167,5 +167,55 @@ def pin(
     typer.echo(f"brief: pinned {len(pinned)} ref(s)")
 
 
+@app.command()
+def doctor(
+    repo: str = typer.Option(".", "--repo", help="repo root"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+    json_out: bool = typer.Option(False, "--json", help="emit JSON (machine-first — what an agent acts on)"),
+    strict: bool = typer.Option(False, "--strict", help="exit nonzero on any warning (opt-in CI fail; default is advisory)"),
+):
+    """Advisory lint for latent governance drift the gate doesn't block. Agents run this and close what it flags."""
+    from . import doctor as doctor_mod
+
+    repo_path = Path(repo).resolve()
+    bd = _brief_dir(brief, repo_path)
+    report = doctor_mod.run(repo_path, bd)
+    if json_out:
+        typer.echo(json.dumps(report.to_dict(), indent=2))
+    else:
+        typer.echo(doctor_mod.render_md(report))
+    raise typer.Exit(1 if strict and report.warnings else 0)
+
+
+@app.command()
+def backfill(
+    repo: str = typer.Option(".", "--repo", help="repo to scan"),
+    json_out: bool = typer.Option(False, "--json", help="also write map.json"),
+):
+    """Scan code + docs + comments and write a context map for reconstructing the decision layer."""
+    from . import scan
+
+    repo_path = Path(repo).resolve()
+    m = scan.build_map(repo_path)
+    out_dir = repo_path / ".brief" / "backfill"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "map.md").write_text(scan.render_map_md(m), encoding="utf-8")
+    if json_out:
+        import json as _json
+
+        (out_dir / "map.json").write_text(_json.dumps(m.to_dict(), indent=2), encoding="utf-8")
+
+    typer.echo(
+        f"brief: mapped {len(m.docs)} docs ({len(m.decision_docs)} decision-genre), "
+        f"{len(m.signals)} code signals, {len(m.modules)} modules"
+    )
+    if m.untracked_decisions:
+        typer.echo(f"  ⚠ {len(m.untracked_decisions)} untracked decision doc(s) — a silent-drift risk", err=True)
+    if m.status_less_decisions:
+        typer.echo(f"  ⚠ {len(m.status_less_decisions)} decision doc(s) with no status field", err=True)
+    typer.echo(f"  wrote {out_dir / 'map.md'}")
+    typer.echo("  next: run the `brief-backfill` skill (or hand map.md to an agent) to reconstruct the decision layer.")
+
+
 if __name__ == "__main__":
     app()

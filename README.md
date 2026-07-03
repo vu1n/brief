@@ -77,10 +77,12 @@ operates.
 
 - `brief resolve <ref>` — ref → file, anchor, lines, body, hash (+ stale flag)
 - `brief check [--base <ref>]` — the L0 gate (staged locally; a commit range in CI)
+- `brief doctor [--strict]` — advisory lint: latent drift the gate *doesn't* block — an active decision that was never published, a governed file with no back-ref, a floating `@latest`, a stale pin. Agents run it and close what it flags; `--strict` fails CI on warnings.
 - `brief pin [files]` — freeze `@latest`/`@current` code refs to a concrete revision
 - `brief publish <doc-id>` — mint the next immutable revision
 - `brief ratify <anchor>` — accept an amendment → new revision, archive the proposal
 - `brief init` — scaffold + inject the convention (`--with-skills`, `--ci`, `--hook`)
+- `brief backfill` — scan code + docs + comments into a context map for reconstructing the decision layer (pairs with the `brief-backfill` skill)
 
 ## Status
 
