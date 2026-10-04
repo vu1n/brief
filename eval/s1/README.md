@@ -28,3 +28,28 @@ TYPESAFE_API_KEY=$OPENROUTER_API_KEY TYPESAFE_BASE_URL=https://openrouter.ai/api
 
 Answers are cached in `results/<model>.jsonl`, and the run resumes. `--report <file>`
 re-prints the table without calls.
+
+## Result: Jev 1.13 (2026-10-04)
+
+`results/typesafe_jev-1.13.jsonl`, via OpenRouter, one pass:
+
+```
+281 cases (54 violating, 227 conforming); Brier 0.012, ECE 0.060
+
+| ask when p >= | violations still asked | conforming asks suppressed |
+|---|---|---|
+| (mechanical rule) | 54/54 | 0/227 |
+| 0.02 | 54/54 | 0/227 (0%) |
+| 0.05 | 54/54 | 26/227 (11%) |
+| 0.1 | 54/54 | 220/227 (97%) |
+| 0.2 | 54/54 | 224/227 (99%) |
+| 0.3 | 53/54 | 224/227 (99%) |
+| 0.5 | 53/54 | 224/227 (99%) |
+```
+
+It separates within each task, not just across tasks: conforming diffs score 0.04–0.12
+except three (0.50, 0.66, 0.71), and violations score 0.50–0.97 except one T7 diff at 0.21.
+At p >= 0.1 every violation keeps its ask and 97% of conforming asks are dropped. The
+margin is thin at both ends (lowest violation 0.21; conforming diffs cluster up to 0.12), and
+28 of the 54 violations come from T5, so treat 0.1 as the starting threshold for a
+real-repo trial rather than a settled one.
