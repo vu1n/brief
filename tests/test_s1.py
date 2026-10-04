@@ -45,3 +45,31 @@ def test_decide_fails_to_none_never_to_no():
     # An answer of an unknown type is dropped (no opinion), not read as p=0.
     a = s1.decide({}, Q, via=Fake({"is_bug": NS(type="mystery"), "team": CHOICE}))
     assert set(a) == {"team"}
+
+
+def test_reads_the_real_sdk_response_types():
+    """The fakes above mirror the SDK; this pins the adapter to the SDK's own decoded types."""
+    import json
+
+    import pytest
+    sdk = pytest.importorskip("typesafe_sdk")
+    reply = sdk.SystemOneResponse.model_validate_json(json.dumps({
+        "model": "m", "usage": {"input_tokens": 1, "output_tokens": 0},
+        "answers": {
+            "is_bug": {"type": "noul", "noul": 0.2},
+            "team": {"type": "choice", "choice": "x", "confidence": 0.6,
+                     "probabilities": {"x": 0.8, "y": 0.2}},
+            "urgency": {"type": "score", "score": 1.5, "confidence": 0.7,
+                        "probabilities": {"0": 0.1, "1": 0.3, "2": 0.6},
+                        "legend": {"0": "lo", "1": "mid", "2": "hi"}},
+        },
+    }))
+
+    class Real:
+        def system_one(self, state, questions):
+            return reply
+
+    a = s1.decide({}, {"is_bug": {}, "team": {}, "urgency": {}}, via=Real())
+    assert a["is_bug"].p == 0.2
+    assert (a["team"].value, a["team"].probabilities) == ("x", {"x": 0.8, "y": 0.2})
+    assert a["urgency"].value == 1.5 and a["urgency"].probabilities["2"] == 0.6

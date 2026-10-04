@@ -10,6 +10,10 @@ import re
 import subprocess
 from pathlib import Path
 
+# Content diffs must show what changed whatever the repo's attributes or the user's config
+# say: a `-diff`/binary attribute or a textconv/external driver would otherwise hide lines
+# from the gate (vacuously "comment-only") and from triage's model.
+_CONTENT = ("diff", "--text", "--no-ext-diff", "--no-textconv", "--no-color")
 _HUNK_RE = re.compile(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", re.MULTILINE)
 
 
@@ -17,7 +21,8 @@ def _git(repo: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-C", str(repo), *args],
         capture_output=True,
-        text=True,
+        encoding="utf-8",
+        errors="replace",  # `--text` diffs of binary files aren't UTF-8
         check=True,
     ).stdout
 
@@ -38,7 +43,7 @@ def changed_files(repo: Path, base: str | None = None) -> list[str]:
 
 def added_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
     """Added (+) lines for one path, staged (base=None) or over base..HEAD."""
-    args = ["diff", "-U0", base, "HEAD", "--", path] if base else ["diff", "--cached", "-U0", "--", path]
+    args = [*_CONTENT, "-U0", base, "HEAD", "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
     try:
         out = _git(repo, *args)
     except subprocess.CalledProcessError:
@@ -48,16 +53,31 @@ def added_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
 
 def diff(repo: Path, paths: list[str], base: str | None = None) -> str:
     """Unified diff for `paths`, staged (base=None) or over base..HEAD."""
-    args = ["diff", base, "HEAD", "--", *paths] if base else ["diff", "--cached", "--", *paths]
+    args = [*_CONTENT, base, "HEAD", "--", *paths] if base else [*_CONTENT, "--cached", "--", *paths]
     try:
         return _git(repo, *args)
     except subprocess.CalledProcessError:
         return ""
 
 
+def staged_content(repo: Path, path: str) -> str:
+    """`path` as staged in the index; "" when it isn't there."""
+    try:
+        return _git(repo, "show", f":{path}")
+    except subprocess.CalledProcessError:
+        return ""
+
+
+def stage_content(repo: Path, path: str, text: str) -> None:
+    """Put exactly `text` in the index at `path`, leaving the working tree alone."""
+    blob = subprocess.run(["git", "-C", str(repo), "hash-object", "-w", "--stdin"], input=text,
+                          capture_output=True, text=True, check=True).stdout.strip()
+    _git(repo, "update-index", "--add", "--cacheinfo", f"100644,{blob},{path}")
+
+
 def removed_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
     """Removed (-) lines for one path, staged (base=None) or over base..HEAD."""
-    args = ["diff", "-U0", base, "HEAD", "--", path] if base else ["diff", "--cached", "-U0", "--", path]
+    args = [*_CONTENT, "-U0", base, "HEAD", "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
     try:
         out = _git(repo, *args)
     except subprocess.CalledProcessError:
@@ -68,7 +88,7 @@ def removed_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
 def changed_lines(repo: Path, path: str, base: str | None = None) -> set[int]:
     """1-based line numbers on the change's far side that a hunk touches. A pure deletion
     marks the lines on either side of where it happened."""
-    args = ["diff", "-U0", base, "HEAD", "--", path] if base else ["diff", "--cached", "-U0", "--", path]
+    args = [*_CONTENT, "-U0", base, "HEAD", "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
     try:
         out = _git(repo, *args)
     except subprocess.CalledProcessError:
