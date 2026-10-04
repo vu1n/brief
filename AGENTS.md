@@ -29,6 +29,7 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `pin.py` | rewrite `@latest`/`@current` → concrete revision in code |
 | `scan.py` | `brief backfill` scanner: inventory docs (genre/status/tracked) + code signals + module tree into a context map |
 | `s1.py` | optional System One client over the TypeSafe SDK (Jev/Clef): typed questions → calibrated probabilities, for triage only; None = no opinion |
+| `triage.py` | `brief triage`: writes tagged `conforms` lines for sign-off asks the System One model clears; never inside the gate |
 | `init.py` / `templates.py` | `brief init` + the injected convention / CI workflow |
 | `gitutil.py` | minimal git plumbing (staged + range modes) |
 | `cli.py` | Typer entrypoint |

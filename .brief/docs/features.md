@@ -177,12 +177,14 @@ Thin Typer entrypoint over the primitives.
 ```yaml
 paths:
   - "src/brief/s1.py"
+  - "src/brief/triage.py"
   - "eval/s1/**"
 ```
 
 Optional client for System One decision models over the TypeSafe API (`brief[s1]`;
 Jev, Clef, any compatible endpoint): typed questions in, calibrated probabilities out. Used to triage what
-reaches a human or agent; `eval/s1/` measures whether it can filter sign-off asks.
+reaches a human or agent. `brief triage` writes tagged `conforms` lines for the
+sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold comes from.
 
 ### Gotchas
 - `decide` returns None (or drops an answer) on any failure; callers must read that as
