@@ -1,6 +1,7 @@
 ---
 name: brief-review
 description: Independent (L1) verification of a brief governance change — audit a `conforms` claim or an amendment proposal with a fresh-context agent. Use as the maintainer before ratifying an amendment, or to spot-check that code claiming to conform to a decision actually does. The adversarial verifier layer above the mechanical gate.
+disable-model-invocation: true
 ---
 
 # brief L1 review (independent verification)

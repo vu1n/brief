@@ -20,6 +20,8 @@ list it in the PR instead of guessing.
      brief init --with-skills --ci
    This scaffolds `.brief/`, injects the governance convention into AGENTS.md (or
    CLAUDE.md), installs the brief skills into `.claude/skills/`, and adds a pinned CI gate.
+   The skills are slash-only (`/brief-backfill` etc.), so read their SKILL.md files directly
+   when a step below points at one.
    If the convention was already present, `init` refreshes it to the current text. Read the
    convention before continuing; it applies to you from here on.
 
@@ -28,8 +30,8 @@ list it in the PR instead of guessing.
    Read the map: existing decision docs (ADRs, design docs, decisions logs), rationale
    comments in code, and existing doc:// refs.
 
-3. Capture decisions. Follow the `brief-backfill` skill if the map found existing decision
-   docs or rationale comments; otherwise survey the code yourself. Either way:
+3. Capture decisions. Follow `.claude/skills/brief-backfill/SKILL.md` if the map found
+   existing decision docs or rationale comments; otherwise survey the code yourself. Either way:
    - Aim for the 5-15 decisions that actually constrain future changes: ownership and
      isolation boundaries, key contracts and formats, "we removed X, don't bring it back",
      and conventions the code alone doesn't reveal (rounding, logging/PII, retry policy,
@@ -37,8 +39,8 @@ list it in the PR instead of guessing.
      what it doesn't.
    - Verify every claim against current code before marking it `status: active`. Anything
      you can't confirm stays `status: draft`.
-   - Write each as `.brief/docs/<id>.md` per the `brief-author-decision` skill, then
-     `brief publish <id>`.
+   - Write each as `.brief/docs/<id>.md` per `.claude/skills/brief-author-decision/SKILL.md`,
+     then `brief publish <id>`.
    - If the repo keeps another decisions log (e.g. docs/decisions.md, an ADR folder), don't
      leave two sources of truth: carry each live entry into .brief/docs/, mark superseded
      ones superseded, and turn the old log into a short pointer to `.brief/docs/`.
