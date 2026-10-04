@@ -44,6 +44,7 @@ def _git(repo, *a):
 
 
 def _repo(tmp_path: Path, signoff: bool = True, code: str = CODE) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     _git(tmp_path, "init", "-q")
     _git(tmp_path, "config", "user.email", "t@t")
     _git(tmp_path, "config", "user.name", "t")
@@ -120,3 +121,33 @@ def test_ref_blocks_python_brace_and_trailing():
     trailing = f"x = 1\nLIMIT = 3  # Context: {REF_B} — y\ny = 2\n"
     assert ref_blocks(trailing, "retry") == [(2, 2, "backoff")]
     assert ref_blocks(CODE, "other-doc") == []
+
+
+def test_comment_only_edit_needs_no_signoff(tmp_path):
+    repo = _repo(tmp_path)
+    v = _edit(repo, "src/retry.py", "— retry only idempotent calls", "— only idempotent methods retry")
+    assert _needs(v) == set()
+
+
+def test_replacing_a_ref_with_a_why_comment_asks_only_signoff_decisions(tmp_path):
+    # kypp#2: demoting decisions to why-comments touched only comments
+    new = "# Why: POST is not idempotent, so it never retries.\n"
+    assert _needs(_edit(_repo(tmp_path / "a", signoff=False), "src/retry.py",
+                        f"# Context: {REF_A} — retry only idempotent calls\n", new)) == set()
+    assert _needs(_edit(_repo(tmp_path / "b"), "src/retry.py",
+                        f"# Context: {REF_A} — retry only idempotent calls\n", new)) == {"idempotent-only"}
+
+
+def test_code_hiding_behind_a_trailing_ref_is_not_comment_only(tmp_path):
+    repo = _repo(tmp_path)
+    v = _edit(repo, "src/retry.py", "    return 2 ** attempt",
+              f"    return 3 ** attempt  # Context: {REF_B} — exponential backoff")
+    assert _needs(v) == {"backoff"}
+
+
+def test_hash_code_lines_are_not_comments():
+    from brief.gate import _is_comment
+
+    assert _is_comment("  # why") and _is_comment("// why") and _is_comment("")
+    assert not _is_comment("#[derive(Debug)]") and not _is_comment("#include <x.h>")
+    assert not _is_comment("x = 1  # trailing")

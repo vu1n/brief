@@ -54,18 +54,38 @@ def _is_locked(status: str | None) -> bool:
     return status == docs.UNPARSEABLE or (status or "").lower() in LOCKED_STATUSES
 
 
-def _ref_only_change(repo: Path, path: str, rng: str | None) -> bool:
-    """True if a governed file's change is *only* the addition of doc-ref comment lines
-    (e.g. `// Context: doc://…`) and removes nothing. Such an edit adds a pointer, not
-    behavior — it cannot violate a behavioral invariant — so it is exempt from
-    needs-conformance. Any non-ref added line, or any removal, re-arms the gate, so a real
-    change can't hide behind a ref. (broken-ref is still checked separately.)"""
+_COMMENT_START = ("//", "#", "/*", "*", "--", "<!--", ";")
+# `#` lines that are code, not comments: Rust attributes, shebangs, C preprocessor
+_HASH_CODE = ("#[", "#!", "#include", "#define", "#if", "#else", "#elif", "#endif", "#pragma", "#import", "#undef")
+
+
+def _is_comment(line: str) -> bool:
+    s = line.strip()
+    return not s or (s.startswith(_COMMENT_START) and not s.startswith(_HASH_CODE))
+
+
+def _comment_only_change(repo: Path, path: str, rng: str | None) -> bool:
+    """True if every added and removed line of a governed file is a comment (or blank):
+    wiring a `// Context:` ref, rewording a why-comment. Comments can't violate a
+    behavioral invariant, so the file is exempt from needs-conformance. One code line
+    re-arms the gate, and so does deleting a ref (that unwires a decision, which
+    `_context_scope` asks about). broken-ref is still checked separately."""
     added = gitutil.added_lines(repo, path, rng)
-    if not added:
+    removed = gitutil.removed_lines(repo, path, rng)
+    if not added and not removed:
         return False
-    if any(not find_refs(line) for line in added):
+    if not all(_is_comment(line) for line in added + removed):
         return False
-    return not gitutil.removed_lines(repo, path, rng)
+    return not _unwired(added, removed)
+
+
+def _ref_keys(lines: list[str]) -> set[tuple[str, str | None]]:
+    return {(r.doc_id, r.anchor) for line in lines for r in find_refs(line)}
+
+
+def _unwired(added: list[str], removed: list[str]) -> set[tuple[str, str | None]]:
+    """(doc_id, anchor) refs the change deletes and doesn't put back (a reword keeps them)."""
+    return _ref_keys(removed) - _ref_keys(added)
 
 
 @dataclass
@@ -266,8 +286,7 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
                     resolve(r, brief_dir)
                 except Exception as e:  # ResolveError / ValueError
                     bad_refs.append((str(r), str(e)))
-        # a pure ref-add is a pointer, not behavior → exempt from needs-conformance
-        if _ref_only_change(repo, f, rng):
+        if _comment_only_change(repo, f, rng):
             exempt.add(f)
 
     violations = evaluate(
@@ -277,7 +296,6 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
     return violations + _empty_globs(repo, brief_dir, index, base)
 
 
-_COMMENT_START = ("//", "#", "/*", "*", "--", "<!--", ";")
 _BLOCK_CLOSE = ("}", ")", "]", "end", "else", "elif", "except", "finally", "catch")
 
 
@@ -298,10 +316,9 @@ def ref_blocks(text: str, doc_id: str) -> list[tuple[int, int, str | None]]:
         if not anchors:
             continue
         base = i
-        if line.lstrip().startswith(_COMMENT_START):
+        if _is_comment(line):
             base = next(
-                (j for j in range(i + 1, len(lines))
-                 if lines[j].strip() and not lines[j].lstrip().startswith(_COMMENT_START)),
+                (j for j in range(i + 1, len(lines)) if not _is_comment(lines[j])),
                 i,
             )
         end, ind = base, _indent(lines[base])
@@ -321,27 +338,26 @@ def _context_scope(repo: Path, rng: str | None) -> Scope:
     """Scope a governed file change by the decision's `// Context:` refs in that file: only
     a hunk inside a ref's block needs that anchor's sign-off. A file with no ref to the
     decision falls back to every anchor (the decision is unwired there, not unaffected)."""
-    cache: dict[str, tuple[str, set[int], list[str]]] = {}
+    cache: dict[str, tuple[str, set[int], set[tuple[str, str | None]]]] = {}
 
     def scope(d: Decision, f: str) -> set[str] | None:
         if f not in cache:
             cache[f] = (
                 gitutil.content_after(repo, f, rng),
                 gitutil.changed_lines(repo, f, rng),
-                gitutil.removed_lines(repo, f, rng),
+                _unwired(gitutil.added_lines(repo, f, rng), gitutil.removed_lines(repo, f, rng)),
             )
-        text, changed, removed = cache[f]
+        text, changed, unwired = cache[f]
         spans = ref_blocks(text, d.doc_id)
         if not spans:
             return None
         # deleting a ref unwires that anchor here: it needs the sign-off its block would have
         hit: set[str] = set()
-        for line in removed:
-            for r in find_refs(line):
-                if r.doc_id == d.doc_id:
-                    if r.anchor is None:
-                        return None
-                    hit.add(r.anchor)
+        for doc_id, anchor in unwired:
+            if doc_id == d.doc_id:
+                if anchor is None:
+                    return None
+                hit.add(anchor)
         for first, last, anchor in spans:
             if any(first <= n <= last for n in changed):
                 if anchor is None:

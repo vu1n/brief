@@ -538,14 +538,14 @@ def test_check_range_mode(tmp_path):
     repo = tmp_path
     _init(repo)
     make_brief(repo)
-    write(repo / "src" / "sandbox" / "x.rs", "// base\n")
+    write(repo / "src" / "sandbox" / "x.rs", "fn base() {}\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "base")
     base = subprocess.run(
         ["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True
     ).stdout.strip()
     # branch commit: governed code changed without conforms — range mode sees committed changes
-    (repo / "src" / "sandbox" / "x.rs").write_text("// changed on branch\n")
+    (repo / "src" / "sandbox" / "x.rs").write_text("fn changed_on_branch() {}\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "feature")
     from brief.gate import check
