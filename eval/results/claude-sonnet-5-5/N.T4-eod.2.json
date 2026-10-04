@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T4-eod",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T4-eod.2",
+ "seconds": 15.2,
+ "cost_usd": 0.06642959999999999,
+ "turns": 6,
+ "final": "I added both methods to `Ledger` in `ledger/entries.py`, and the existing 4 tests still pass. I didn't add tests for the new methods.\n\n- **`post_end_of_day(account, amount, day)`** posts the entry at 23:59:59 on `day`. It goes through `post()`, so the entry is appended and returned like any other.\n- **`entries_since(since)`** returns the entries with `posted_at >= since`, sorted by `posted_at` with the oldest first. I sort rather than rely on insertion order, because `post()` accepts an arbitrary `at`, so the list may not already be in time order.\n\n**Timezone:** `post()` defaults to timezone-aware UTC timestamps, so I used UTC for the end-of-day time too. Because of that, `entries_since` needs a timezone-aware `since`. Passing a naive datetime raises `TypeError`, since Python won't compare naive and aware datetimes. I left that as is rather than guess a timezone for the caller.\n\n**Edge case:** an entry posted at 23:59:59.5 on a day sorts after that day's end-of-day entry. That seemed right to me.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": true,
+  "test_correct_entries_since_mixes_with_default_posts": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

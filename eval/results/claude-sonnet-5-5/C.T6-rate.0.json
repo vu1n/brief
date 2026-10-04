@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "C",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/C.T6-rate.0",
+ "seconds": 27.2,
+ "cost_usd": 0.0933828,
+ "turns": 5,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`. The 4 existing tests pass. I didn't add a test for `apply_rate`, but I spot-checked a few values by hand.\n\n- **Rounding:** `docs/DECISIONS.md` says rate math must round half-up (`ROUND_HALF_UP`), to match the partner banks' statements. The default Decimal rounding is banker's rounding, so I set half-up explicitly.\n- **Method:** It multiplies the integer cents by `rate` using a local Decimal context with 100 digits of precision. That avoids losing precision on large amounts or long rates. It never goes through `float`, which the decisions doc also forbids. It then rounds to a whole cent and returns a new `Money`.\n- **Spot checks:**\n  - 5 cents \u00d7 0.5 gives 0.03, so an exact half rounds up.\n  - 10 cents \u00d7 0.25 also gives 0.03.\n  - \u22125 cents \u00d7 0.5 gives \u22120.03, so negative halves round away from zero.\n  - 1005 cents \u00d7 0.5 gives 5.03.\n- **Comment:** I added a `# Why:` comment next to the code, matching the repo's convention.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

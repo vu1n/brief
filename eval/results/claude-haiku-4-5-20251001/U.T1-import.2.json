@@ -1,0 +1,26 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T1-import",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T1-import.2",
+ "seconds": 47.0,
+ "cost_usd": 0.1037092,
+ "turns": 14,
+ "final": "**Done.** I created `ledger/importer.py` with the `import_csv(text: str, ledger: Ledger) -> int` function that:\n\n- Parses CSV lines with `account,amount` format (no header)\n- Skips blank lines and malformed entries (wrong column count, invalid amounts)\n- Uses `Money.from_str()` for exact decimal parsing to match the library's design decision (avoiding float precision loss)\n- Posts each valid entry to the ledger and returns the count of successfully imported entries\n\nThe implementation is lenient on error handling\u2014skipping bad lines rather than failing\u2014which makes it practical for batch imports where some lines might be malformed. All existing tests pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

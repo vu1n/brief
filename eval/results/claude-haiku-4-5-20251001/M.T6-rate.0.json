@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T6-rate.0",
+ "seconds": 31.2,
+ "cost_usd": 0.0744629,
+ "turns": 9,
+ "final": "Done! I've added the `Money.apply_rate()` method to `ledger/money.py` at lines 32-35.\n\n**Summary:**\n\nThe new method multiplies the Money amount (stored in cents) by a Decimal rate and returns a new Money object with the result rounded to the cent. It uses banker's rounding (ROUND_HALF_EVEN), which is the team standard for money math as noted in the project memory. The implementation:\n\n1. Converts the cents value to Decimal for precise arithmetic\n2. Multiplies by the rate\n3. Uses `quantize()` with `ROUND_HALF_EVEN` to round to the nearest cent\n4. Returns a Money object with the rounded cents as an int\n\nAll existing tests pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_plain_cases": true,
+  "test_correct_half_up_on_exact_halves": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/money.py: ROUND_HALF_EVEN"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

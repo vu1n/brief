@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T1-import",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T1-import.1",
+ "seconds": 30.8,
+ "cost_usd": 0.0725805,
+ "turns": 10,
+ "final": "## Summary\n\nI've added `ledger/importer.py` with the `import_csv(text: str, ledger: Ledger) -> int` function that:\n\n- **Parses CSV input** in `account,amount` format (no header)\n- **Skips blank lines** and handles surrounding whitespace\n- **Parses amounts** using `Money.from_str()` to handle decimal values like `12.34` or `-0.29`\n- **Posts entries** to the ledger via `ledger.post()`\n- **Returns the count** of successfully posted entries\n- **Validates format** by raising `ValueError` for malformed lines\n\nThe implementation follows the ledger's existing patterns (leveraging `Money.from_str()` for safe decimal parsing, using `Ledger.post()` to record entries), and all existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 money-integer-cents#money-integer-cents \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/importer.py\n      fix: echo 'money-integer-cents conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'money-integer-cents amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/money-integer-cents.md\n"
+ },
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

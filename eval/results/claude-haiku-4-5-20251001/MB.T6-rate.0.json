@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MB",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MB.T6-rate.0",
+ "seconds": 32.4,
+ "cost_usd": 0.0665043,
+ "turns": 9,
+ "final": "Perfect! All tests pass. Here's what I implemented:\n\n## Summary\n\nAdded `apply_rate(self, rate: Decimal) -> Money` method to the `Money` class that:\n\n1. **Multiplies** the amount (in cents) by the provided `rate` (a `Decimal`)\n2. **Rounds to the cent** using `ROUND_HALF_UP` via `quantize(Decimal(\"1\"), rounding=ROUND_HALF_UP)`\n3. **Returns** a new `Money` object with the rounded result\n\nThe rounding mode conforms to the active brief document `doc://ledger/rounding-half-up@0001#rounding-half-up`, which specifies that rate math must use `ROUND_HALF_UP` to match bank statements for reconciliation purposes.\n\nExample: `Money(1234).apply_rate(Decimal(\"0.5\"))` \u2192 `Money(617)` (1234 \u00d7 0.5 = 617 cents)",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 money-integer-cents#money-integer-cents \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/money.py\n      fix: echo 'money-integer-cents conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'money-integer-cents amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/money-integer-cents.md\n  \u2717 rounding-half-up#rounding-half-up \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/money.py\n      fix: echo 'rounding-half-up conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'rounding-half-up amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/rounding-half-up.md\n"
+ },
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "MB",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/MB.T3-rates.0",
+ "seconds": 16.6,
+ "cost_usd": 0.0749888,
+ "turns": 4,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. Tests pass (5), and `brief check` reports no violations.\n\n- **How it works:** it fetches `cfg.rates_url` through `ledger.http.Client`, which retries `TransientError` up to 5 attempts with exponential backoff. It then parses the JSON into `Decimal` values.\n- **Retry helper:** I used `Client` instead of `legacy_retry`. My saved memory says `legacy_retry` is the standard retry helper. The active decision `retries-via-client` says all outbound HTTP must use `Client` and new code must not call `legacy_retry`. I followed the decision.\n- **Test:** I added a test in `tests/test_basic.py`. It has the transport fail 3 times and then succeed, and it checks the parsed rates and that `sleep` was called 3 times.\n- **Brief bookkeeping:** `ledger/rates.py` carries a `// Context:` ref to the decision. I recorded `retries-via-client conforms: ...` in `.brief/SIGNOFF`. I did not commit, so `brief pin` hasn't been run.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "retries-via-client conforms: rates.fetch_rates uses http.Client with default RetryPolicy; no legacy_retry\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "A\tledger/rates.py",
+  "M\ttests/test_basic.py"
+ ]
+}

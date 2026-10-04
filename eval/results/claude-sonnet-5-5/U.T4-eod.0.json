@@ -1,0 +1,30 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T4-eod",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T4-eod.0",
+ "seconds": 16.1,
+ "cost_usd": 0.0662384,
+ "turns": 3,
+ "final": "I added `post_end_of_day` and `entries_since` to `Ledger` in `ledger/entries.py`. The existing tests pass (4 passed), but I didn't write tests for the two new methods.\n\n- **`post_end_of_day(account, amount, day)`**: posts through the normal `post` at 23:59:59 on `day`, in UTC.\n- **`entries_since(since)`**: returns entries with `posted_at >= since`, oldest first. It raises `ValueError` if `since` is a naive datetime.\n\nI used UTC and rejected naive datetimes because `docs/DECISIONS.md` says every timestamp is timezone-aware UTC. An end-of-day cutoff in server-local time is the bug that rule was written to prevent. Without the check, a naive `since` would raise an obscure `TypeError` on comparison anyway.\n\nI added a `# Why:` comment above each method. I also extended the \"Timestamps are timezone-aware UTC\" entry in `docs/DECISIONS.md` to cover both behaviours, as `CLAUDE.md` asks.\n\n\"End of day\" is therefore the UTC day, so for accounts in other time zones it won't line up with their local midnight.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": true,
+  "test_correct_entries_since_mixes_with_default_posts": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [
+  "docs/DECISIONS.md"
+ ],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tdocs/DECISIONS.md",
+  "M\tledger/entries.py"
+ ]
+}

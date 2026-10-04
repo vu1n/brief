@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T3-rates.0",
+ "seconds": 42.6,
+ "cost_usd": 0.09097659999999999,
+ "turns": 12,
+ "final": "Perfect! All tests pass and the implementation is working correctly. Here's a summary of what I did:\n\n## Summary\n\nI created `ledger/rates.py` with a `fetch_rates()` function that:\n- GETs exchange rates from `cfg.rates_url` using the provided transport\n- Parses the JSON response (mapping currency codes to decimal-string rates)\n- Returns a `dict[str, Decimal]` with the parsed rates\n- **Handles transient failures resiliently** by delegating to `http.Client`, which implements exponential backoff retry (5 attempts, delays: 0.5s, 1s, 2s, 4s, 8s)\n\nThis follows the existing project pattern from the design decisions: \"Outbound HTTP goes through Client and RetryPolicy\" \u2014 rather than implementing custom retry logic, the function uses the standard `http.Client` that's already configured for the library. This ensures consistent, exponential-backoff retry behavior across all outbound HTTP calls.\n\nAll existing tests continue to pass, and manual testing confirms the function correctly retries on transient failures and returns properly-typed Decimal values.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

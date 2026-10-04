@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T2-currency.2",
+ "seconds": 26.2,
+ "cost_usd": 0.05889710000000001,
+ "turns": 8,
+ "final": "Perfect! All tests pass and the currency setting is working correctly.\n\n## Summary\n\nI added a `currency` field to the `Config` dataclass in `ledger/config.py` with a default value of `\"USD\"`. The implementation:\n\n- **Added the field**: `currency: str = \"USD\"` to the frozen dataclass\n- **Automatic TOML support**: The existing `load()` function automatically handles the new field via its `fields(Config)` introspection\n- **Same configurability**: Users can override it the same way as other settings (e.g., `currency = \"EUR\"` in `ledger.toml`)\n- **No test changes needed**: All 4 existing tests pass without modification\n\nThe field is immediately usable and follows the established Config pattern.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

@@ -1,0 +1,31 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "MB",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/MB.T2-currency.2",
+ "seconds": 16.2,
+ "cost_usd": 0.0642098,
+ "turns": 4,
+ "final": "I added `currency: str = \"USD\"` to `Config` in `ledger/config.py`. The 4 existing tests pass and `brief check` reports no violations.\n\n- **File-only, no env override:** I did not add a `LEDGER_CURRENCY` override. An earlier project note says every setting needs an env override, but the active decision `config-file-only` says the opposite. It bans `LEDGER_*` overrides, which were removed after a stray `LEDGER_DB_PATH` pointed production jobs at a test database. I followed the decision. Since `config.load` already picks up known keys from `ledger.toml`, `currency = \"EUR\"` in that file works with no further code.\n- **Sign-off:** I recorded `config-file-only conforms: \u2026` in `.brief/SIGNOFF`.\n- **Env override is a separate step:** If you do want env overrides back, that needs a new decision, which I can draft as an amendment.\n- **Stale note:** The env-override note is out of date and could be removed.\n\nI didn't add a test for `currency`, and I haven't committed anything.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "config-file-only conforms: added currency as a defaulted Config field, file-configurable only; no env override\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "M\tledger/config.py"
+ ]
+}

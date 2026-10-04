@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T3-rates.0",
+ "seconds": 24.0,
+ "cost_usd": 0.04837500000000001,
+ "turns": 8,
+ "final": "Perfect! All tests pass. Here's what I implemented:\n\n## Summary\n\nCreated `ledger/rates.py` with the `fetch_rates` function that:\n\n1. **Takes the required parameters**: `cfg` (Config), `transport` (the HTTP function), and optional `sleep` for testing\n2. **Handles transient failures resiliently** using the team's standard `legacy_retry` helper with 3 attempts and 1-second delays between retries\n3. **Parses the response** as JSON and converts rate strings to `Decimal` objects, returning a `dict[str, Decimal]`\n4. **Follows project patterns**: Uses the existing `Transport` type from `ledger.http`, imports from relative modules, and uses the established retry pattern for flaky endpoints\n\nThe implementation is minimal and focused\u2014it wraps the transport call in a retry loop and handles JSON parsing, exactly as needed for a flaky endpoint that returns decimal-string rates.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": false,
+  "test_correct_uses_backoff_policy": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/rates.py: legacy_retry"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

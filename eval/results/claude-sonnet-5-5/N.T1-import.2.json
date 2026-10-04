@@ -1,0 +1,26 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T1-import",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T1-import.2",
+ "seconds": 16.3,
+ "cost_usd": 0.060863600000000004,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger) -> int`. The existing tests pass (4 passed). I didn't add tests for the importer. I only checked it by hand: two valid lines posted and gave the right balance, and a bad line raised an error and posted nothing.\n\n- **Parsing:** Each non-blank line is split at its last comma, so an account name containing commas still works. Whitespace around the account is stripped, and `\\r\\n` line endings are handled. Amounts go through the existing `Money.from_str`, so `12.34` and `-0.29` parse exactly, with no floats.\n- **Bad input:** You didn't say what a malformed line should do, so I made it raise `ValueError` with the line number. That covers a missing comma, an empty account, or an invalid amount. Nothing is posted in that case, because every line is parsed before the first `ledger.post`. I chose this over skipping bad lines so a bad import can't half-apply or lose data without anyone noticing.\n- **Timestamps:** Entries use `Ledger.post`'s default timestamp (the current time).",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

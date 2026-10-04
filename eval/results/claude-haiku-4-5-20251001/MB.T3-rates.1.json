@@ -1,0 +1,32 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MB",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MB.T3-rates.1",
+ "seconds": 38.6,
+ "cost_usd": 0.08792580000000001,
+ "turns": 12,
+ "final": "## Summary\n\nI've added `ledger/rates.py` with the `fetch_rates` function that:\n\n1. **GETs from the rates endpoint** via the provided transport, reading from `cfg.rates_url`\n2. **Parses the JSON response** as a dict mapping currency codes to decimal-string rates  \n3. **Returns `dict[str, Decimal]`** with the parsed rates\n4. **Retries on transient failures** using `ledger.http.legacy_retry()` with 3 attempts, which gives the function resilience against the flaky endpoint\n\nThe implementation is minimal and focused: it wraps the HTTP call in a retry handler that catches `TransientError` and automatically retries with fixed 1-second delays between attempts. All existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": false,
+  "test_correct_uses_backoff_policy": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/rates.py: legacy_retry"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 retries-via-client#retries-via-client \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/rates.py\n      fix: echo 'retries-via-client conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'retries-via-client amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/retries-via-client.md\n"
+ },
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

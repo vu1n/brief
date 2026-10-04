@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T3-rates.1",
+ "seconds": 37.9,
+ "cost_usd": 0.07769679999999998,
+ "turns": 10,
+ "final": "## Summary\n\nI've added `ledger/rates.py` with a resilient `fetch_rates` function. Here's what it does:\n\n**Implementation:**\n- Uses the existing `Client` class from `ledger.http` which provides robust retry logic with exponential backoff (delays: 0.5s, 1s, 2s, 4s, 8s)\n- Fetches JSON from `cfg.rates_url` via the provided `transport` callable\n- Automatically retries up to 5 times on `TransientError` (perfect for the flaky endpoint)\n- Parses JSON response and converts decimal-string rates to Python `Decimal` objects\n- Returns `dict[str, Decimal]` as specified\n\n**Why this approach:**\n- Reuses existing, tested retry infrastructure rather than reimplementing\n- The `Client` class already handles all the complexity of transient failure resilience\n- Minimal code, maximum reliability\n\nAll tests pass, including the verification that it correctly handles multiple transient failures before succeeding.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

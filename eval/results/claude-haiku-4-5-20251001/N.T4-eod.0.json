@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T4-eod",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T4-eod.0",
+ "seconds": 29.5,
+ "cost_usd": 0.13978049999999997,
+ "turns": 10,
+ "final": "Perfect! I've successfully added the two methods to the `Ledger` class:\n\n## Summary\n\n**Added methods:**\n\n1. **`post_end_of_day(account, amount, day: date) -> Entry`**: Creates a datetime at 23:59:59 UTC on the specified day and posts an entry. This reuses the existing `post` method with a calculated timestamp.\n\n2. **`entries_since(since: datetime) -> list[Entry]`**: Returns all entries posted at or after the given datetime, in order (oldest first). Since entries are appended sequentially, they're naturally sorted.\n\n**Implementation details:**\n- Imported `date` and `time` from the datetime module to support the new methods\n- `post_end_of_day` uses `datetime.combine()` to merge the date with 23:59:59 time and UTC timezone, then delegates to the existing `post` method\n- `entries_since` filters entries using a list comprehension comparing `posted_at >= since`\n\nAll existing tests pass (4/4). The methods integrate cleanly with the existing codebase and follow its patterns.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": true,
+  "test_correct_entries_since_mixes_with_default_posts": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

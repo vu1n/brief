@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T6-rate",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T6-rate.1",
+ "seconds": 17.6,
+ "cost_usd": 0.0740066,
+ "turns": 6,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`. It multiplies the amount by `rate` and rounds to the cent. The existing 4 tests pass, and I checked a few values by hand (for example 10.05 \u00d7 0.5 gives 5.03). I didn't add new tests.\n\nYou didn't say how to round, so I chose half-up, meaning exact halves round away from zero (10.05 \u00d7 0.5 \u2192 5.03, and -0.05 \u00d7 0.5 \u2192 -0.03). I picked it because it matches the usual convention for money. If you'd rather use banker's rounding, change `ROUND_HALF_UP` to `ROUND_HALF_EVEN`. That's a one-line change.\n\nThe multiplication works on the integer cents, so no float is involved.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

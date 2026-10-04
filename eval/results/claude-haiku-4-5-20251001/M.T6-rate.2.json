@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T6-rate",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T6-rate.2",
+ "seconds": 25.5,
+ "cost_usd": 0.06445749999999999,
+ "turns": 9,
+ "final": "Done. I've added the `Money.apply_rate(self, rate: Decimal) -> Money` method that:\n\n- Multiplies the amount (in cents) by the provided rate using `Decimal` for precision\n- Rounds to the nearest cent using banker's rounding (`ROUND_HALF_EVEN`), per the team standard\n- Returns a new `Money` object with the rounded result\n\nThe implementation handles positive and negative amounts correctly, and all existing tests pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_plain_cases": true,
+  "test_correct_half_up_on_exact_halves": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/money.py: ROUND_HALF_EVEN"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

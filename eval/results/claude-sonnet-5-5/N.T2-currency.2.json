@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T2-currency.2",
+ "seconds": 11.5,
+ "cost_usd": 0.055658400000000004,
+ "turns": 5,
+ "final": "I added `currency: str = \"USD\"` to `Config` in `ledger/config.py`. The existing tests still pass (4 passed).\n\nI didn't change `load()`. It builds `Config` from whichever keys in `ledger.toml` match a field name. So `currency = \"EUR\"` in `ledger.toml` now works like `db_path` and `rates_url` do, and a missing key falls back to `\"USD\"`.\n\nI didn't add a test for the new setting.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

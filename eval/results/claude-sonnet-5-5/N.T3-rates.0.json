@@ -1,0 +1,28 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T3-rates.0",
+ "seconds": 17.6,
+ "cost_usd": 0.19433539999999996,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. The tests pass (`python -m pytest -q`, 5 passed), including a new one for the retry behavior.\n\n- **Retries:** it reuses the existing `ledger.http.Client` and its `RetryPolicy` instead of a new retry loop. That means up to 5 attempts, with exponential backoff of 0.5s, 1s, 2s, then 4s between them. If every attempt fails, the last `TransientError` is raised.\n- **Parsing:** it calls `json.loads` on the response bytes and converts each rate with `Decimal(str)`, so rates stay exact and never go through floats.\n- **Injected sleep:** the `sleep` argument is passed through to `Client`, so tests don't actually wait.\n- **Test:** I added `test_fetch_rates_retries_transient` to `tests/test_basic.py`. It has the transport fail 3 times and then succeed, and checks the parsed result and the sleep delays `[0.5, 1.0, 2.0]`.\n\nI didn't retry on malformed JSON or bad decimal strings. Those aren't transient failures, so they raise right away (`json.JSONDecodeError` or `decimal.InvalidOperation`).",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py",
+  "M\ttests/test_basic.py"
+ ]
+}

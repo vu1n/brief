@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "C",
+ "task": "T2-currency",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/C.T2-currency.1",
+ "seconds": 23.6,
+ "cost_usd": 0.0553221,
+ "turns": 8,
+ "final": "## Summary\n\nI've successfully added a `currency` setting to the `Config` class with a default value of `\"USD\"`. \n\n**What I did:**\n- Added `currency: str = \"USD\"` as a new field to the frozen `Config` dataclass in `ledger/config.py`\n- The setting automatically integrates with the existing `load()` function, which discovers all dataclass fields and reads them from `ledger.toml`\n\n**Why this approach:**\nThe ledger config system uses a dataclass with default values. The `load()` function automatically discovers fields via `fields(Config)` and reads matching keys from TOML, so new settings integrate seamlessly without any additional code. This follows the established pattern for other settings like `db_path` and `rates_url`.\n\n**Testing:**\n- All 4 existing tests pass\n- Verified the default value is \"USD\"\n- Verified it can be overridden via `ledger.toml`\n- Verified other settings continue to work normally",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

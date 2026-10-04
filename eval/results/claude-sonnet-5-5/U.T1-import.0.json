@@ -1,0 +1,26 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T1-import",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T1-import.0",
+ "seconds": 18.4,
+ "cost_usd": 0.06655160000000002,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger) -> int`. A quick manual check posted 3 entries and gave balances of 12.63 and -0.29. The existing tests pass, but I didn't add tests for the importer.\n\n- **Parsing:** Each non-blank line is split on its last comma, so an account name containing a comma still works. Amounts go through `Money.from_str`, as `docs/DECISIONS.md` requires. `-0.29` therefore parses exactly, with no float conversion.\n- **Timestamps:** Entries use `Ledger.post`'s default timestamp, which is timezone-aware UTC, so that decision is respected.\n- **Bad lines:** A malformed line raises `ValueError` with the line number. The error names the account only through `redact()`, per the log-redaction decision.\n- **All-or-nothing:** The whole input is parsed before anything is posted. A bad line partway through leaves the ledger unchanged instead of half-imported. You didn't specify this, so I chose it as the safer behaviour for a ledger.\n- **Docs:** I put a `# Why:` comment on the function pointing at the relevant decisions. No behaviour changed, so I left `docs/DECISIONS.md` as it was.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

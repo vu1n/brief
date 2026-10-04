@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MB",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MB.T3-rates.0",
+ "seconds": 54.7,
+ "cost_usd": 0.0827506,
+ "turns": 12,
+ "final": "## Summary\n\nI've added `ledger/rates.py` with the `fetch_rates` function. The implementation:\n\n**What it does:**\n- GETs the configured rates endpoint (`cfg.rates_url`)\n- Parses JSON response mapping currency codes to decimal rates\n- Returns `dict[str, Decimal]` with exchange rates\n\n**Why this approach:**\n- Uses the existing `Client` class from `ledger.http`, which provides **exponential backoff retry logic** (up to 5 attempts: delays of 0.5s, 1.0s, 2.0s, 4.0s, 8.0s)\n- Aligns with the architectural decision: \"All outbound HTTP goes through Client (RetryPolicy backoff)\"\n- Handles `TransientError` automatically through the Client's built-in retry mechanism\n- Respects the `transport` and `sleep` parameters for testability\n\n**Verification:**\n- \u2705 All existing tests pass\n- \u2705 Functional tests confirm proper retry behavior with exponential backoff\n- \u2705 Correctly parses JSON rates and converts to Decimal",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 retries-via-client#retries-via-client \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/rates.py\n      fix: echo 'retries-via-client conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'retries-via-client amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/retries-via-client.md\n"
+ },
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

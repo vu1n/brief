@@ -1,0 +1,28 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T6-rate.0",
+ "seconds": 19.1,
+ "cost_usd": 0.08288859999999999,
+ "turns": 4,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`, and the tests pass (`python -m pytest -q`, 5 passed).\n\n- **Rounding:** It multiplies the cents by `rate` as a `Decimal` and rounds to a whole cent with `ROUND_HALF_UP`. `docs/DECISIONS.md` requires this (\"Rate math rounds half-up\") so results match the partner banks' statements. I avoided `round()` and the default Decimal context because they use banker's rounding and drift one cent on exact halves.\n- **No float:** Nothing goes through `float`, which keeps to the \"Money is integer cents\" decision.\n- **Docs:** The method follows the existing decisions, so I didn't change `docs/DECISIONS.md` or the `# Why:` comments. The `Money` class already carries the rate-math `# Why:` comment.\n- **Test:** I added `test_apply_rate_rounds_half_up` to `tests/test_basic.py`. It covers 2.5 \u2192 3, 7.5 \u2192 8 and 5.25 \u2192 5.\n- **Negative amounts:** Half-up in `Decimal` rounds exact halves away from zero, so -2.5 cents becomes -3. The decision doc doesn't say how negative halves should round, so check this if the banks round them differently.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py",
+  "M\ttests/test_basic.py"
+ ]
+}

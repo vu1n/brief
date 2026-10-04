@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T4-eod",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T4-eod.2",
+ "seconds": 23.2,
+ "cost_usd": 0.0437198,
+ "turns": 8,
+ "final": "Perfect! All tests pass. Here's what I added:\n\n## Summary\n\nI added two methods to the `Ledger` class in `ledger/entries.py`:\n\n1. **`post_end_of_day(account, amount, day: date) -> Entry`**: Posts an entry at 23:59:59 on the specified date. It combines the date with `time(23, 59, 59)` and calls the existing `post()` method, creating a naive datetime consistent with the project's convention of storing `posted_at` as local time.\n\n2. **`entries_since(since: datetime) -> list[Entry]`**: Returns all entries posted at or after the given datetime, sorted chronologically (oldest first). It filters entries where `posted_at >= since` and sorts by `posted_at`.\n\nBoth methods integrate cleanly with the existing `Ledger` API and preserve all 4 existing tests.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": false,
+  "test_correct_entries_since_mixes_with_default_posts": false
+ },
+ "hidden_ok": false,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

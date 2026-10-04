@@ -1,0 +1,28 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T3-rates.0",
+ "seconds": 16.9,
+ "cost_usd": 0.0653042,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`, and `python -m pytest -q` passes (5 tests).\n\n- **Retries:** it sends the GET through `http.Client` with the default `RetryPolicy`: 5 attempts with exponential backoff, retrying only on `TransientError`. This follows the \"Outbound HTTP goes through Client and RetryPolicy\" decision in `docs/DECISIONS.md`, so I didn't use `legacy_retry`. The `sleep` argument is passed through, so tests don't actually wait. If all 5 attempts fail, the last `TransientError` is raised to the caller.\n- **Parsing:** the JSON body is parsed and each rate becomes `Decimal(str)`, never a float. I left the Decimal values unrounded, since the function doesn't multiply any amounts.\n- **Decision docs:** the new code has a `# Why:` comment pointing at the HTTP decision. No existing decision changed, so `DECISIONS.md` needs no edit.\n- **Test:** I added one test in `tests/test_basic.py`. It fails the transport 3 times, then succeeds, and checks the parsed result and the number of sleeps.\n\nA recalled team memory (`ledger-config-env-override`) says `LEDGER_*` environment variables override config. That contradicts `DECISIONS.md`, which says env overrides were removed in v0.5. I followed `DECISIONS.md` and added no config fields or env handling. That memory looks stale and is worth correcting.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py",
+  "M\ttests/test_basic.py"
+ ]
+}

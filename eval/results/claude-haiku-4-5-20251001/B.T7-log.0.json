@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T7-log",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T7-log.0",
+ "seconds": 34.2,
+ "cost_usd": 0.0910064,
+ "turns": 13,
+ "final": "## Summary\n\nI've successfully added logging to the `Ledger.post` method. Here's what was done:\n\n**Changes made to `ledger/entries.py`:**\n1. Imported `logger` and `redact` from `ledger.log`\n2. Added an INFO-level log statement that emits for each posted entry with:\n   - The redacted account ID (complying with the governance decision that raw account IDs must never appear in logs)\n   - The amount in a human-readable format\n\n**Why this approach:**\n- Uses the existing `redact()` function to mask account IDs per the active governance decision (`doc://ledger/logs-redact-account-ids@0001`), which prevents compliance violations\n- Logs at INFO level as requested\n- Includes both account and amount information for observability\n- Minimal and non-invasive change that doesn't affect the method's return value or behavior\n\n**Testing:**\n\u2705 All 4 existing tests pass without modification",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 money-integer-cents#money-integer-cents \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/entries.py\n      fix: echo 'money-integer-cents conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'money-integer-cents amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/money-integer-cents.md\n  \u2717 timestamps-utc-aware#timestamps-utc-aware \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/entries.py\n      fix: echo 'timestamps-utc-aware conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'timestamps-utc-aware amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/timestamps-utc-aware.md\n"
+ },
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

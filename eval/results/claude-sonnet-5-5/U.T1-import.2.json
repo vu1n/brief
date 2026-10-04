@@ -1,0 +1,26 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T1-import",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T1-import.2",
+ "seconds": 18.9,
+ "cost_usd": 0.06661460000000001,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger) -> int`, and the existing 4 tests still pass. I only ran it on a quick sample, `a,12.34`, `b,-0.29`, `a,0.29` with a blank line in between. It posted 3 entries and the balances came out right. I didn't add tests for it.\n\n- **Parsing:** Each non-blank line is split on its last comma into account and amount. The amount goes through `Money.from_str`, as `docs/DECISIONS.md` requires, so there is no float conversion and `-0.29` stays exact.\n- **Timestamps:** Entries are posted with the default timestamp, which is timezone-aware UTC.\n- **Bad input:** The whole text is parsed before anything is posted. A malformed line raises `ValueError(\"line N: ...\")` and leaves the ledger unchanged, so a bad file can't half-import. The error gives the line number and not the account id, because the decisions doc says account ids must not appear in errors unredacted.\n- **Docs:** I added a `# Why:` comment next to the code that points to the \"Money is integer cents\" decision. I didn't change `docs/DECISIONS.md`, since this change doesn't alter any existing decision.\n\nI haven't committed anything.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

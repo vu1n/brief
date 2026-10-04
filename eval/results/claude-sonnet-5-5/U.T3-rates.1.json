@@ -1,0 +1,31 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T3-rates.1",
+ "seconds": 16.0,
+ "cost_usd": 0.0665704,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. All 5 tests pass, including the new one.\n\n- **How it works:** it fetches `cfg.rates_url` through `http.Client` and parses the JSON into `{code: Decimal(rate)}`. `Client` retries `TransientError` up to 5 attempts with exponential backoff (0.5s, 1s, 2s, 4s). I used it because `docs/DECISIONS.md` requires all outbound HTTP to go through `Client` and `RetryPolicy`. I didn't use `legacy_retry` or write a separate retry loop. The `sleep` argument is passed through, so tests don't actually wait.\n- **Failure behavior:** if all 5 attempts fail, the last `TransientError` is raised.\n- **Rounding:** rates are parsed straight to `Decimal` with no float conversion and no multiplication, so the half-up rounding rule doesn't apply here.\n- **Test:** I added one to `tests/test_basic.py`. It fails twice and then succeeds, and checks the parsed result and the sleep delays.\n- **Docs:** I added a `# Why:` comment next to `fetch_rates` pointing at the HTTP decision. I also added one sentence to that decision in `docs/DECISIONS.md` naming `fetch_rates` as an example of the intended usage.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [
+  "docs/DECISIONS.md"
+ ],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tdocs/DECISIONS.md",
+  "A\tledger/rates.py",
+  "M\ttests/test_basic.py"
+ ]
+}

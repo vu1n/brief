@@ -1,0 +1,26 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "C",
+ "task": "T1-import",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/C.T1-import.0",
+ "seconds": 13.3,
+ "cost_usd": 0.059583800000000006,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger)`. It posts one entry per `account,amount` line, skips blank lines, and returns the number of entries posted. The existing tests pass (4 passed), and a quick manual run gave the expected counts and balances. I didn't add a test file for the importer.\n\n- **Amounts:** Each amount is parsed with `Money.from_str`, not `float`, as `docs/DECISIONS.md` requires. `-0.29` therefore stays exactly -29 cents. I added a `# Why:` comment pointing to that decision.\n- **Timestamps:** I don't pass a time to `ledger.post`, so entries get its default timezone-aware UTC `posted_at`, which matches the timestamp decision.\n- **Splitting:** Each line is split on its last comma. That keeps an account name with a comma in it intact, and the amount is always the final field.\n- **Bad lines:** A malformed amount raises `ValueError` from `Money.from_str`. Lines before it have already been posted, so a bad file can leave a partial import. I left it that way because you didn't specify error handling.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

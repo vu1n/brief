@@ -1,0 +1,26 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T1-import",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T1-import.0",
+ "seconds": 21.4,
+ "cost_usd": 0.19567900000000002,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger)`. It posts one entry per `account,amount` line and returns the count. The 4 existing tests pass. I also ran a quick sample by hand (`a,12.34`, a blank line, `b,-0.29`, `a,0.66`). It posted 3 entries, and the balances came out right (a = 13.00, b = -0.29). I didn't add tests for the new function.\n\n- **Parsing:** it uses the existing `Money.from_str`, so amounts are exact (no floats) and anything with more than 2 decimals is rejected. Blank and whitespace-only lines are skipped.\n- **Bad input:** a malformed line raises `ValueError` that names the line number. That covers a missing comma, an empty account, or a bad amount.\n- **All or nothing:** every line is parsed before anything is posted. A bad line therefore leaves the ledger unchanged instead of half-imported. You didn't specify this, so I chose it. Partial imports are hard to undo, and the cost is only holding the parsed rows in memory.\n- **Account names:** the line is split on the last comma, so account names may contain commas.\n\nEntries are posted with the default timestamp (now), since the CSV has no date column.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

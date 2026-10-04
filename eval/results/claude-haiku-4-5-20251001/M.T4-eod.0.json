@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T4-eod",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T4-eod.0",
+ "seconds": 39.0,
+ "cost_usd": 0.0786629,
+ "turns": 11,
+ "final": "**Summary:**\n\nAdded two methods to the `Ledger` class in `ledger/entries.py`:\n\n1. **`post_end_of_day(account, amount, day: date) -> Entry`** \u2014 Converts a date to a datetime at 23:59:59 and posts the entry, reusing the existing `post` method for consistency.\n\n2. **`entries_since(since: datetime) -> list[Entry]`** \u2014 Filters entries to those posted at or after `since`, then sorts them by `posted_at` in ascending order (oldest first).\n\nBoth methods integrate cleanly with the existing code: `post_end_of_day` leverages the existing `post` logic, and `entries_since` respects the Entry dataclass's timestamp field. All 4 existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": false,
+  "test_correct_entries_since_mixes_with_default_posts": false
+ },
+ "hidden_ok": false,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

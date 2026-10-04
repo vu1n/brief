@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T7-log",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T7-log.1",
+ "seconds": 40.6,
+ "cost_usd": 0.1141543,
+ "turns": 17,
+ "final": "Perfect! All tests pass and logging is working as expected.\n\n## Summary\n\nI added logging to the `Ledger.post` method that:\n\n1. **Emits an INFO record** on the `ledger` logger for each posted entry\n2. **Includes the account** (redacted via `ledger.log.redact()` to mask personal data per compliance requirements from the 2025 audit)\n3. **Includes the amount** formatted as a string (e.g., \"10.00\", \"-5.00\")\n\nThe changes were minimal and focused:\n- Imported `logger` and `redact` from `ledger.log`\n- Added a single `logger.info()` call in the `post` method that logs the entry with structured data\n\nAll existing tests pass, and the logging correctly redacts account IDs while preserving the last 4 characters for debugging purposes.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 money-integer-cents#money-integer-cents \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/entries.py\n      fix: echo 'money-integer-cents conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'money-integer-cents amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/money-integer-cents.md\n  \u2717 timestamps-utc-aware#timestamps-utc-aware \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/entries.py\n      fix: echo 'timestamps-utc-aware conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'timestamps-utc-aware amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/timestamps-utc-aware.md\n"
+ },
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

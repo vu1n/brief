@@ -1,0 +1,31 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T2-currency",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/B.T2-currency.1",
+ "seconds": 14.1,
+ "cost_usd": 0.06270780000000001,
+ "turns": 4,
+ "final": "I added `currency: str = \"USD\"` to `Config` in `ledger/config.py`. The 4 existing tests pass and `brief check` reports no violations.\n\n`config.load` only keeps keys that are `Config` fields, so `currency = \"EUR\"` in `ledger.toml` now works with no other code change. I didn't add a test for it.\n\nThe `config-file-only` decision says settings are file-configurable only, with no environment-variable overrides, so I didn't add one for `currency`. The change fits that decision. I recorded `config-file-only conforms: \u2026` in `.brief/SIGNOFF` and left the decision doc untouched.\n\nI haven't run `brief pin` or `brief doctor`. I wrote no new `// Context:` refs, so there was nothing to pin. I haven't committed anything.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "config-file-only conforms: added currency as a defaulted Config field, file-configurable via ledger.toml only; no env overrides\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "M\tledger/config.py"
+ ]
+}

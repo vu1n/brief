@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T6-rate",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T6-rate.1",
+ "seconds": 29.4,
+ "cost_usd": 0.05719010000000001,
+ "turns": 8,
+ "final": "Perfect! All tests pass. Here's what I did:\n\n**Added `Money.apply_rate()` method** to `ledger/money.py`:\n- Takes a `Decimal` rate parameter and returns a new Money object\n- Multiplies the amount (in cents) by the rate\n- Rounds to the nearest cent using `ROUND_HALF_EVEN` (banker's rounding), which is the team standard for money math per project memory\n- Implementation: `(Decimal(self.cents) * rate).quantize(Decimal('1'), rounding=ROUND_HALF_EVEN)`\n\nThe method integrates cleanly with the existing Money class design and all 4 existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_plain_cases": true,
+  "test_correct_half_up_on_exact_halves": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/money.py: ROUND_HALF_EVEN"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

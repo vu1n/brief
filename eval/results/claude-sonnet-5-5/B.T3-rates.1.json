@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/B.T3-rates.1",
+ "seconds": 16.5,
+ "cost_usd": 0.0736176,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. It retries transient failures and returns the rates as `Decimal` values. The full suite passes (6 tests), and `brief check` reports no violations.\n\n- **Retries:** it fetches `cfg.rates_url` through `http.Client` with the default `RetryPolicy`. That is 5 attempts with exponential backoff, so it survives up to 4 transient failures in a row. This follows the `retries-via-client` decision, which says all outbound HTTP goes through `Client` and new code must not use `legacy_retry`. It passes `sleep` through, so tests don't actually wait.\n- **Parsing:** it parses the JSON and converts each rate string with `Decimal(...)`, never via `float`. It raises `ValueError` if the payload isn't a JSON object.\n- **Tests:** `tests/test_rates.py` covers success after 3 transient failures, and giving up with `TransientError` once the attempts run out.\n- **Governance:** I added a `// Context:` ref to the decision in the code. I also recorded `retries-via-client conforms: ...` in `.brief/SIGNOFF`. I didn't edit any decision docs, and `brief pin` had nothing to pin.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "retries-via-client conforms: rates.fetch_rates uses http.Client with default RetryPolicy; no legacy_retry\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "A\tledger/rates.py",
+  "A\ttests/test_rates.py"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T7-log",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T7-log.1",
+ "seconds": 18.9,
+ "cost_usd": 0.08746280000000001,
+ "turns": 8,
+ "final": "`Ledger.post` now logs one INFO record on the `ledger` logger for each posted entry, and the 4 existing tests still pass. I didn't add a test for the new log record.\n\nThe message looks like `posted entry account=****1234 amount=12.34`. The change is in `ledger/entries.py`, and it uses the logger already defined in `ledger/log.py`.\n\n**Account masking:** I passed the account through the repo's `redact()` helper from `ledger/log.py`, so only its last 4 characters appear in the log. I assumed account identifiers are sensitive, since that helper exists. If you want the full account in the log, drop the `redact(...)` call.\n\n**Amount format:** The amount is logged unmasked, formatted by `Money.__str__` (for example `12.34`).",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

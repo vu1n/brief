@@ -1,0 +1,28 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T3-rates.1",
+ "seconds": 17.0,
+ "cost_usd": 0.059267600000000004,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`, and the full suite passes (7 tests).\n\n- **Retries:** `fetch_rates` sends the request through the existing `ledger.http.Client`, which already retries `TransientError` with capped exponential backoff. The default policy is 5 attempts with sleeps of 0.5s, 1s, 2s and 4s between them. That covers an endpoint that fails a few times in a row. If every attempt fails, the last `TransientError` is raised.\n- **Parsing:** the JSON response becomes `{code: Decimal(rate)}`. Rates are parsed from the strings, so there is no float rounding.\n- **Injectable sleep:** the `sleep` argument is passed through to the client, so tests don't actually wait.\n- **Tests:** `tests/test_rates.py` covers a clean fetch, success after 3 transient failures (checking the sleep delays), and giving up after repeated failures.\n\nI used `Client` instead of `legacy_retry` because its backoff suits a flaky endpoint better than a fixed delay.\n\nMalformed JSON or an invalid rate string raises `json.JSONDecodeError` or `decimal.InvalidOperation` straight to the caller and isn't retried.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py",
+  "A\ttests/test_rates.py"
+ ]
+}

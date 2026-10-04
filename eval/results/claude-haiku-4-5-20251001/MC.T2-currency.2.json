@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MC",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MC.T2-currency.2",
+ "seconds": 26.4,
+ "cost_usd": 0.0673614,
+ "turns": 10,
+ "final": "## Summary\n\nI've successfully added a `currency` setting to `Config` with a default value of `\"USD\"`. \n\n**What I did:**\n- Added `currency: str = \"USD\"` as a new field in the `Config` dataclass (ledger/config.py:12)\n- The existing `load()` function automatically supports it\u2014since it reads all fields from `fields(Config)`, the new setting is immediately configurable via `ledger.toml` if specified, or defaults to `\"USD\"` otherwise\n\n**Why this approach:**\nPer the project's design decision in `DECISIONS.md`, configuration comes from `ledger.toml` only (no environment overrides). The dataclass-based approach with automatic field filtering means new settings require minimal code\u2014just add the field with its default value.\n\n**Verification:**\nAll 4 existing tests pass, confirming backward compatibility.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

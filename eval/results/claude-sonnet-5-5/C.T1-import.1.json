@@ -1,0 +1,26 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "C",
+ "task": "T1-import",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/C.T1-import.1",
+ "seconds": 12.3,
+ "cost_usd": 0.059456800000000004,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger)`. A quick manual check posted two entries (`12.34` and `-0.29`) and returned 2. The existing tests still pass (4 passed). I didn't add tests for the importer.\n\n- **Parsing:** It skips blank lines and posts one entry per remaining line. It splits on the last comma, so an account name that contains a comma still works.\n- **Amounts:** It parses them with `Money.from_str`, so `-0.29` becomes exactly -29 cents. `docs/DECISIONS.md` says never to go through `float`, because that loses cents.\n- **Timestamps:** It uses `Ledger.post`'s default timestamp, which is timezone-aware UTC, as the decisions doc requires.\n- **Bad lines:** A line with a malformed amount raises `ValueError` from `Money.from_str`. Entries posted before that line stay in the ledger, because I didn't make the import all-or-nothing. A line with no comma has no account part and also fails with `ValueError`.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}
