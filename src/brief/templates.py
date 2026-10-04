@@ -52,8 +52,8 @@ from . import __version__
 
 # Installed from a pinned tag, never from PyPI: `brief` on PyPI is an unrelated package, and
 # an unpinned source would let any push to brief's main change every governed repo's gate.
-BRIEF_SOURCE = f"git+https://github.com/vu1n/brief@v{__version__}"
 BRIEF_REPO = "https://github.com/vu1n/brief"
+BRIEF_SOURCE = f"git+{BRIEF_REPO}@v{__version__}"
 CI_MARKER = "# Managed by `brief init --ci`: re-running it rewrites this file. Delete this line to own it."
 
 CI_WORKFLOW = f"""\
@@ -77,7 +77,7 @@ jobs:
       - name: brief update check (advisory)
         if: always()
         run: |
-          latest=$(git ls-remote --tags --refs {BRIEF_REPO} 'v*' | sed 's|.*refs/tags/||' | sort -V | tail -1)
+          latest=$(git ls-remote --tags --refs {BRIEF_REPO} 'v*' | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+$' | sort -V | tail -1)
           if [ -n "$latest" ] && [ "$latest" != "v{__version__}" ] \\
              && [ "$(printf '%s\\n' v{__version__} "$latest" | sort -V | tail -1)" = "$latest" ]; then
             echo "::notice title=brief $latest is available (this repo pins v{__version__})::Upgrade: uvx --from git+{BRIEF_REPO}@$latest brief init --ci --with-skills, then commit."

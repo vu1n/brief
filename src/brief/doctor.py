@@ -19,9 +19,9 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import gitutil, versions
-from .docs import Decision, load_index
+from .docs import Decision, glob_match, load_index
 from .features import is_feature_map, load_features
-from .gate import LOCKED_STATUSES, glob_match
+from .gate import LOCKED_STATUSES
 from .refs import DocRef, find_refs
 from .resolve import resolve
 

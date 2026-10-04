@@ -108,7 +108,7 @@ def _classify(rel: str, head: str) -> str:
         return "readme"
     if name in ("agents.md", "claude.md"):
         return "agent-guide"
-    if name == "skill.md" or rel.split("/", 1)[0] in AGENT_DIRS:
+    if name == "skill.md" or AGENT_DIRS.intersection(rel.split("/")[:-1]):
         return "agent-tooling"
     # decision genres by path or name
     if "/decisions/" in p or "/adr" in p or _ADR_NAME_RE.search(name) or "decision" in name:

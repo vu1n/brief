@@ -18,19 +18,27 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: version
         id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Tag and release are checked separately so a re-run finishes a half-done release.
         run: |
           v="v$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)"
           echo "tag=$v" >> "$GITHUB_OUTPUT"
-          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then echo "new=false" >> "$GITHUB_OUTPUT"; else echo "new=true" >> "$GITHUB_OUTPUT"; fi
+          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then echo "tagged=true" >> "$GITHUB_OUTPUT"; else echo "tagged=false" >> "$GITHUB_OUTPUT"; fi
+          if gh release view "$v" >/dev/null 2>&1; then echo "released=true" >> "$GITHUB_OUTPUT"; else echo "released=false" >> "$GITHUB_OUTPUT"; fi
       - name: tests
-        if: steps.v.outputs.new == 'true'
+        if: steps.v.outputs.released == 'false'
         run: uv run --extra dev pytest -q
-      - name: tag and release
-        if: steps.v.outputs.new == 'true'
+      - name: tag
+        if: steps.v.outputs.tagged == 'false'
         env:
-          GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.v.outputs.tag }}
         run: |
           git tag "$TAG" "$GITHUB_SHA"
           git push origin "$TAG"
-          gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
+      - name: release
+        if: steps.v.outputs.released == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"

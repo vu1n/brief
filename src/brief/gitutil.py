@@ -77,6 +77,14 @@ def files_at(repo: Path, ref: str, prefix: str) -> list[str]:
     return [ln for ln in out.splitlines() if ln.strip()]
 
 
+def toplevel(path: Path) -> Path:
+    """The git work-tree root containing `path` (paths from git are relative to it), else `path`."""
+    try:
+        return Path(_git(path, "rev-parse", "--show-toplevel").strip())
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return path
+
+
 def tracked_files(repo: Path) -> list[str]:
     """Every git-tracked path (repo-relative). Empty if not a repo. For whole-repo scans."""
     try:

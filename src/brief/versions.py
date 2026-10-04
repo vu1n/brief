@@ -12,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from .docs import DocError
+
 _REV_RE = re.compile(r"^v(\d+)\.md$")
 
 
@@ -21,7 +23,15 @@ def aliases_file(brief_dir: Path) -> Path:
 
 def load_aliases(brief_dir: Path) -> dict:
     p = aliases_file(brief_dir)
-    return (yaml.safe_load(p.read_text(encoding="utf-8")) or {}) if p.exists() else {}
+    if not p.exists():
+        return {}
+    try:
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as e:
+        raise DocError(f"{p}: not valid YAML: {getattr(e, 'problem', None) or e}") from None
+    if not isinstance(data, dict):
+        raise DocError(f"{p}: must be a YAML mapping")
+    return data
 
 
 def save_aliases(brief_dir: Path, data: dict) -> None:

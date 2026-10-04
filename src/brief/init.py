@@ -5,6 +5,7 @@ convention + skills) is the behavior layer that does the real work.
 """
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -74,6 +75,11 @@ def _install_hook(repo: Path, actions: list[str]) -> None:
     actions.append("installed pre-commit gate hook")
 
 
+def _pinned_version(workflow: str) -> tuple[int, ...]:
+    m = re.search(r"vu1n/brief@v(\d+(?:\.\d+)*)", workflow)
+    return tuple(int(x) for x in m.group(1).split(".")) if m else ()
+
+
 def _install_ci(repo: Path, actions: list[str]) -> None:
     from .templates import CI_MARKER, CI_WORKFLOW
 
@@ -84,6 +90,8 @@ def _install_ci(repo: Path, actions: list[str]) -> None:
             actions.append(".github/workflows/brief.yml is hand-managed — left as-is; bump its brief tag by hand")
         elif current == CI_WORKFLOW:
             actions.append(".github/workflows/brief.yml already current")
+        elif _pinned_version(current) > _pinned_version(CI_WORKFLOW):
+            actions.append(".github/workflows/brief.yml pins a newer brief — left as-is; run init from that version")
         else:
             wf.write_text(CI_WORKFLOW, encoding="utf-8")
             actions.append("refreshed .github/workflows/brief.yml to this brief version")
