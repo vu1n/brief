@@ -64,9 +64,10 @@ needs-conformance, amendment-required, broken-ref, and empty-glob for the featur
 ### Gotchas
 - Locked status is read from the baseline tree and `changed_files` uses `--no-renames`;
   both close known ways to reverse a locked decision (brief#1). Don't "simplify" them.
-- A change that only adds doc-ref comment lines is exempt from needs-conformance; any
-  removal or non-ref line re-arms it.
-- `features.py` imports `gate.glob_match`, so the gate imports `features` lazily.
+- Sign-off is opt-in (`signoff: required`, brief#9) and scoped by `ref_blocks` to the
+  anchors whose `// Context:` block changed; a comment-only change is exempt unless it
+  removes a ref.
+- `glob_match` lives in `docs.py` so `gate` and `features` don't import each other.
 
 <!-- brief:anchor ratify -->
 ## Ratification
@@ -169,6 +170,25 @@ Thin Typer entrypoint over the primitives.
 
 ### Gotchas
 - Keep it to deterministic primitives; workflow and judgment go in the convention and skills.
+
+<!-- brief:anchor system-one -->
+## System One triage
+
+```yaml
+paths:
+  - "src/brief/s1.py"
+  - "eval/s1/**"
+```
+
+Optional client for System One decision models over the TypeSafe API (`brief[s1]`;
+Jev, Clef, any compatible endpoint): typed questions in, calibrated probabilities out. Used to triage what
+reaches a human or agent; `eval/s1/` measures whether it can filter sign-off asks.
+
+### Gotchas
+- `decide` returns None (or drops an answer) on any failure; callers must read that as
+  "no opinion" and fall back to the mechanical rule, never as "no".
+- It may only remove asks or rank queues. Never let it ratify, block, or pass the gate:
+  the gate must stay deterministic and keyless in every consuming repo's CI.
 
 <!-- brief:anchor eval -->
 ## Eval
