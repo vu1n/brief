@@ -28,7 +28,7 @@ jobs:
           if gh release view "$v" >/dev/null 2>&1; then echo "released=true" >> "$GITHUB_OUTPUT"; else echo "released=false" >> "$GITHUB_OUTPUT"; fi
       - name: tests
         if: steps.v.outputs.released == 'false'
-        run: uv run --extra dev pytest -q
+        run: uv run --extra dev --extra s1 pytest -q
       - name: tag
         if: steps.v.outputs.tagged == 'false'
         env:

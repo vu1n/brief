@@ -13,6 +13,7 @@ mechanical rule.
 """
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
@@ -30,6 +31,12 @@ class Answer:
     p: float
     value: Any = None
     probabilities: Mapping[str, float] | None = None
+    model: str = ""  # the model that answered, as the endpoint reports it (not the alias)
+
+
+def model_name(env: Mapping[str, str] | None = None) -> str:
+    """The model the SDK will call; "jev-latest" is the SDK's own default."""
+    return ((os.environ if env is None else env).get("TYPESAFE_DEFAULT_MODEL") or "").strip() or "jev-latest"
 
 
 def client(env: Mapping[str, str] | None = None) -> Client | None:
@@ -43,16 +50,29 @@ def client(env: Mapping[str, str] | None = None) -> Client | None:
         return None
 
 
-def _answer(raw: Any) -> Answer | None:
+def _prob(x: Any) -> float | None:
+    # The SDK doesn't bound these: NaN, ±inf, or -0.5 must read as "no opinion", never as a
+    # confident "no" that clears an ask.
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        return None
+    return x if math.isfinite(x) and 0.0 <= x <= 1.0 else None
+
+
+def _answer(raw: Any, model: str) -> Answer | None:
     kind = getattr(raw, "type", None)
     if kind == "noul":
-        return Answer("noul", float(raw.noul))
-    probs = {str(k): float(v) for k, v in (getattr(raw, "probabilities", None) or {}).items()}
-    if kind == "choice":
-        return Answer("choice", float(raw.confidence), raw.choice, probs)
-    if kind == "score":
-        return Answer("score", float(raw.confidence), float(raw.score), probs)
-    return None
+        p = _prob(getattr(raw, "noul", None))
+        return Answer("noul", p, model=model) if p is not None else None
+    if kind not in ("choice", "score"):
+        return None
+    p = _prob(getattr(raw, "confidence", None))
+    probs = {str(k): _prob(v) for k, v in (getattr(raw, "probabilities", None) or {}).items()}
+    if p is None or None in probs.values():
+        return None
+    value = raw.choice if kind == "choice" else float(raw.score)
+    return Answer(kind, p, value, probs, model)
 
 
 def decide(state: Any, questions: Mapping[str, Any], *,
@@ -64,8 +84,9 @@ def decide(state: Any, questions: Mapping[str, Any], *,
     if c is None:
         return None
     try:
-        answers = c.system_one(state, dict(questions)).answers
-        out = {k: a for k, raw in answers.items() if k in questions and (a := _answer(raw))}
+        reply = c.system_one(state, dict(questions))
+        model = str(getattr(reply, "model", "") or "")
+        out = {k: a for k, raw in reply.answers.items() if k in questions and (a := _answer(raw, model))}
     except Exception:
         return None
     return out or None
@@ -75,6 +96,13 @@ def decide(state: Any, questions: Mapping[str, Any], *,
 
 def conflict_state(decision: str, diff: str) -> dict:
     return {"decision": decision, "diff": diff}
+
+
+def noul_p(answers: Mapping[str, Answer] | None, key: str) -> float | None:
+    """P(yes) for a noul question, or None. An answer of another type to a noul question is
+    not a probability of yes (its `p` is a confidence), so it is no opinion."""
+    a = (answers or {}).get(key)
+    return a.p if a is not None and a.kind == "noul" else None
 
 
 def conflict_question() -> dict:

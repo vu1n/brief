@@ -45,7 +45,7 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.4.0   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.4.1   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
@@ -97,7 +97,7 @@ operates.
 - `brief resolve <ref>` — ref → file, anchor, lines, body, hash (+ stale flag)
 - `brief check [--base <ref>]` — the L0 gate (staged locally; a commit range in CI)
 - `brief doctor [--strict]` — advisory lint: latent drift the gate *doesn't* block — an active decision that was never published, a governed file with no back-ref, a floating `@latest`, a stale pin. Agents run it and close what it flags; `--strict` fails CI on warnings.
-- `brief triage [--base <ref>]` — optional (`brief[s1]` + `TYPESAFE_API_KEY`): a System One model rates each sign-off ask; below p=0.1 it writes the `conforms` line itself, tagged with the score. The gate never calls the model. See `eval/s1/`.
+- `brief triage [--base <ref>]` — optional (`brief[s1]` + `TYPESAFE_API_KEY`): a System One model rates each sign-off ask; below p=0.1 it writes the `conforms` line itself, tagged with the score. It sends the decision text and the governed files' diff to `TYPESAFE_BASE_URL`, so only enable it where that is acceptable. The gate never calls the model. See `eval/s1/`.
 - `brief pin [files]` — freeze `@latest`/`@current` code refs to a concrete revision
 - `brief publish <doc-id>` — mint the next immutable revision
 - `brief ratify <anchor>` — accept an amendment → new revision, archive the proposal

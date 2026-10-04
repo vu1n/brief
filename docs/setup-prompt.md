@@ -16,7 +16,7 @@ list it in the PR instead of guessing.
 
 1. Install and initialize (brief is not on PyPI; the PyPI package named `brief` is
    unrelated):
-     uv tool install git+https://github.com/vu1n/brief@v0.4.0
+     uv tool install git+https://github.com/vu1n/brief@v0.4.1
      brief init --with-skills --ci
    This scaffolds `.brief/`, injects the governance convention into AGENTS.md (or
    CLAUDE.md), installs the brief skills into `.claude/skills/`, and adds a pinned CI gate.

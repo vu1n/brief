@@ -67,6 +67,8 @@ needs-conformance, amendment-required, broken-ref, and empty-glob for the featur
 - Sign-off is opt-in (`signoff: required`, brief#9) and scoped by `ref_blocks` to the
   anchors whose `// Context:` block changed; a comment-only change is exempt unless it
   removes a ref.
+- Content diffs go through `gitutil._CONTENT` (`--text --no-ext-diff --no-textconv`): a
+  `-diff` attribute or a diff driver must not hide lines, or a change reads as comment-only.
 - `glob_match` lives in `docs.py` so `gate` and `features` don't import each other.
 
 <!-- brief:anchor ratify -->
@@ -189,6 +191,11 @@ sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold com
 ### Gotchas
 - `decide` returns None (or drops an answer) on any failure; callers must read that as
   "no opinion" and fall back to the mechanical rule, never as "no".
+- Out-of-range, non-finite, or wrong-type answers are dropped in `s1._answer`/`noul_p`:
+  a confidence is not P(no), and -0.5 must not read as a confident "no".
+- The gate matches `conforms` on the bare anchor id across docs, so triage clears an id only
+  when every ask sharing it is under the threshold; staged mode writes only its own lines
+  to the index (`gitutil.stage_content`), never `git add` of the whole SIGNOFF.
 - It may only remove asks or rank queues. Never let it ratify, block, or pass the gate:
   the gate must stay deterministic and keyless in every consuming repo's CI.
 
