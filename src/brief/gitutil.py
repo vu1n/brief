@@ -24,10 +24,12 @@ def merge_base(repo: Path, ref: str) -> str:
 
 
 def changed_files(repo: Path, base: str | None = None) -> list[str]:
+    # --no-renames: a rename must report its old path too, or moving a locked decision
+    # aside (then demoting the copy) would never show the original as changed.
     if base:
-        out = _git(repo, "diff", "--name-only", base, "HEAD")
+        out = _git(repo, "diff", "--no-renames", "--name-only", base, "HEAD")
     else:
-        out = _git(repo, "diff", "--cached", "--name-only")
+        out = _git(repo, "diff", "--cached", "--no-renames", "--name-only")
     return [ln for ln in out.splitlines() if ln.strip()]
 
 
@@ -57,6 +59,22 @@ def content_at(repo: Path, path: str, ref: str) -> str:
         return _git(repo, "show", f"{ref}:{path}")
     except subprocess.CalledProcessError:
         return ""
+
+
+def content_after(repo: Path, path: str, base: str | None = None) -> str:
+    """Content of a path on the change's far side: HEAD in range mode, the index when
+    staged. '' if absent."""
+    return content_at(repo, path, "HEAD" if base else "")
+
+
+def files_at(repo: Path, ref: str, prefix: str) -> list[str]:
+    """Paths tracked under `prefix` at `ref`. Empty if the ref doesn't exist (e.g. no
+    commits yet)."""
+    try:
+        out = _git(repo, "ls-tree", "-r", "--name-only", ref, "--", prefix)
+    except subprocess.CalledProcessError:
+        return []
+    return [ln for ln in out.splitlines() if ln.strip()]
 
 
 def tracked_files(repo: Path) -> list[str]:

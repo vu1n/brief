@@ -5,9 +5,11 @@ Workflow: a human reviews `.brief/amendments/<anchor>.md` (optionally with the
 `brief ratify <anchor>`. That publishes a new revision and archives the amendment.
 
 Authority is the human running it / approving the PR — `brief` makes ratification an
-explicit, structured, reviewable act (the gate exempts it precisely *because* the
-archived amendment is present). It does not, and cannot locally, prevent a forged
-ratification; CI + human PR review is the backstop.
+explicit, structured, reviewable act. The gate exempts the decision edit only when the
+change carries this function's full output: the new archived amendment (stamped
+`ratified_rev`) and the new published revision equal to the live doc (see
+`gate._ratified`). A bare file in the archive is not enough. It still cannot locally
+prevent a hand-forged copy of that output; CI + human PR review is the backstop.
 """
 from __future__ import annotations
 

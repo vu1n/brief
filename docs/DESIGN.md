@@ -56,7 +56,7 @@ to keep it current, an agent resolves a conflict between its task and a decision
 the party being checked cannot edit the check.
 
 - **L0 — Procedural (commit hook; mechanical, certain).**
-  1. *Read-only decisions* — a coding commit may not modify a locked (`active`/`ratified`) decision. This kills reversal-by-fiat at the root, with no semantic check.
+  1. *Read-only decisions* — a coding commit may not modify, delete, or rename a locked (`active`/`ratified`) decision, nor rewrite a published revision. Locked status is read from the baseline tree, so removing the doc in the same change can't dodge it. The one exemption is a ratification carrying `brief ratify`'s full output (archived amendment + new revision equal to the live doc). This kills reversal-by-fiat at the root, with no semantic check.
   2. *Conformance assertion* — when governed code changes, the author records `<anchor> conforms: <why>` (code still satisfies the decision) or `<anchor> amend-proposed: <why>` in `.brief/SIGNOFF`.
   3. *Amendment-required* — `amend-proposed` blocks the commit: code needing a decision changed cannot land until that change is ratified.
   4. *Ref integrity* — every `doc://` ref added to code must resolve.
