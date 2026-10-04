@@ -1,6 +1,7 @@
 ---
 name: brief-backfill
 description: Reconstruct a brief decision layer for an existing codebase from its code, docs, and comments. Use when adopting brief in a repo that already has ADRs / design docs / rationale comments — it maps what exists, verifies each decision against current code, carries forward the correct ones, re-grounds the drifted ones, and discovers decisions that live only in code. Invoke for "backfill brief", "adopt brief here", "reconstruct decisions".
+disable-model-invocation: true
 ---
 
 # brief backfill — reconstruct the decision layer

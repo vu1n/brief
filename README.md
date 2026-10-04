@@ -60,6 +60,12 @@ brief check                           # run before committing (CI runs the same 
 brief pin                             # freeze @latest -> @0001 in your staged code
 ```
 
+The skills ship with `disable-model-invocation: true`: "brief" is a generic word, and a
+globally installed skill with an auto-matching description pulls unrelated agents into
+governance work in repos that never adopted brief. Run them as `/brief-amend`,
+`/brief-author-decision`, `/brief-backfill`, `/brief-review`. The gate, not description
+matching, is what routes an agent to an amendment.
+
 When a task can't be done without changing a ratified decision:
 
 ```sh

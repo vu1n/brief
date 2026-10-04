@@ -1,6 +1,7 @@
 ---
 name: brief-amend
 description: Propose an amendment when a coding task conflicts with a ratified (read-only) brief decision. Use when the gate blocks you with "ratified decision is read-only" or "amendment-required", or when you realize a task cannot be done without changing an active decision. The correct escalation — never edit the decision to make your code pass.
+disable-model-invocation: true
 ---
 
 # Proposing a brief amendment

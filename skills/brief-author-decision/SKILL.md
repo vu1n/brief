@@ -1,6 +1,7 @@
 ---
 name: brief-author-decision
 description: Write or scope a brief governance decision doc in .brief/docs/. Use when capturing an architectural decision or invariant as a governed constraint — defining its anchor, the code it governs, and the invariant code must conform to. Invoke for "add a decision", "write an ADR in brief", "govern this invariant".
+disable-model-invocation: true
 ---
 
 # Authoring a brief decision
