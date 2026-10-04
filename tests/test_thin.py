@@ -1,3 +1,4 @@
+import re
 import subprocess
 from pathlib import Path
 
@@ -550,3 +551,35 @@ def test_check_range_mode(tmp_path):
 
     v = check(repo, repo / ".brief", base=base)
     assert any(x.kind == "needs-conformance" for x in v)
+
+
+def test_bad_frontmatter_is_a_clean_error(tmp_path):
+    import subprocess
+    import sys
+
+    _init(tmp_path)
+    bd = tmp_path / ".brief"
+    (bd / "docs").mkdir(parents=True, exist_ok=True)
+    (bd / "docs" / "retry.md").write_text(
+        "---\ntitle: Retry: idempotent only\nstatus: active\n---\n<!-- brief:anchor retry -->\n## Retry\n"
+    )
+    r = subprocess.run(
+        [sys.executable, "-m", "brief", "doctor", "--repo", str(tmp_path)],
+        capture_output=True, text=True, cwd=tmp_path,
+    )
+    assert r.returncode == 2
+    assert "Traceback" not in r.stderr
+    assert "retry.md: frontmatter is not valid YAML" in r.stderr and "Quote a value" in r.stderr
+
+
+def test_docs_pin_the_current_version():
+    # The install lines people copy must point at the tag release.yml creates for this version.
+    from pathlib import Path
+
+    import brief
+
+    root = Path(__file__).resolve().parents[1]
+    for rel in ("README.md", "docs/setup-prompt.md"):
+        text = (root / rel).read_text()
+        pins = set(re.findall(r"vu1n/brief@(v[\d.]+)", text))
+        assert pins == {f"v{brief.__version__}"}, f"{rel} pins {pins}"

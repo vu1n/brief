@@ -24,6 +24,8 @@ SKIP_DIRS = {
     ".ruff_cache", "coverage", ".turbo",
 }
 DECISION_GENRES = {"adr", "decision", "design", "spec", "contract"}
+# Agent tooling (installed skills, agent configs) — never a decision doc, whatever it says.
+AGENT_DIRS = {".claude", ".agents", ".codex", ".cursor", ".opencode", ".gemini"}
 MAX_FILE_BYTES = 512 * 1024
 MAX_SIGNALS = 500
 
@@ -106,6 +108,8 @@ def _classify(rel: str, head: str) -> str:
         return "readme"
     if name in ("agents.md", "claude.md"):
         return "agent-guide"
+    if name == "skill.md" or rel.split("/", 1)[0] in AGENT_DIRS:
+        return "agent-tooling"
     # decision genres by path or name
     if "/decisions/" in p or "/adr" in p or _ADR_NAME_RE.search(name) or "decision" in name:
         return "adr"

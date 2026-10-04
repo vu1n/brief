@@ -240,5 +240,16 @@ def backfill(
     typer.echo("  next: run the `brief-backfill` skill (or hand map.md to an agent) to reconstruct the decision layer.")
 
 
+def main() -> None:
+    """Console entry: a malformed .brief file is a one-line error, not a traceback."""
+    from .docs import DocError
+
+    try:
+        app()
+    except DocError as e:
+        typer.echo(f"brief: {e}", err=True)
+        raise SystemExit(2) from None
+
+
 if __name__ == "__main__":
-    app()
+    main()

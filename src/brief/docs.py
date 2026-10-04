@@ -17,6 +17,28 @@ HEADING_RE = re.compile(r"^#{1,6}\s+(.*\S)\s*$")
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 
 
+class DocError(ValueError):
+    """A .brief file brief can't parse. The CLI prints it as one line, not a traceback."""
+
+
+def load_frontmatter(text: str, path: Path) -> dict:
+    fm = FRONTMATTER_RE.match(text)
+    if not fm:
+        return {}
+    try:
+        meta = yaml.safe_load(fm.group(1)) or {}
+    except yaml.YAMLError as e:
+        mark = getattr(e, "problem_mark", None)
+        where = f" (frontmatter line {mark.line + 1})" if mark else ""
+        raise DocError(
+            f"{path}: frontmatter is not valid YAML{where}: {getattr(e, 'problem', None) or e}. "
+            'Quote a value that contains ": ", e.g. title: "Retry: idempotent only".'
+        ) from None
+    if not isinstance(meta, dict):
+        raise DocError(f"{path}: frontmatter must be a YAML mapping (key: value lines)")
+    return meta
+
+
 def sha256(text: str) -> str:
     return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -46,10 +68,7 @@ class Decision:
 
 def parse_doc(path: Path, project: str) -> Decision:
     text = path.read_text(encoding="utf-8")
-    meta: dict = {}
-    fm = FRONTMATTER_RE.match(text)
-    if fm:
-        meta = yaml.safe_load(fm.group(1)) or {}
+    meta = load_frontmatter(text, path)
     doc_id = str(meta.get("id") or path.stem)
     related = meta.get("related_code") or []
     if isinstance(related, str):
@@ -123,8 +142,11 @@ def doc_id_of(text: str, path: Path) -> str:
 def project_name(brief_dir: Path) -> str:
     pj = brief_dir / "project.yaml"
     if pj.exists():
-        data = yaml.safe_load(pj.read_text(encoding="utf-8")) or {}
-        if data.get("id"):
+        try:
+            data = yaml.safe_load(pj.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as e:
+            raise DocError(f"{pj}: not valid YAML: {getattr(e, 'problem', None) or e}") from None
+        if isinstance(data, dict) and data.get("id"):
             return str(data["id"])
     return brief_dir.parent.name
 
