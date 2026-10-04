@@ -46,6 +46,15 @@ def added_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
     return [ln[1:] for ln in out.splitlines() if ln.startswith("+") and not ln.startswith("+++")]
 
 
+def diff(repo: Path, paths: list[str], base: str | None = None) -> str:
+    """Unified diff for `paths`, staged (base=None) or over base..HEAD."""
+    args = ["diff", base, "HEAD", "--", *paths] if base else ["diff", "--cached", "--", *paths]
+    try:
+        return _git(repo, *args)
+    except subprocess.CalledProcessError:
+        return ""
+
+
 def removed_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
     """Removed (-) lines for one path, staged (base=None) or over base..HEAD."""
     args = ["diff", "-U0", base, "HEAD", "--", path] if base else ["diff", "--cached", "-U0", "--", path]

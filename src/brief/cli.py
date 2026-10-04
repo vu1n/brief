@@ -95,6 +95,32 @@ def check(
 
 
 @app.command()
+def triage(
+    repo: str = typer.Option(".", "--repo", help="repo root"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+    base: str = typer.Option(None, "--base", help="triage the range base..HEAD instead of staged changes"),
+):
+    """Clear sign-off asks a System One model rates as conforming (optional: brief[s1] + TYPESAFE_API_KEY)."""
+    from .triage import THRESHOLD
+    from .triage import triage as run_triage
+
+    repo_path = gitutil.toplevel(Path(repo).resolve())
+    verdicts = run_triage(repo_path, _brief_dir(brief, repo_path), base)
+    if not verdicts:
+        typer.echo("brief triage: no sign-off asks")
+        return
+    for v in verdicts:
+        if v.cleared:
+            typer.echo(f"  cleared {v.doc_id}#{v.anchor_id} (p={v.p:.2f} < {THRESHOLD}): conforms line written to .brief/SIGNOFF")
+        elif v.p is None:
+            typer.echo(f"  ask {v.doc_id}#{v.anchor_id}: no model opinion — sign off yourself")
+        else:
+            typer.echo(f"  ask {v.doc_id}#{v.anchor_id} (p={v.p:.2f}): may cut against the decision — read it, then sign off or amend")
+    if base and any(v.cleared for v in verdicts):
+        typer.echo("commit .brief/SIGNOFF to record the cleared asks")
+
+
+@app.command()
 def features(
     files: list[str] = typer.Argument(None, help="only features these repo-relative paths touch (e.g. a diff's files)"),
     brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
