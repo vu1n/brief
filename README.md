@@ -45,12 +45,14 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.4.1   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.4.2   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
 Releases are cut by bumping `version` in `pyproject.toml` and `src/brief/__init__.py`: on
-merge to main, `release.yml` tags `v<version>` and publishes a GitHub release. Repos set up
+merge to main, `release.yml` tags `v<version>` and publishes a GitHub release. Every
+release adds an entry to [UPGRADING.md](UPGRADING.md): what changed for a governed repo and
+what the upgrading agent must do (a test fails without it). Repos set up
 with `brief init --ci` get a PR notice when a newer tag exists, with the one command that
 upgrades them.
 
