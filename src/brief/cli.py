@@ -85,9 +85,32 @@ def check(
         elif v.kind == "amendment-required":
             typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — {v.detail}", err=True)
             typer.echo("      this is a correct escalation: the code cannot land until the amendment is ratified.", err=True)
+        elif v.kind == "empty-glob":
+            typer.echo(f"  ✗ {v.doc_id}#{v.anchor_id} — {v.detail}", err=True)
         else:
             typer.echo(f"  ✗ broken-ref — {v.detail}", err=True)
     raise typer.Exit(1)
+
+
+@app.command()
+def features(
+    files: list[str] = typer.Argument(None, help="only features these repo-relative paths touch (e.g. a diff's files)"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+):
+    """List the feature map: each feature's ref and paths, or only those FILES touch."""
+    from .features import load_features, touched
+
+    feats = load_features(_brief_dir(brief, Path.cwd()))
+    if files:
+        feats = touched(feats, list(files))
+    if json_out:
+        typer.echo(json.dumps([f.to_dict() for f in feats], indent=2))
+        return
+    for f in feats:
+        typer.echo(f"{f.ref}  {f.title}")
+        for g in f.paths:
+            typer.echo(f"    {g}")
 
 
 @app.command()

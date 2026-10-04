@@ -20,6 +20,7 @@ from pathlib import Path
 
 from . import gitutil, versions
 from .docs import Decision, load_index
+from .features import is_feature_map, load_features
 from .gate import LOCKED_STATUSES, glob_match
 from .refs import DocRef, find_refs
 from .resolve import resolve
@@ -47,6 +48,7 @@ class CodeRef:
 @dataclass
 class Finding:
     # stale-ref | unpinned-ref | draft-governing-code | active-unwired | active-unpublished
+    # | feature-no-paths
     kind: str
     severity: str  # warn | info
     detail: str
@@ -154,6 +156,8 @@ def check_decisions(
     refd = {cr.ref.doc_id for cr in code_refs}
     findings: list[Finding] = []
     for d in index:
+        if is_feature_map(d):
+            continue  # descriptive, not governing: none of these states apply
         status = _status(d)
         locked = status in LOCKED_STATUSES
         latest = versions.latest_rev(brief_dir, d.doc_id)
@@ -183,6 +187,20 @@ def check_decisions(
     return findings
 
 
+def check_features(index: list[Decision], brief_dir: Path) -> list[Finding]:
+    """A feature with no `paths:` is invisible to diff→feature recall. (A glob that matches
+    nothing is the gate's empty-glob, not doctor's.)"""
+    return [
+        Finding(
+            kind="feature-no-paths", severity=WARN, doc_id=f.doc_id, anchor=f.feature_id,
+            detail="feature declares no paths — no diff will ever map to it",
+            fix=f"add a ```yaml block with `paths:` globs under #{f.feature_id} in {f.path}",
+        )
+        for f in load_features(brief_dir, index)
+        if not f.paths
+    ]
+
+
 _SEV_ORDER = {WARN: 0, INFO: 1}
 
 
@@ -192,6 +210,7 @@ def run(repo: Path, brief_dir: Path) -> Report:
     index = load_index(brief_dir)
     code_refs = scan_code_refs(repo, tracked)
     findings = check_refs(code_refs, index, brief_dir) + check_decisions(index, code_refs, tracked, brief_dir)
+    findings += check_features(index, brief_dir)
     findings.sort(key=lambda f: (_SEV_ORDER.get(f.severity, 9), f.kind, f.doc_id, f.file, f.line))
     return Report(repo=str(repo), findings=findings)
 

@@ -25,20 +25,23 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `gate.py` | the L0 gate (separation of powers): `check(repo, brief_dir, base=None)` |
 | `doctor.py` | advisory lint (repo-wide): latent drift the gate doesn't block — unwired / unpublished / unpinned / stale refs. Machine-first `Report`, `--strict` opt-in |
 | `ratify.py` | the authorized decision change (publish new revision + archive amendment) |
+| `features.py` | feature map: `type: features` docs → features (anchor + `paths:` globs); diff → features; dead-glob detection for the gate |
 | `pin.py` | rewrite `@latest`/`@current` → concrete revision in code |
 | `scan.py` | `brief backfill` scanner: inventory docs (genre/status/tracked) + code signals + module tree into a context map |
 | `init.py` / `templates.py` | `brief init` + the injected convention / CI workflow |
 | `gitutil.py` | minimal git plumbing (staged + range modes) |
 | `cli.py` | Typer entrypoint |
 
-`skills/` — the agent-facing skills (`brief-author-decision`, `brief-amend`, `brief-review`).
+`skills/` — the agent-facing skills (`brief-author-decision`, `brief-amend`, `brief-review`,
+`brief-backfill`, `brief-feature-map`).
+`.brief/docs/features.md` — brief's own feature map; read the Gotchas for the area you touch.
 `docs/DESIGN.md` — design of record.
 
 ## Dev
 
 ```sh
 uv venv && uv pip install -e ".[dev]"
-uv run pytest -q            # the suite — tests/test_thin.py
+uv run pytest -q            # the suite — tests/
 uv run brief --help
 ```
 
@@ -64,6 +67,7 @@ decision to ratify your own code) is the failure the whole design exists to prev
 
 ## Dogfood TODO
 
-brief does not yet govern itself. A natural next step: author brief's own load-bearing
+brief maps itself (`.brief/docs/features.md`, kept honest by a test) but does not yet
+govern itself with decisions. A natural next step: author brief's own load-bearing
 decisions (e.g. *mechanism-in-code/policy-in-prose*, *separation-of-powers: decisions
 read-only*) as `.brief/docs/` and govern this repo with brief.
