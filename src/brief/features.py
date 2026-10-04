@@ -19,8 +19,7 @@ from pathlib import Path
 
 import yaml
 
-from .docs import Decision, load_index
-from .gate import glob_match
+from .docs import Decision, DocError, glob_match, load_index
 
 FEATURES_TYPE = "features"
 _YAML_FENCE_RE = re.compile(r"^```ya?ml\s*\n(.*?)^```", re.MULTILINE | re.DOTALL)
@@ -50,7 +49,7 @@ def is_feature_map(d: Decision) -> bool:
     return str(d.meta.get("type") or "").lower() == FEATURES_TYPE
 
 
-def _paths_of(body: str) -> list[str]:
+def _paths_of(body: str, where: str) -> list[str]:
     """`paths:` from the first fenced yaml block in a feature section that declares it."""
     for m in _YAML_FENCE_RE.finditer(body):
         try:
@@ -59,7 +58,11 @@ def _paths_of(body: str) -> list[str]:
             continue
         if isinstance(data, dict) and "paths" in data:
             paths = data["paths"] or []
-            return [paths] if isinstance(paths, str) else [str(p) for p in paths]
+            if isinstance(paths, str):
+                return [paths]
+            if isinstance(paths, list):
+                return [str(p) for p in paths]
+            raise DocError(f"{where}: `paths:` must be a glob or a list of globs, got {paths!r}")
     return []
 
 
@@ -71,7 +74,7 @@ def features_of(d: Decision) -> list[Feature]:
             doc_id=d.doc_id,
             project=d.project,
             path=str(d.path),
-            paths=_paths_of(a.body),
+            paths=_paths_of(a.body, f"{d.path}#{a.anchor_id}"),
         )
         for a in d.anchors
     ]

@@ -5,6 +5,8 @@ the coding loop may rewrite. So the gate enforces:
 
 1. ratified-edit   — a coding commit must NOT modify, delete, or rename a locked
                      (active/ratified) decision, nor touch a published revision.
+                     A baseline doc whose frontmatter won't parse counts as locked
+                     (fail closed: a YAML repair can't smuggle in a rule change).
                      To change one, propose an amendment for human ratification. (This is the fix for "reversal by fiat": the
                      constrained party cannot edit the constraint to pass.)
 2. needs-conformance — when governed code changes, the author must record either
@@ -32,7 +34,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import docs, gitutil, versions
-from .docs import Decision, load_index
+from .docs import Decision, glob_match, load_index
+from .features import empty_globs, load_features
 from .refs import find_refs
 from .resolve import resolve
 
@@ -42,34 +45,12 @@ CONFORMS_RE = re.compile(r"^\s*([a-z0-9][a-z0-9-]*)\s+conforms\b")
 AMEND_RE = re.compile(r"^\s*([a-z0-9][a-z0-9-]*)\s+amend-proposed\b")
 
 
-def glob_match(pattern: str, path: str) -> bool:
-    """Match a path against a glob: ** spans directories, * stays within a segment."""
-    rx: list[str] = []
-    i = 0
-    while i < len(pattern):
-        if pattern.startswith("**", i):
-            rx.append(".*")
-            i += 2
-            if i < len(pattern) and pattern[i] == "/":
-                i += 1
-        elif pattern[i] == "*":
-            rx.append("[^/]*")
-            i += 1
-        elif pattern[i] == "?":
-            rx.append("[^/]")
-            i += 1
-        else:
-            rx.append(re.escape(pattern[i]))
-            i += 1
-    return re.match("^" + "".join(rx) + "$", path) is not None
-
-
 def _is_brief_path(p: str) -> bool:
     return p.startswith(".brief/") or "/.brief/" in f"/{p}"
 
 
 def _is_locked(status: str | None) -> bool:
-    return (status or "").lower() in LOCKED_STATUSES
+    return status == docs.UNPARSEABLE or (status or "").lower() in LOCKED_STATUSES
 
 
 def _ref_only_change(repo: Path, path: str, rng: str | None) -> bool:
@@ -271,8 +252,6 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
 def _empty_globs(repo: Path, brief_dir: Path, index: list[Decision], base: str | None) -> list[Violation]:
     """Feature-map globs matching no file on the change's far side: HEAD in range mode,
     the index when staged. Repo-wide, not diff-scoped — a dead glob is stale whoever made it."""
-    from .features import empty_globs, load_features  # features imports gate
-
     feats = load_features(brief_dir, index)
     if not feats:
         return []

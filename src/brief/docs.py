@@ -21,6 +21,10 @@ class DocError(ValueError):
     """A .brief file brief can't parse. The CLI prints it as one line, not a traceback."""
 
 
+def _yaml_problem(e: yaml.YAMLError) -> str:
+    return str(getattr(e, "problem", None) or e)
+
+
 def load_frontmatter(text: str, path: Path) -> dict:
     fm = FRONTMATTER_RE.match(text)
     if not fm:
@@ -31,12 +35,34 @@ def load_frontmatter(text: str, path: Path) -> dict:
         mark = getattr(e, "problem_mark", None)
         where = f" (frontmatter line {mark.line + 1})" if mark else ""
         raise DocError(
-            f"{path}: frontmatter is not valid YAML{where}: {getattr(e, 'problem', None) or e}. "
+            f"{path}: frontmatter is not valid YAML{where}: {_yaml_problem(e)}. "
             'Quote a value that contains ": ", e.g. title: "Retry: idempotent only".'
         ) from None
     if not isinstance(meta, dict):
         raise DocError(f"{path}: frontmatter must be a YAML mapping (key: value lines)")
     return meta
+
+
+def glob_match(pattern: str, path: str) -> bool:
+    """Match a path against a glob: ** spans directories, * stays within a segment."""
+    rx: list[str] = []
+    i = 0
+    while i < len(pattern):
+        if pattern.startswith("**", i):
+            rx.append(".*")
+            i += 2
+            if i < len(pattern) and pattern[i] == "/":
+                i += 1
+        elif pattern[i] == "*":
+            rx.append("[^/]*")
+            i += 1
+        elif pattern[i] == "?":
+            rx.append("[^/]")
+            i += 1
+        else:
+            rx.append(re.escape(pattern[i]))
+            i += 1
+    return re.match("^" + "".join(rx) + "$", path) is not None
 
 
 def sha256(text: str) -> str:
@@ -112,15 +138,25 @@ def parse_doc(path: Path, project: str) -> Decision:
     )
 
 
-def status_of(text: str) -> str | None:
-    """Extract the frontmatter `status` from raw doc text (for HEAD-version checks)."""
-    fm = FRONTMATTER_RE.match(text)
-    if not fm:
-        return None
+UNPARSEABLE = "<unparseable>"
+
+
+def _baseline_meta(text: str) -> dict | None:
+    """Frontmatter of a doc read from a git ref; None if it can't be parsed. Never raises:
+    the gate must keep working on a baseline that predates DocError."""
     try:
-        meta = yaml.safe_load(fm.group(1)) or {}
-    except yaml.YAMLError:
+        return load_frontmatter(text, Path("<baseline>"))
+    except DocError:
         return None
+
+
+def status_of(text: str) -> str | None:
+    """The frontmatter `status` of raw doc text (for baseline checks). UNPARSEABLE when the
+    frontmatter is broken: the gate treats that as locked, so repairing a broken ratified doc
+    can't double as an unreviewed rewrite of it."""
+    meta = _baseline_meta(text)
+    if meta is None:
+        return UNPARSEABLE
     s = meta.get("status")
     return str(s) if s is not None else None
 
@@ -128,15 +164,8 @@ def status_of(text: str) -> str | None:
 def doc_id_of(text: str, path: Path) -> str:
     """The doc id a raw doc text declares (frontmatter `id`), else the file stem —
     the same rule as parse_doc, for docs that exist only at a git ref."""
-    fm = FRONTMATTER_RE.match(text)
-    if fm:
-        try:
-            meta = yaml.safe_load(fm.group(1)) or {}
-        except yaml.YAMLError:
-            meta = {}
-        if meta.get("id"):
-            return str(meta["id"])
-    return path.stem
+    meta = _baseline_meta(text) or {}
+    return str(meta.get("id") or path.stem)
 
 
 def project_name(brief_dir: Path) -> str:
@@ -145,7 +174,7 @@ def project_name(brief_dir: Path) -> str:
         try:
             data = yaml.safe_load(pj.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError as e:
-            raise DocError(f"{pj}: not valid YAML: {getattr(e, 'problem', None) or e}") from None
+            raise DocError(f"{pj}: not valid YAML: {_yaml_problem(e)}") from None
         if isinstance(data, dict) and data.get("id"):
             return str(data["id"])
     return brief_dir.parent.name

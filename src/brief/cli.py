@@ -6,6 +6,7 @@ from pathlib import Path
 
 import typer
 
+from . import gitutil
 from .docs import find_brief_dir
 from .gate import check as gate_check
 from .resolve import ResolveError
@@ -58,7 +59,8 @@ def check(
     base: str = typer.Option(None, "--base", help="CI mode: check the range base..HEAD (e.g. origin/main) instead of staged changes"),
 ):
     """L0 gate. Run before committing (staged), or with --base for CI on a PR range."""
-    repo_path = Path(repo).resolve()
+    # Globs and doc paths are root-relative; from a subdirectory git would report cwd-relative ones.
+    repo_path = gitutil.toplevel(Path(repo).resolve())
     bd = _brief_dir(brief, repo_path)
     violations = gate_check(repo_path, bd, base)
     if not violations:
@@ -103,7 +105,7 @@ def features(
 
     feats = load_features(_brief_dir(brief, Path.cwd()))
     if files:
-        feats = touched(feats, list(files))
+        feats = touched(feats, files)
     if json_out:
         typer.echo(json.dumps([f.to_dict() for f in feats], indent=2))
         return
@@ -200,7 +202,7 @@ def doctor(
     """Advisory lint for latent governance drift the gate doesn't block. Agents run this and close what it flags."""
     from . import doctor as doctor_mod
 
-    repo_path = Path(repo).resolve()
+    repo_path = gitutil.toplevel(Path(repo).resolve())
     bd = _brief_dir(brief, repo_path)
     report = doctor_mod.run(repo_path, bd)
     if json_out:
