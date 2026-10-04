@@ -30,6 +30,7 @@ claim is now falsifiable against a fixed target instead of one the author can ed
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -76,6 +77,17 @@ class Violation:
     detail: str = ""
 
 
+# anchors of `doc` a change to `file` touches: None = all of them, empty = none
+Scope = Callable[[Decision, str], "set[str] | None"]
+
+
+def requires_signoff(d: Decision) -> bool:
+    """Sign-off is opt-in per decision (`signoff: required`). Every locked decision is
+    read-only regardless; sign-off is for the few where silent drift in code is costly."""
+    v = d.meta.get("signoff")
+    return v is True or str(v).lower() == "required"
+
+
 def evaluate(
     changed_files: list[str],
     locked_edits: set[str],
@@ -84,10 +96,12 @@ def evaluate(
     amend_proposed: set[str],
     bad_refs: list[tuple[str, str]] | None = None,
     exempt: set[str] | None = None,
+    scope: Scope | None = None,
 ) -> list[Violation]:
     """Pure core. `locked_edits` = doc_ids of locked decisions modified in this commit.
     `exempt` = code files whose change is ref-only (comment pointer, no behavior) and so
-    does not trigger needs-conformance."""
+    does not trigger needs-conformance. `scope` narrows a governed file change to the
+    anchors it actually touches (default: all of them)."""
     exempt = exempt or set()
     code_changes = [f for f in changed_files if not _is_brief_path(f)]
     violations: list[Violation] = []
@@ -106,13 +120,24 @@ def evaluate(
             continue  # only locked decisions gate code; drafts are still forming
         if d.doc_id in locked_edits:
             continue  # already reported as ratified-edit
-        governed = [
-            f for f in code_changes
-            if f not in exempt and any(glob_match(g, f) for g in d.related_code)
-        ]
+        signoff = requires_signoff(d)
+        if not signoff and not any(a.anchor_id in amend_proposed for a in d.anchors):
+            continue  # read-only, but its governed code changes without a sign-off
+        governed: list[str] = []
+        touched: set[str] | None = set()
+        for f in code_changes:
+            if f in exempt or not any(glob_match(g, f) for g in d.related_code):
+                continue
+            hit = scope(d, f) if scope else None
+            if hit is not None and not hit:
+                continue
+            governed.append(f)
+            touched = None if hit is None or touched is None else touched | hit
         if not governed:
             continue
         for a in d.anchors:
+            if touched is not None and a.anchor_id not in touched:
+                continue
             if a.anchor_id in conforms:
                 continue
             if a.anchor_id in amend_proposed:
@@ -125,7 +150,7 @@ def evaluate(
                         detail="decision change proposed — needs human ratification before code can land",
                     )
                 )
-            else:
+            elif signoff:
                 violations.append(
                     Violation(
                         kind="needs-conformance",
@@ -245,8 +270,86 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
         if _ref_only_change(repo, f, rng):
             exempt.add(f)
 
-    violations = evaluate(changed, locked_edits, index, conforms, amend, bad_refs, exempt)
+    violations = evaluate(
+        changed, locked_edits, index, conforms, amend, bad_refs, exempt,
+        scope=_context_scope(repo, rng),
+    )
     return violations + _empty_globs(repo, brief_dir, index, base)
+
+
+_COMMENT_START = ("//", "#", "/*", "*", "--", "<!--", ";")
+_BLOCK_CLOSE = ("}", ")", "]", "end", "else", "elif", "except", "finally", "catch")
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def ref_blocks(text: str, doc_id: str) -> list[tuple[int, int, str | None]]:
+    """(first, last, anchor) 1-based line spans of the code each `// Context:` ref to
+    `doc_id` sits on. A ref in a comment covers the next statement and everything indented
+    under it (plus its closing brace); a ref trailing code covers that line's block.
+    Language-agnostic by indentation — a heuristic, so callers fall back to the whole file
+    when a decision has no ref in it."""
+    lines = text.splitlines()
+    spans: list[tuple[int, int, str | None]] = []
+    for i, line in enumerate(lines):
+        anchors = [r.anchor for r in find_refs(line) if r.doc_id == doc_id]
+        if not anchors:
+            continue
+        base = i
+        if line.lstrip().startswith(_COMMENT_START):
+            base = next(
+                (j for j in range(i + 1, len(lines))
+                 if lines[j].strip() and not lines[j].lstrip().startswith(_COMMENT_START)),
+                i,
+            )
+        end, ind = base, _indent(lines[base])
+        for k in range(base + 1, len(lines)):
+            s = lines[k].strip()
+            if not s:
+                continue
+            if _indent(lines[k]) > ind or (_indent(lines[k]) == ind and s.startswith(_BLOCK_CLOSE)):
+                end = k
+            else:
+                break
+        spans += [(i + 1, end + 1, a) for a in anchors]
+    return spans
+
+
+def _context_scope(repo: Path, rng: str | None) -> Scope:
+    """Scope a governed file change by the decision's `// Context:` refs in that file: only
+    a hunk inside a ref's block needs that anchor's sign-off. A file with no ref to the
+    decision falls back to every anchor (the decision is unwired there, not unaffected)."""
+    cache: dict[str, tuple[str, set[int], list[str]]] = {}
+
+    def scope(d: Decision, f: str) -> set[str] | None:
+        if f not in cache:
+            cache[f] = (
+                gitutil.content_after(repo, f, rng),
+                gitutil.changed_lines(repo, f, rng),
+                gitutil.removed_lines(repo, f, rng),
+            )
+        text, changed, removed = cache[f]
+        spans = ref_blocks(text, d.doc_id)
+        if not spans:
+            return None
+        # deleting a ref unwires that anchor here: it needs the sign-off its block would have
+        hit: set[str] = set()
+        for line in removed:
+            for r in find_refs(line):
+                if r.doc_id == d.doc_id:
+                    if r.anchor is None:
+                        return None
+                    hit.add(r.anchor)
+        for first, last, anchor in spans:
+            if any(first <= n <= last for n in changed):
+                if anchor is None:
+                    return None  # a ref to the whole doc covers every anchor
+                hit.add(anchor)
+        return hit
+
+    return scope
 
 
 def _empty_globs(repo: Path, brief_dir: Path, index: list[Decision], base: str | None) -> list[Violation]:

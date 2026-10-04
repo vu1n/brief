@@ -14,6 +14,7 @@ id: ADR-001-backend
 project: acme
 title: Sandbox backend
 status: active
+signoff: required
 related_code:
   - "src/sandbox/**"
   - "src/docker.rs"

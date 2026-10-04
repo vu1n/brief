@@ -49,6 +49,7 @@ SEARCH_REF = "doc:" + "//acme/features@latest#search"
 ACTIVE = """---
 id: adr-search
 status: active
+signoff: required
 related_code:
   - "src/search/**"
 ---
