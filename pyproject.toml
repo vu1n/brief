@@ -11,6 +11,8 @@ dependencies = [
 
 [project.optional-dependencies]
 rich = ["rich>=13"]
+# System One triage (optional): any TypeSafe-API endpoint, e.g. Jev via OpenRouter.
+s1 = ["typesafe-sdk>=0.7"]
 dev = ["pytest>=8"]
 
 [project.scripts]

@@ -28,6 +28,7 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `features.py` | feature map: `type: features` docs → features (anchor + `paths:` globs); diff → features; dead-glob detection for the gate |
 | `pin.py` | rewrite `@latest`/`@current` → concrete revision in code |
 | `scan.py` | `brief backfill` scanner: inventory docs (genre/status/tracked) + code signals + module tree into a context map |
+| `s1.py` | optional System One client over the TypeSafe SDK (Jev/Clef): typed questions → calibrated probabilities, for triage only; None = no opinion |
 | `init.py` / `templates.py` | `brief init` + the injected convention / CI workflow |
 | `gitutil.py` | minimal git plumbing (staged + range modes) |
 | `cli.py` | Typer entrypoint |
