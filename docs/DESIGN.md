@@ -45,6 +45,7 @@ the governance stack (below), not by the ref. We make no "cannot lie" claim.
 | 14 | **Vault is in-repo `.brief/` by default** (doc+code atomic, one PR, native governance review). Separate-vault + `.brief.lock` pins is the opt-in for multi-repo only. |
 | 15 | **Separation of powers: ratified decisions are READ-ONLY to the coding loop.** A coding commit may not modify a locked decision; the party being checked cannot edit the check. Changing a decision is an **amendment** (L1 advice + L3 human ratification), not a coding side-effect. |
 | 16 | **Decision firmness:** `draft` (freely editable while forming) → `active`/`ratified` (locked; amendment-only) → `superseded` (historical). Cheap to change while forming, expensive once committed. |
+| 17 | **Brief owns the feature map.** A `type: features` doc, one anchor per feature (user-facing or internal) with `paths:` globs and Gotchas. Descriptive, not governing: `paths` are not `related_code`. L0 blocks a glob that matches nothing. Other tools (kypp, verification skills) reference `doc://<project>/features@latest#<id>` rather than keeping their own map. |
 
 ## Governance stack (the load-bearing mechanism)
 
@@ -60,6 +61,7 @@ the party being checked cannot edit the check.
   2. *Conformance assertion* — when governed code changes, the author records `<anchor> conforms: <why>` (code still satisfies the decision) or `<anchor> amend-proposed: <why>` in `.brief/SIGNOFF`.
   3. *Amendment-required* — `amend-proposed` blocks the commit: code needing a decision changed cannot land until that change is ratified.
   4. *Ref integrity* — every `doc://` ref added to code must resolve.
+  5. *Live feature map* — every `paths:` glob in a feature map (`type: features`) must match at least one tracked file, so moving code can't silently drop it from the map.
 - **L1 — Independent verification (probabilistic).** A fresh-context agent (codex/second Claude) audits *amendment proposals* and samples `conforms` claims — "does this code actually satisfy the decision?" Because the decision is read-only, a `conforms` claim is falsifiable against a *fixed* target. Runs on amendments + sampling, not every commit.
 - **L2 — Conformance tests (mechanical, certain — strongest layer).** A decision linking acceptance tests (`test://`) cannot be violated without red CI. Zero agent honesty required.
 - **L3 — Human ratification.** The authority that turns an amendment into a new `active` decision; the coding loop cannot self-grant it.

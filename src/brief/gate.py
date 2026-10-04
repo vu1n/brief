@@ -17,6 +17,9 @@ the coding loop may rewrite. So the gate enforces:
                      ratified decision changed cannot land until the amendment is
                      ratified. (A correct *escalation*, not a rule violation.)
 4. broken-ref      — a doc:// ref added to code that does not resolve.
+5. empty-glob      — a feature-map `paths:` glob that matches no tracked file. The map is
+                     how a diff finds its features; a dead glob silently drops that code
+                     from it, so a move or delete must update the map in the same change.
 
 Whether code *conforms* to a standing decision is semantic (L1 sampling / L2 tests);
 the gate does not attempt it. But because the decision is read-only, a "conforms"
@@ -85,7 +88,7 @@ def _ref_only_change(repo: Path, path: str, rng: str | None) -> bool:
 
 @dataclass
 class Violation:
-    kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref
+    kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref | empty-glob
     doc_id: str = ""
     anchor_id: str = ""
     files: list[str] = field(default_factory=list)
@@ -261,7 +264,28 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
         if _ref_only_change(repo, f, rng):
             exempt.add(f)
 
-    return evaluate(changed, locked_edits, index, conforms, amend, bad_refs, exempt)
+    violations = evaluate(changed, locked_edits, index, conforms, amend, bad_refs, exempt)
+    return violations + _empty_globs(repo, brief_dir, index, base)
+
+
+def _empty_globs(repo: Path, brief_dir: Path, index: list[Decision], base: str | None) -> list[Violation]:
+    """Feature-map globs matching no file on the change's far side: HEAD in range mode,
+    the index when staged. Repo-wide, not diff-scoped — a dead glob is stale whoever made it."""
+    from .features import empty_globs, load_features  # features imports gate
+
+    feats = load_features(brief_dir, index)
+    if not feats:
+        return []
+    files = gitutil.files_at(repo, "HEAD", ".") if base else gitutil.tracked_files(repo)
+    return [
+        Violation(
+            kind="empty-glob",
+            doc_id=f.doc_id,
+            anchor_id=f.feature_id,
+            detail=f"paths glob {g!r} matches no tracked file — update the feature's paths to where its code lives now",
+        )
+        for f, g in empty_globs(feats, files)
+    ]
 
 
 # Back-compat alias: staged check is `check(..., base=None)`.

@@ -45,7 +45,7 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.1.0   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.2.0   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
@@ -96,7 +96,38 @@ operates.
 - `brief publish <doc-id>` — mint the next immutable revision
 - `brief ratify <anchor>` — accept an amendment → new revision, archive the proposal
 - `brief init` — scaffold + inject the convention (`--with-skills`, `--ci`, `--hook`)
+- `brief features [files]` — the feature map: each feature's ref and `paths:` globs, or only the features those files touch (see below)
 - `brief backfill` — scan code + docs + comments into a context map for reconstructing the decision layer (pairs with the `brief-backfill` skill)
+
+## Feature map
+
+Decisions say what must stay true; a **feature map** says what each part of the codebase
+*is*, where its code lives, and what bites there. It is one doc with `type: features`
+(by convention `.brief/docs/features.md`), one anchor per feature — user-facing or
+internal — so a feature is addressable as `doc://<project>/features@latest#<id>`:
+
+````markdown
+<!-- brief:anchor search -->
+## Search
+
+```yaml
+paths:
+  - "src/search/**"
+  - "cli/commands/search.ts"
+```
+
+What search is, in a paragraph.
+
+### Gotchas
+- Results are debounced; wait for the list, not a fixed sleep.
+````
+
+`brief features <files>` maps a diff to the features it touches, so an agent reads those
+Gotchas before changing the code. `brief check` blocks any `paths:` glob that matches no
+tracked file: moving code without updating the map fails instead of silently dropping it.
+A feature map governs nothing (its `paths` are not `related_code`) and needs no
+ratification to edit. The `brief-feature-map` skill seeds one; brief's own is
+[`.brief/docs/features.md`](.brief/docs/features.md).
 
 ## Status
 
