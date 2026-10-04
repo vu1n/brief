@@ -24,7 +24,13 @@ Decisions are **ratified constraints, not editable notes**. Develop *to* them:
   yourself. Write `.brief/amendments/<anchor-id>.md` (what should change and why), record
   `<anchor-id> amend-proposed: <reason>` in `.brief/SIGNOFF`, and STOP — it needs human
   ratification before code can land. Never bypass the commit hook.
-- Prefer a short `// Context: doc://...#anchor` ref over re-explaining a decision in code.
+- At each site that embodies a decision, leave a one-line comment:
+  `// Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>`.
+  The ref makes it checkable; the one-line rule puts the constraint in front of the next
+  agent exactly where it touches the code. Keep the full reasoning in the decision doc.
+- If your memory, notes, or habits disagree with an active decision, the decision wins:
+  it is versioned and reviewed with the code, memory is not. Follow the decision and say
+  which memory looked stale.
 
 **Before committing, run `brief check`** (resolve anything it flags) and `brief pin`
 (freeze any `@latest`/`@current` refs you wrote to a concrete revision). CI runs the same
@@ -37,7 +43,13 @@ advisory, not a gate: it exists so *you* catch latent drift instead of leaving i
 human to notice later.
 """
 
-CI_WORKFLOW = """\
+from . import __version__
+
+# Installed from a pinned tag, never from PyPI: `brief` on PyPI is an unrelated package, and
+# an unpinned source would let any push to brief's main change every governed repo's gate.
+BRIEF_SOURCE = f"git+https://github.com/vu1n/brief@v{__version__}"
+
+CI_WORKFLOW = f"""\
 name: brief
 on: pull_request
 jobs:
@@ -49,10 +61,10 @@ jobs:
           fetch-depth: 0          # need the base ref for the range check
       - uses: astral-sh/setup-uv@v5
       - name: brief governance gate
-        # once brief is published: `uvx brief check ...`; until then install from source.
-        run: uvx brief check --base "origin/${{ github.base_ref }}"
+        # pinned; bump the tag deliberately
+        run: uvx --from {BRIEF_SOURCE} brief check --base "origin/${{{{ github.base_ref }}}}"
       - name: brief doctor (advisory — latent drift; does not block)
         if: always()   # surface drift even when the gate blocks, for the human PR view
-        run: uvx brief doctor --repo .
+        run: uvx --from {BRIEF_SOURCE} brief doctor --repo .
 """
 

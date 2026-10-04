@@ -1,48 +1,74 @@
-# Set up brief — copy/paste prompt
+# Move a repo onto brief: copy/paste prompt
 
-Paste everything in the block below into your coding agent (Claude Code, etc.), running from
-the root of the repository you want to govern.
+Paste the block below into your coding agent (Claude Code, Codex, etc.) from the root of the
+repo you want to govern. It works for a fresh repo and for one that already has ADRs, a
+decisions log, design docs, or rationale comments. In the second case it migrates them
+instead of starting over. It ends with a PR for you to review. The decisions it marks
+`active` become read-only to agents once merged, so that review is your ratification.
 
 ---
 
 ```text
-Set up `brief` (doc-driven-development governance) in this repository, then help me capture
-my first decisions.
+Move this repository onto `brief` (doc-driven-development governance): capture its
+load-bearing decisions as governed docs, wire them to the code, and open a PR for my review.
+I'm not available for questions mid-way; where you can't verify something, mark it draft and
+list it in the PR instead of guessing.
 
-1. Install the CLI and verify it:
-   uv tool install git+https://github.com/vu1n/brief
-   brief --help
+1. Install and initialize (brief is not on PyPI; the PyPI package named `brief` is
+   unrelated):
+     uv tool install git+https://github.com/vu1n/brief@v0.1.0
+     brief init --with-skills --ci
+   This scaffolds `.brief/`, injects the governance convention into AGENTS.md (or
+   CLAUDE.md), installs the brief skills into `.claude/skills/`, and adds a pinned CI gate.
+   If the convention was already present, `init` refreshes it to the current text. Read the
+   convention before continuing; it applies to you from here on.
 
-2. Initialize:
-   brief init --with-skills --ci
-   This scaffolds `.brief/`, injects a "Context Vault" convention into AGENTS.md, installs
-   brief's skills into `.claude/skills/`, and adds a CI workflow that enforces governance on
-   PRs. Read the injected convention before continuing.
+2. Map what already exists:
+     brief backfill          # writes .brief/backfill/map.md
+   Read the map: existing decision docs (ADRs, design docs, decisions logs), rationale
+   comments in code, and existing doc:// refs.
 
-3. Capture decisions. Survey this codebase for 3-5 load-bearing architectural decisions or
-   invariants — ownership rules, a routing/topology choice, a key contract, a security or
-   isolation boundary — the kind worth an ADR. Using the `brief-author-decision` skill, write
-   each as `.brief/docs/<id>.md`: frontmatter (`status: active`, plus `related_code` globs
-   scoping the code it governs), a stable `<!-- brief:anchor <id> -->`, and the invariant
-   stated as the *why* (not the what). Then publish each:
-   brief publish <id>
+3. Capture decisions. Follow the `brief-backfill` skill if the map found existing decision
+   docs or rationale comments; otherwise survey the code yourself. Either way:
+   - Aim for the 5-15 decisions that actually constrain future changes: ownership and
+     isolation boundaries, key contracts and formats, "we removed X, don't bring it back",
+     and conventions the code alone doesn't reveal (rounding, logging/PII, retry policy,
+     config sources). The last kind matters most: agents can infer what the code shows, not
+     what it doesn't.
+   - Verify every claim against current code before marking it `status: active`. Anything
+     you can't confirm stays `status: draft`.
+   - Write each as `.brief/docs/<id>.md` per the `brief-author-decision` skill, then
+     `brief publish <id>`.
+   - If the repo keeps another decisions log (e.g. docs/decisions.md, an ADR folder), don't
+     leave two sources of truth: carry each live entry into .brief/docs/, mark superseded
+     ones superseded, and turn the old log into a short pointer to `.brief/docs/`.
 
-4. Wire code to decisions. In the governed source, add a short reference comment where the
-   decision is embodied:
-   // Context: doc://<project>/<doc-id>@latest#<anchor>
-   Then freeze the refs:
-   brief pin
+4. Wire decisions to code. At each site that embodies a decision, add one line:
+     // Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>
+   (use the file's comment syntax). Put it where an agent editing that code will see it.
+   Then: brief pin
 
-5. Confirm and show me: resolve one ref and summarize the decisions you captured:
-   brief resolve 'doc://<project>/<doc-id>@latest#<anchor>'
+5. Check your work:
+     brief check --base origin/<default-branch>
+     brief doctor
+   Close everything doctor flags (unwired, unpublished, unpinned).
 
-From now on, follow the convention in AGENTS.md:
-- Decisions with `status: active` are READ-ONLY to coding work — never edit one to make your
-  change fit; your code conforms to the decision, not the reverse.
-- When you change governed code that STILL satisfies a decision, record
-  `<anchor> conforms: <why>` in `.brief/SIGNOFF`.
-- If a task can't be done without changing a ratified decision, write
-  `.brief/amendments/<anchor>.md` (what should change + why), record
-  `<anchor> amend-proposed: <why>` in `.brief/SIGNOFF`, and STOP — I will ratify it.
-- Run `brief check` and `brief pin` before committing. Never bypass the gate.
+6. Commit on a branch and open a PR. In the description, list:
+   - decisions captured: id, one-line rule, and the code each governs
+   - decisions carried forward, re-grounded, or superseded from existing docs, and what
+     drift you found
+   - drafts that need my judgment
+   - anything in agent memory files or notes in this repo that contradicts a decision
+     (flag it; the decision wins)
 ```
+
+---
+
+After merging, agents working in the repo follow the injected convention:
+- Active decisions are read-only.
+- A change to governed code records `<anchor> conforms: <why>` in `.brief/SIGNOFF`.
+- A change that needs a decision changed writes an amendment and stops for you to run
+  `brief ratify`.
+
+To upgrade brief later, bump the tag in `.github/workflows/brief.yml` and re-run `brief init`
+to refresh the convention.

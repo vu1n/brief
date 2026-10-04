@@ -31,13 +31,21 @@ own code:
   and filed an amendment — including on a weaker model (**0 / 8 reversals across two model
   tiers**).
 
-The convention does the persuading; the gate + CI are the backstop. (Validation methodology
-and data are kept private for now.)
+The convention does the persuading; the gate + CI are the backstop.
+
+A reproducible follow-up lives in [`eval/`](eval/): 294 graded runs on two model tiers,
+comparing stale agent memory, plain in-repo docs and brief
+([results](eval/RESULTS.md)). Findings:
+- Stale memory took the weaker model from 14/18 to 4/18.
+- A one-line rule at the code plus a decisions doc restored 15–18/18.
+- On a conflicting task, plain docs were rewritten to fit the change: Haiku 9/9, and Sonnet
+  3/3 under "keep docs up to date" framing. Brief decisions were rewritten 0/12, and the gate
+  blocked every forbidden change.
 
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief
+uv tool install git+https://github.com/vu1n/brief@v0.1.0   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
@@ -92,8 +100,10 @@ pin. **Deferred until proven needed:** `pack`, full-text `search`/`index`, a gen
 `site`. Design of record: [`docs/DESIGN.md`](docs/DESIGN.md). Agent/contributor guide:
 [`AGENTS.md`](AGENTS.md).
 
-## Set up brief in your own project
+## Move a project onto brief
 
 Paste [`docs/setup-prompt.md`](docs/setup-prompt.md) into your coding agent from the root of
-the repo you want to govern. It installs brief, runs `brief init`, captures your first
-decisions from the existing code, and wires them up.
+the repo you want to govern. It works for a fresh repo and for one with existing ADRs or a
+decisions log, which it migrates instead of duplicating. It captures decisions, wires them
+into the code, checks its own work with `brief check` and `brief doctor`, and opens a PR,
+and your review of that PR is the ratification.

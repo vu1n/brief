@@ -290,7 +290,24 @@ def test_init_optin_hook_and_ci(tmp_path):
     _init(tmp_path)
     init_vault(tmp_path, ci=True, hook=True)
     assert (tmp_path / ".git" / "hooks" / "pre-commit").exists()
-    assert (tmp_path / ".github" / "workflows" / "brief.yml").exists()
+    wf = (tmp_path / ".github" / "workflows" / "brief.yml").read_text()
+    # never `uvx brief` (an unrelated PyPI package); always the pinned git source
+    assert "uvx brief " not in wf
+    assert "uvx --from git+https://github.com/vu1n/brief@v" in wf
+
+
+def test_init_refreshes_stale_convention(tmp_path):
+    from brief.init import init_vault
+    from brief.templates import AGENTS_SNIPPET, MARKER
+
+    agents = tmp_path / "AGENTS.md"
+    agents.write_text(f"# repo\n\n{MARKER}\n\nold convention text\n\n## Other\n\nkeep me\n")
+    actions = init_vault(tmp_path)
+    text = agents.read_text()
+    assert "old convention text" not in text and AGENTS_SNIPPET in text
+    assert text.startswith("# repo\n") and text.endswith("## Other\n\nkeep me\n")
+    assert any("refreshed" in a for a in actions)
+    assert any("already current" in a for a in init_vault(tmp_path))
 
 
 # --- versioning / revisions ---
