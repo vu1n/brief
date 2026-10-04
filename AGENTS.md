@@ -60,7 +60,9 @@ uv run brief --help
 ## The governance model (the domain you're building)
 
 Decisions in `.brief/docs/` are ratified constraints, **read-only to the coding loop**. Code
-conforms (or the author records `<anchor> conforms:` / proposes an amendment and stops).
+conforms (or, for a `signoff: required` decision whose `// Context:` block changed, the
+author records `<anchor> conforms:` / proposes an amendment and stops). Sign-off is opt-in
+because sign-offs on every governed edit get rubber-stamped; read-only is the real guard.
 L0 (`check`) is mechanical and runs locally + in CI; L1 is the `brief-review` skill; L2 is
 the host project's tests; L3 is a human running `ratify`. Reversal-by-fiat (rewriting a
 decision to ratify your own code) is the failure the whole design exists to prevent.

@@ -16,7 +16,7 @@ list it in the PR instead of guessing.
 
 1. Install and initialize (brief is not on PyPI; the PyPI package named `brief` is
    unrelated):
-     uv tool install git+https://github.com/vu1n/brief@v0.2.2
+     uv tool install git+https://github.com/vu1n/brief@v0.3.0
      brief init --with-skills --ci
    This scaffolds `.brief/`, injects the governance convention into AGENTS.md (or
    CLAUDE.md), installs the brief skills into `.claude/skills/`, and adds a pinned CI gate.
@@ -32,11 +32,15 @@ list it in the PR instead of guessing.
 
 3. Capture decisions. Follow `.claude/skills/brief-backfill/SKILL.md` if the map found
    existing decision docs or rationale comments; otherwise survey the code yourself. Either way:
-   - Aim for the 5-15 decisions that actually constrain future changes: ownership and
-     isolation boundaries, key contracts and formats, "we removed X, don't bring it back",
-     and conventions the code alone doesn't reveal (rounding, logging/PII, retry policy,
-     config sources). The last kind matters most: agents can infer what the code shows, not
-     what it doesn't.
+   - Ratify a decision only if a capable agent reading the code would plausibly get it wrong
+     AND the mistake would be costly or hard to undo: ownership and isolation boundaries,
+     key contracts and formats, "we removed X, don't bring it back", and conventions the
+     code alone doesn't reveal (rounding, logging/PII, retry policy, config sources).
+     Expect roughly 5-10. Everything else is a one-line why-comment at the code (and a
+     Gotcha in the feature map if there is one), not a decision: too many decisions train
+     everyone to rubber-stamp them.
+   - Mark `signoff: required` only on the few where silent drift is dangerous (security
+     boundaries, data loss, money). Every active decision is read-only either way.
    - Verify every claim against current code before marking it `status: active`. Anything
      you can't confirm stays `status: draft`.
    - Write each as `.brief/docs/<id>.md` per `.claude/skills/brief-author-decision/SKILL.md`,
@@ -68,7 +72,8 @@ list it in the PR instead of guessing.
 
 After merging, agents working in the repo follow the injected convention:
 - Active decisions are read-only.
-- A change to governed code records `<anchor> conforms: <why>` in `.brief/SIGNOFF`.
+- A change under a `signoff: required` decision's `// Context:` comment records
+  `<anchor> conforms: <why>` in `.brief/SIGNOFF`.
 - A change that needs a decision changed writes an amendment and stops for you to run
   `brief ratify`.
 

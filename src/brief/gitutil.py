@@ -6,8 +6,11 @@ merge-base with HEAD, so it reflects only what the branch introduced.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
+
+_HUNK_RE = re.compile(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", re.MULTILINE)
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -51,6 +54,21 @@ def removed_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
     except subprocess.CalledProcessError:
         return []
     return [ln[1:] for ln in out.splitlines() if ln.startswith("-") and not ln.startswith("---")]
+
+
+def changed_lines(repo: Path, path: str, base: str | None = None) -> set[int]:
+    """1-based line numbers on the change's far side that a hunk touches. A pure deletion
+    marks the lines on either side of where it happened."""
+    args = ["diff", "-U0", base, "HEAD", "--", path] if base else ["diff", "--cached", "-U0", "--", path]
+    try:
+        out = _git(repo, *args)
+    except subprocess.CalledProcessError:
+        return set()
+    lines: set[int] = set()
+    for m in _HUNK_RE.finditer(out):
+        start, count = int(m.group(1)), int(m.group(2) or 1)
+        lines.update(range(start, start + count) if count else (start, start + 1))
+    return lines
 
 
 def content_at(repo: Path, path: str, ref: str) -> str:
