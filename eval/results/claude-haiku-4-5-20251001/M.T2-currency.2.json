@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "M",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T2-currency.2",
+ "seconds": 27.0,
+ "cost_usd": 0.0527367,
+ "turns": 7,
+ "final": "Perfect! Here's what I did:\n\n## Summary\n\n**Added a `currency` setting to the `Config` class:**\n- Default value: `\"USD\"`\n- Added field to the `Config` dataclass at `/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/M.T2-currency.2/ledger/config.py`\n\n**Implemented environment variable override support:**\n- Updated `load()` to check for `LEDGER_CURRENCY` (and other `LEDGER_<FIELD_NAME>` env vars)\n- Environment variables take precedence over TOML values, enabling ops to configure containers without editing files\n\n**Why this approach:**\n- Follows the project pattern: all Config settings are now consistently configurable via TOML files and environment variables\n- Matches the existing code structure with minimal changes\n- Aligns with the documented operational requirement that container deployments can use env vars to override settings\n\nAll existing tests pass \u2713",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/config.py: environ"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

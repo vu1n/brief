@@ -1,0 +1,31 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T6-rate",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/B.T6-rate.1",
+ "seconds": 16.2,
+ "cost_usd": 0.0768392,
+ "turns": 4,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`. It multiplies the amount by `rate` and rounds half-up to the cent. The existing tests pass (4 passed) and `brief check` reports no violations. I did not add a test for the new method, and I did not run `brief pin` or `brief doctor` because I wrote no new refs.\n\n- **Rounding:** The method follows the `rounding-half-up` decision, so it uses `Decimal` with `ROUND_HALF_UP` and never goes through float. Halves round away from zero, so 105 cents \u00d7 0.5 gives 0.53 and \u2212105 cents \u00d7 0.5 gives \u22120.53. 1000 cents \u00d7 0.075 gives 0.75.\n- **Integer cents:** The method also follows `money-integer-cents`. It does the maths on integer cents and returns a `Money` with an integer cent count.\n- **Signoff:** I did not edit any decision. I added a `conforms` line for each of the two decisions to `.brief/SIGNOFF`.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "rounding-half-up conforms: apply_rate uses Decimal with ROUND_HALF_UP to the cent\nmoney-integer-cents conforms: apply_rate computes from integer cents via Decimal, no float, returns integer-cents Money\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "M\tledger/money.py"
+ ]
+}

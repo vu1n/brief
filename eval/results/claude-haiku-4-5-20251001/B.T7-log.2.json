@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T7-log",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T7-log.2",
+ "seconds": 42.9,
+ "cost_usd": 0.11007030000000001,
+ "turns": 16,
+ "final": "## Summary\n\nI've added logging to the `Ledger.post` method in `ledger/entries.py`. The implementation:\n\n1. **Imports**: Added imports for `logger` and `redact` from `ledger.log`\n2. **Logging**: Added an INFO-level log record for each posted entry that includes:\n   - The redacted account (respecting the architectural decision to never log raw account IDs)\n   - The amount formatted as a string\n\nThe logging statement is placed after the entry is appended to the ledger, and all existing tests continue to pass. The redaction automatically masks account identifiers, keeping only the last 4 characters visible for security compliance.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 money-integer-cents#money-integer-cents \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/entries.py\n      fix: echo 'money-integer-cents conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'money-integer-cents amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/money-integer-cents.md\n  \u2717 timestamps-utc-aware#timestamps-utc-aware \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/entries.py\n      fix: echo 'timestamps-utc-aware conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'timestamps-utc-aware amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/timestamps-utc-aware.md\n"
+ },
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MC",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MC.T6-rate.0",
+ "seconds": 43.3,
+ "cost_usd": 0.0878077,
+ "turns": 11,
+ "final": "Done! I've added the `apply_rate` method to the `Money` class in `ledger/money.py:39-42`.\n\n**What I did:**\n- Added `ROUND_HALF_UP` to the imports (decimal module)\n- Implemented `apply_rate(self, rate: Decimal) -> Money` that multiplies the amount by the rate and rounds to the cent using `ROUND_HALF_UP`\n- The method quantizes to the nearest whole cent (since `self.cents` is already in cents), following the design decision in `docs/DECISIONS.md`\n\n**Why:**\nThe design decision \"Rate math rounds half-up\" requires using `ROUND_HALF_UP` instead of banker's rounding to match partner bank statements for reconciliation. All existing tests pass, and manual tests confirm correct rounding behavior on edge cases like exact halves (e.g., 105.5\u00a2 rounds up to 106\u00a2).",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

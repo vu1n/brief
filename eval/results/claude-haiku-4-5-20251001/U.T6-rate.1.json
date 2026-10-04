@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T6-rate",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T6-rate.1",
+ "seconds": 37.5,
+ "cost_usd": 0.08413419999999999,
+ "turns": 11,
+ "final": "Done. I've added `Money.apply_rate(self, rate: Decimal) -> Money` to the ledger library.\n\n**What I did:**\n\n1. **Imported `ROUND_HALF_UP`** from the decimal module for proper rounding\n2. **Implemented the method** to multiply cents by the rate and round to the nearest cent using `ROUND_HALF_UP` (as specified in the design decision for rate math)\n3. **Added a \"Why\" comment** linking to the decision in `docs/DECISIONS.md`\n4. **Verified** with test cases: basic multiplication ($10 \u00d7 1.5 = $15), half-up rounding ($3.33 \u00d7 0.5 = $1.67), negative amounts, and edge cases all work correctly\n5. **All existing tests pass** (`python -m pytest -q`)\n\nThe implementation matches bank statement rounding behavior (half-up, not banker's rounding) as required by the project's design decisions.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T2-currency.2",
+ "seconds": 28.5,
+ "cost_usd": 0.0667947,
+ "turns": 10,
+ "final": "Perfect! I've successfully added the `currency` setting to the Config class. Here's what I did:\n\n## Summary\n\n**Added:** `currency: str = \"USD\"` field to the Config dataclass in `ledger/config.py`\n\n**Why:** The setting is configurable the same way as existing settings\u2014via `ledger.toml`. The `load()` function automatically includes any Config field in the TOML parsing (through the `known` filter), so no additional code was needed beyond adding the field with its default value.\n\n**Tests:** All 4 tests pass, including the config defaults test, which verifies both that missing TOML files get all defaults and that custom values override them.\n\nThe currency can now be configured by adding `currency = \"EUR\"` (or any other code) to `ledger.toml`, while defaulting to `\"USD\"` if not specified.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

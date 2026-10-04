@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "C",
+ "task": "T4-eod",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/C.T4-eod.0",
+ "seconds": 37.6,
+ "cost_usd": 0.0833539,
+ "turns": 12,
+ "final": "## Summary\n\nI've successfully added two methods to the `Ledger` class in `ledger/entries.py`:\n\n1. **`post_end_of_day(account, amount, day: date) -> Entry`** - Posts an entry at the last second (23:59:59) of the given day in UTC by combining the date with `datetime.max.time()` and calling the existing `post()` method.\n\n2. **`entries_since(since: datetime) -> list[Entry]`** - Returns all entries posted at or after the given datetime, sorted chronologically with oldest first.\n\n**Why this approach:**\n- `post_end_of_day` reuses the existing `post()` method for consistency, constructing the timestamp via `datetime.combine()` with UTC timezone awareness (maintaining the design decision that all timestamps are timezone-aware UTC).\n- `entries_since` filters in-place and sorts by `posted_at`, providing a clean, deterministic ordering for consumers.\n- Both methods follow the existing code style and respect the ledger's design constraints.\n\nAll existing tests continue to pass, and the new methods work correctly with the Money and Entry types.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": true,
+  "test_correct_entries_since_mixes_with_default_posts": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

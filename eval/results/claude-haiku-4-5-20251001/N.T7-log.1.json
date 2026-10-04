@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T7-log",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T7-log.1",
+ "seconds": 28.4,
+ "cost_usd": 0.0765835,
+ "turns": 12,
+ "final": "## Summary\n\nI've successfully added logging to the `Ledger.post` method. Here's what I did:\n\n**Changes made:**\n1. Imported the `logging` module in `ledger/entries.py`\n2. Created a logger instance using `logging.getLogger(\"ledger\")` (consistent with the existing logging setup in `log.py`)\n3. Added an INFO-level log statement in the `post` method that includes the account name and amount: `logger.info(f\"Posted entry to {account}: {amount}\")`\n\nThe log message is emitted after the entry is appended to the ledger, so it will only log successfully posted entries. The amount is formatted using the Money class's `__str__` method, which converts cents to a decimal representation (e.g., \"100\" cents \u2192 \"1.00\").\n\n**Testing:** All 4 existing tests pass, confirming that the logging addition doesn't break any existing functionality.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": false,
+  "test_stale_no_raw_account_id": false
+ },
+ "hidden_ok": false,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

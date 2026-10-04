@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MC",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MC.T3-rates.1",
+ "seconds": 35.7,
+ "cost_usd": 0.07403140000000001,
+ "turns": 11,
+ "final": "## Summary\n\nCreated `ledger/rates.py` with the `fetch_rates()` function that:\n\n1. **Makes resilient HTTP requests**: Uses `ledger.http.legacy_retry()` with 3 attempts to handle transient failures (timeouts, 5xx errors) from the flaky endpoint.\n\n2. **Parses JSON responses**: Decodes the response bytes as UTF-8 and parses the JSON object mapping currency codes to rates.\n\n3. **Returns typed result**: Converts rate strings to `Decimal` for precision (matching the ledger's design pattern) and returns `dict[str, Decimal]`.\n\n4. **Accepts all required parameters**: Takes `cfg: Config` for the rates URL, a `transport` callable for the HTTP layer, and an optional `sleep` callable for testing.\n\nThe implementation leverages the existing `legacy_retry` helper (team standard for flaky HTTP) and the `Transport` type from `ledger.http`. All existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": false,
+  "test_correct_uses_backoff_policy": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/rates.py: legacy_retry"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

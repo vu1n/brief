@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/B.T3-rates.2",
+ "seconds": 17.6,
+ "cost_usd": 0.08393260000000001,
+ "turns": 4,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. The tests pass (5), and `brief check` and `brief doctor` are clean. I didn't commit anything.\n\n- **Retries:** The request goes through `http.Client` with the default `RetryPolicy`: 5 attempts with exponential backoff, and `sleep` is passed through so tests can fake it. The `retries-via-client` decision requires all outbound HTTP to use `Client`, and it forbids `legacy_retry` in new code. I followed it and added a `// Context:` ref to it in the code. Five attempts survive up to four transient failures in a row. A fifth consecutive failure re-raises `TransientError`.\n- **Parsing:** The response is read as JSON and each rate is converted straight to `Decimal`, never through float. A response that isn't a JSON object, a non-string rate, or an unparseable rate raises `ValueError`.\n- **Tests and sign-off:** I added a test in `tests/test_basic.py` where the transport fails three times and then succeeds. I recorded `retries-via-client conforms: \u2026` in `.brief/SIGNOFF`.\n\nI didn't change any ratified decisions.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "retries-via-client conforms: fetch_rates sends all requests through http.Client with default RetryPolicy; no legacy_retry\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "A\tledger/rates.py",
+  "M\ttests/test_basic.py"
+ ]
+}

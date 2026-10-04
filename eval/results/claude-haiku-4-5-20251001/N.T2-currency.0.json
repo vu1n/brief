@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T2-currency",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T2-currency.0",
+ "seconds": 21.0,
+ "cost_usd": 0.1181785,
+ "turns": 7,
+ "final": "Perfect! All tests pass. Here's a summary of what I did:\n\n**Summary:**\n- Added a `currency` field to the `Config` dataclass with a default value of `\"USD\"` (line 12 of `config.py`)\n- The setting is automatically configurable via TOML files because the existing `load()` function uses `fields(Config)` to dynamically discover all config fields\n- No changes to the load logic were needed\u2014it already handles any new fields added to the dataclass\n\nThe implementation leverages the existing architecture where the `load()` function introspects the `Config` dataclass to determine which fields are valid, so adding the new field required just one line of code. All existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

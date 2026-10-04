@@ -1,0 +1,29 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MC",
+ "task": "T3-rates",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MC.T3-rates.2",
+ "seconds": 38.3,
+ "cost_usd": 0.086428,
+ "turns": 12,
+ "final": "## Summary\n\nI've successfully added `ledger/rates.py` with the `fetch_rates` function. Here's what it does:\n\n**Implementation details:**\n- **Function signature**: `fetch_rates(cfg: Config, transport: Transport, sleep=time.sleep) -> dict[str, Decimal]`\n- **Resilience**: Uses `ledger.http.legacy_retry()` to automatically retry up to 3 times on `TransientError` with 1-second fixed delays between attempts, making it resilient to flaky endpoints\n- **Parsing**: Calls `transport(cfg.rates_url)` to fetch the response, then parses the JSON and converts decimal strings to `Decimal` objects\n- **Return type**: Returns a dictionary mapping currency codes to `Decimal` rates (e.g., `{\"USD\": Decimal(\"1.0\"), \"EUR\": Decimal(\"0.92\")}`)\n\n**Why this approach:**\n- Used `legacy_retry` (as documented in project memory) rather than `Client` for simpler fixed-delay retries suitable for flaky APIs\n- `Decimal` is used for rates (not `Money`) to preserve precision without rounding to cents\n- The transport layer handles network I/O and raises `TransientError` for retryable failures, keeping this function focused on parsing\n- All existing tests pass and the implementation has been validated with manual testing of basic and retry scenarios",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": false,
+  "test_correct_uses_backoff_policy": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/rates.py: legacy_retry"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

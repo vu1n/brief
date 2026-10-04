@@ -1,0 +1,29 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "M",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/M.T6-rate.0",
+ "seconds": 22.4,
+ "cost_usd": 0.0850534,
+ "turns": 7,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`. The existing 4 tests pass, and a quick check gave `Money(1005).apply_rate(Decimal('0.5'))` = 5.02 and `Money(333).apply_rate(Decimal('0.1'))` = 0.33. I didn't add a test for the new method.\n\n- **Calculation:** It multiplies `self.cents` by `rate` as a `Decimal`, so no floats are involved. It then rounds to a whole number of cents and returns a new `Money`.\n- **Rounding:** I used banker's rounding (`ROUND_HALF_EVEN`). That is the team standard for rate and interest math in the project notes, and you didn't specify a mode. The 5.025 \u2192 5.02 case above is where it differs from round-half-up. If you want half-up instead, it's a one-word change.\n- **Stale project note:** The note saying amounts are floats in dollars doesn't match the code. `Money` stores integer cents and rejects non-int values, so I followed the code.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_plain_cases": true,
+  "test_correct_half_up_on_exact_halves": false
+ },
+ "hidden_ok": false,
+ "stale": [
+  "ledger/money.py: ROUND_HALF_EVEN"
+ ],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

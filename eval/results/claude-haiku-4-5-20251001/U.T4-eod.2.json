@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T4-eod",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T4-eod.2",
+ "seconds": 37.3,
+ "cost_usd": 0.08508059999999999,
+ "turns": 13,
+ "final": "Perfect! All tests pass and the new methods work correctly. Here's a summary of what I added:\n\n## Summary\n\nI added two methods to the `Ledger` class in `ledger/entries.py`:\n\n1. **`post_end_of_day(account, amount, day: date) -> Entry`** \u2014 Creates an entry posted at 23:59:59 UTC on the specified day. It combines the `date` parameter with `time(23, 59, 59)` and the UTC timezone, then delegates to the existing `post()` method to ensure consistent entry creation.\n\n2. **`entries_since(since: datetime) -> list[Entry]`** \u2014 Returns all entries posted at or after the `since` datetime, sorted oldest first. It filters the entries list and sorts by `posted_at` to guarantee the correct order.\n\nBoth methods respect the design decision that `posted_at` must always be a timezone-aware UTC datetime (per `docs/DECISIONS.md`). All existing tests continue to pass, and manual verification confirms the methods work correctly.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": true,
+  "test_correct_entries_since_mixes_with_default_posts": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

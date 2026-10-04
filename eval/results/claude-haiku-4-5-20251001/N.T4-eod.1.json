@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T4-eod",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T4-eod.1",
+ "seconds": 50.2,
+ "cost_usd": 0.11642630000000001,
+ "turns": 16,
+ "final": "## Summary\n\nI've successfully added the two new methods to the `Ledger` class:\n\n1. **`post_end_of_day(account, amount, day: date) -> Entry`**: Posts an entry at 23:59:59.999999 UTC on the specified day by combining the date with `datetime.max.time()` and passing it to the existing `post` method.\n\n2. **`entries_since(since: datetime) -> list[Entry]`**: Returns all entries posted at or after the given datetime, sorted chronologically by `posted_at` (oldest first).\n\nAll existing tests pass (4/4), and the new methods work correctly with proper filtering and sorting behavior.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_eod_is_utc_aware": true,
+  "test_correct_entries_since_mixes_with_default_posts": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

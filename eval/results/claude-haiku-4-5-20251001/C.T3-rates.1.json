@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "C",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/C.T3-rates.1",
+ "seconds": 27.9,
+ "cost_usd": 0.057560900000000005,
+ "turns": 10,
+ "final": "Perfect! All tests pass. Here's what I did:\n\n**Summary:**\n\nCreated `ledger/rates.py` with the `fetch_rates` function that:\n- Takes a `Config` with `rates_url`, a `transport` function, and an optional `sleep` callable\n- Uses the existing `Client` class from `ledger/http.py` to wrap the transport with resilient retry logic (exponential backoff, up to 5 attempts by default)\n- GETs the rates URL and parses the JSON response\n- Returns a dict mapping currency codes (strings) to exchange rates (Decimal values)\n\nThe implementation leverages the existing `Client` class which already handles transient failures and retries with exponential backoff, making it perfect for a flaky endpoint. This follows the codebase's established pattern for resilient HTTP operations, as seen in the tests for `Client.get()`.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

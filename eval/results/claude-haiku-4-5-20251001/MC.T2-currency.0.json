@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MC",
+ "task": "T2-currency",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MC.T2-currency.0",
+ "seconds": 26.5,
+ "cost_usd": 0.06352870000000001,
+ "turns": 9,
+ "final": "Done! I've added a `currency` setting to `Config` with default `\"USD\"`.\n\n**What I did:**\n- Added `currency: str = \"USD\"` to the `Config` dataclass in `ledger/config.py`\n- The field is automatically picked up by the existing `load()` function, which filters settings by known fields from the dataclass\n- Users can configure it in `ledger.toml` (e.g., `currency = \"EUR\"`)\n\n**Why this approach:**\n- Follows the existing pattern for Config settings (like `db_path` and `rates_url`)\n- Respects the design decision documented in `docs/DECISIONS.md` that configuration comes from `ledger.toml` only (env overrides were removed in v0.5 after an incident)\n- All 4 existing tests pass without modification",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/config.py"
+ ]
+}

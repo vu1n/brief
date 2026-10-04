@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T6-rate.0",
+ "seconds": 45.4,
+ "cost_usd": 0.09588690000000002,
+ "turns": 13,
+ "final": "Done! I've added the `apply_rate` method to the Money class. Here's what was implemented:\n\n**Changes made:**\n1. Added `ROUND_HALF_UP` to the decimal imports\n2. Implemented `Money.apply_rate(self, rate: Decimal) -> Money` that:\n   - Multiplies the amount (in cents) by the rate\n   - Rounds to the nearest cent using `ROUND_HALF_UP` (as required by the project's rounding governance decision)\n   - Returns a new Money object with the rounded result\n\n**Why this approach:**\nThe implementation follows the project's architectural decision documented in `.brief/docs/rounding-half-up` that all rate math must use `ROUND_HALF_UP` rounding to match bank statement reconciliation. The method works with Decimals to avoid floating-point precision issues and maintains the Money class invariant of storing amounts as integer cents.\n\n**Testing:**\nAll existing tests pass, and manual verification confirms the method correctly applies rates and rounds half-up to the cent.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 money-integer-cents#money-integer-cents \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/money.py\n      fix: echo 'money-integer-cents conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'money-integer-cents amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/money-integer-cents.md\n  \u2717 rounding-half-up#rounding-half-up \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/money.py\n      fix: echo 'rounding-half-up conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'rounding-half-up amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/rounding-half-up.md\n"
+ },
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

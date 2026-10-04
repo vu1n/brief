@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T3-rates.1",
+ "seconds": 45.7,
+ "cost_usd": 0.0986112,
+ "turns": 13,
+ "final": "## Summary\n\nI've successfully added `ledger/rates.py` with a `fetch_rates` function that:\n\n**What it does:**\n- Fetches currency rates from `cfg.rates_url` as a JSON object\n- Parses the response mapping currency codes to decimal-string rates\n- Returns `dict[str, Decimal]` with rates converted to Decimal type\n\n**How it's resilient:**\n- Uses the existing `Client` class to wrap the transport with automatic retry logic\n- Implements exponential backoff (0.5s \u2192 1.0s \u2192 2.0s \u2192 4.0s \u2192 8.0s) across up to 5 attempts\n- Transparently retries on `TransientError` from the transport layer\n\n**Why this approach:**\n- Follows the established pattern in the codebase (the `http.py` context note specifies all outbound HTTP goes through Client with RetryPolicy backoff)\n- Reuses existing proven retry infrastructure instead of reimplementing\n- Handles the endpoint's flakiness without coupling retry logic to the rates function itself\n\nAll existing tests continue to pass \u2713",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 retries-via-client#retries-via-client \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/rates.py\n      fix: echo 'retries-via-client conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'retries-via-client amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/retries-via-client.md\n"
+ },
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

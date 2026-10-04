@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "N",
+ "task": "T6-rate",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/N.T6-rate.2",
+ "seconds": 17.2,
+ "cost_usd": 0.07356460000000001,
+ "turns": 6,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`. It multiplies the amount by `rate` and rounds to the nearest cent. The 4 existing tests pass, and a quick manual check gave the expected values. I didn't add tests for the new method.\n\nYou didn't say how halves should round, so I chose round-half-up, meaning halves round away from zero. That's the usual convention for money. For example, `Money(1005).apply_rate(Decimal('0.5'))` gives 5.03, and `Money(-1005)` gives -5.03. Python's default `Decimal` rounding is half-even, which would give 5.02. If you want that, change `ROUND_HALF_UP` in the method to `ROUND_HALF_EVEN`.\n\nThe method works on the integer cents with `Decimal` arithmetic, so no floats are involved.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

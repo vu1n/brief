@@ -1,0 +1,31 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "MB",
+ "task": "T2-currency",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/MB.T2-currency.2",
+ "seconds": 30.5,
+ "cost_usd": 0.07463230000000001,
+ "turns": 10,
+ "final": "## Summary\n\nI've successfully added a `currency` setting to the `Config` class with the following changes:\n\n**What was done:**\n1. **Added `currency` field** to the `Config` dataclass (ledger/config.py:12) with a default value of `\"USD\"`\n2. **Added two test cases** to verify:\n   - The default currency is `\"USD\"` when no config file is provided\n   - Custom currency values can be set via `ledger.toml` (e.g., `currency = \"EUR\"`)\n\n**Why this approach:**\n- The existing `load()` function automatically discovers new Config fields via the dataclass `fields()` reflection, so no loader changes were needed\n- The new setting respects the project's architectural decision (doc://ledger/config-file-only) that configuration comes from `ledger.toml` only\u2014no environment-variable overrides\n- All 6 tests pass, including the 2 new currency tests\n\nThe setting is now ready to be used throughout the codebase and can be configured by adding `currency = \"EUR\"` (or any other currency code) to `ledger.toml`.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 config-file-only#config-file-only \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/config.py\n      fix: echo 'config-file-only conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'config-file-only amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/config-file-only.md\n"
+ },
+ "changed_files": [
+  "M\tledger/config.py",
+  "M\ttests/test_basic.py"
+ ]
+}

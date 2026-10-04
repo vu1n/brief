@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "C",
+ "task": "T6-rate",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/C.T6-rate.1",
+ "seconds": 36.8,
+ "cost_usd": 0.0771626,
+ "turns": 11,
+ "final": "Done! I've added the `apply_rate` method to the Money class.\n\n**Summary:**\n\nI implemented `Money.apply_rate(self, rate: Decimal) -> Money` that multiplies the amount by a rate and rounds to the nearest cent using half-up rounding.\n\n**What changed:**\n- Added `ROUND_HALF_UP` import from the `decimal` module\n- Added the `apply_rate` method (lines 22-25) that:\n  - Converts internal cents to Decimal\n  - Multiplies by the rate parameter\n  - Rounds to the cent using `quantize(Decimal('1'), rounding=ROUND_HALF_UP)`\n  - Returns a new Money object with the integer result\n- Included a \"Why\" comment referencing the design decision for half-up rounding (matching bank statements)\n\n**Why this approach:**\nThe design decisions document specifies that rate math must use ROUND_HALF_UP to match partner banks' statements for reconciliation. This ensures exact half-values (e.g., $0.025) round up to $0.03, not down to $0.02 as banker's rounding would do. The method uses Decimal arithmetic throughout to avoid float precision issues, consistent with the project's requirement that amounts are always integer cents.\n\nAll existing tests pass, and manual testing confirms correct behavior including edge cases like negative amounts and exact half-way values.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "N",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/N.T6-rate.0",
+ "seconds": 36.3,
+ "cost_usd": 0.0728625,
+ "turns": 10,
+ "final": "## Summary\n\n\u2705 Successfully added `Money.apply_rate(self, rate: Decimal) -> Money` to the Money class.\n\n**What I did:**\n- Added the `apply_rate` method that multiplies the amount (stored as cents) by a Decimal rate and rounds to the nearest cent using ROUND_HALF_UP rounding\n- Imported `ROUND_HALF_UP` from the decimal module for proper monetary rounding behavior\n- All existing tests continue to pass\n\n**Why this approach:**\n- Money amounts are stored as integer cents, so I multiply `self.cents` by the rate and round the result\n- Used `ROUND_HALF_UP` (rounds 0.5 up) which is the standard for financial calculations, not Python's default banker's rounding\n- Returns a new Money object maintaining the immutable dataclass design",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

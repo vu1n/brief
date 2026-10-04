@@ -1,0 +1,28 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "M",
+ "task": "T3-rates",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/M.T3-rates.2",
+ "seconds": 15.8,
+ "cost_usd": 0.059931200000000004,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`, and the full suite passes (7 tests).\n\n- **What it does:** it GETs `cfg.rates_url` and parses the JSON into `{code: Decimal(rate)}`. I used `Decimal` straight from the strings, as you specified, so rates are never floats.\n- **Retries:** it goes through the existing `ledger.http.Client` and its default `RetryPolicy`. That makes up to 5 attempts with exponential backoff (0.5s, 1s, 2s, 4s) on `TransientError`, and the last error is raised if every attempt fails. I chose this over `legacy_retry` because that helper gives up after 3 tries with a fixed delay, which is thin for an endpoint that fails several times in a row.\n- **Sleep:** the `sleep` argument is passed through to the client, so tests don't have to wait.\n- **Tests:** `tests/test_rates.py` covers a clean fetch, recovery after 4 transient failures, and giving up after repeated failures.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py",
+  "A\ttests/test_rates.py"
+ ]
+}

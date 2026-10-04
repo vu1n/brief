@@ -1,0 +1,30 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T1-import",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/B.T1-import.1",
+ "seconds": 17.0,
+ "cost_usd": 0.07997420000000001,
+ "turns": 4,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger)`. It posts one entry per `account,amount` line, skips blank lines, and returns the count. The 4 existing tests pass, and I did not add tests for the importer. A quick manual run on `a,12.34`, a blank line, `b,-0.29` and `a,0.29` returned 3, with balances of 12.63 for `a` and -0.29 for `b`.\n\n- **Money:** It parses amounts with `Money.from_str`, never through `float`, because the active `money-integer-cents` decision requires that. `-0.29` therefore stays exactly -29 cents. I added a `// Context:` ref to that decision in the code.\n- **Timestamps:** It posts through `Ledger.post`, which stamps a UTC-aware time, so the timestamp decision is also satisfied.\n- **Parsing:** It splits each line on the last comma, so account names containing commas still work. A line with no comma, or a bad amount, raises `ValueError` rather than being skipped silently.\n- **Governance:**\n  - I added a `money-integer-cents conforms` line to `.brief/SIGNOFF`.\n  - `brief pin` had nothing to pin, and `brief check` and `brief doctor` came back clean.\n  - No decisions needed amending.\n\nI haven't committed anything.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "money-integer-cents conforms: importer parses amounts with Money.from_str (no float); posts via Ledger.post, which stamps UTC-aware time\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "A\tledger/importer.py"
+ ]
+}

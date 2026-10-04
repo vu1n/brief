@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T3-rates.1",
+ "seconds": 45.4,
+ "cost_usd": 0.0957859,
+ "turns": 14,
+ "final": "## Summary\n\nI've added `ledger/rates.py` with the `fetch_rates(cfg: Config, transport, sleep=time.sleep) -> dict[str, Decimal]` function.\n\n**Implementation details:**\n- Uses the `Client` class from `ledger.http` to handle retries with exponential backoff (5 attempts, 0.5\u20138s delays), which automatically retries on `TransientError` exceptions\n- Fetches from `cfg.rates_url` via the provided `transport` function\n- Parses the JSON response (e.g., `{\"USD\": \"1\", \"EUR\": \"0.92\"}`) and returns a dict mapping currency codes to `Decimal` rates\n- Follows the project's design decision that \"All outbound HTTP goes through Client and RetryPolicy\"\n\n**Why:** The `Client` class already implements the resilience pattern needed for the flaky endpoint\u2014exponential backoff with a 5-attempt limit\u2014so reusing it avoids duplicating retry logic and keeps the code consistent with the rest of the codebase. All existing tests continue to pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

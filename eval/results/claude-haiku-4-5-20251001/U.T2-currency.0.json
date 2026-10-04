@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T2-currency",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T2-currency.0",
+ "seconds": 30.0,
+ "cost_usd": 0.07159739999999999,
+ "turns": 10,
+ "final": "Done. Here's what I did:\n\n**Changed:**\n1. Added `currency: str = \"USD\"` to the `Config` dataclass (ledger/config.py:12)\n2. Updated `docs/DECISIONS.md` to document the new setting under the configuration section\n\n**Why:**\n- The existing `load()` function already handles all Config fields dynamically via introspection (`fields(Config)`), so no changes to the loading logic were needed\n- The new setting follows the same pattern as existing settings: defined with a default in the dataclass and optionally overridable in `ledger.toml`\n- Documentation was updated per CLAUDE.md guidance: keep design decisions in sync with code changes\n\n**Tests:** All 4 existing tests pass.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_from_file": true,
+  "test_stale_env_ignored": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [
+  "docs/DECISIONS.md"
+ ],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tdocs/DECISIONS.md",
+  "M\tledger/config.py"
+ ]
+}

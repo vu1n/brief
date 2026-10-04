@@ -1,0 +1,31 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/B.T3-rates.0",
+ "seconds": 21.7,
+ "cost_usd": 0.0741884,
+ "turns": 4,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. The existing tests pass (4 passed) and `brief check` reports no violations. I didn't add a test for `fetch_rates` or run it against a failing transport.\n\n- **What it does:** it GETs `cfg.rates_url` and parses the JSON into `dict[str, Decimal]`. Each rate goes straight from its string to `Decimal`, never through `float`, so values like `\"0.9\"` stay exact.\n- **Why this retry setup:** the active decision `retries-via-client` says all outbound HTTP must go through `http.Client`, and `ledger/rates.py` is listed under that decision's governed code. So `fetch_rates` wraps your `transport` in `Client`, which retries `TransientError` up to 5 attempts with capped exponential backoff, and your `sleep` is passed through for tests. I did not use `legacy_retry`, which the decision forbids for new code.\n- **Governance:** I didn't change any decision. I added a `// Context:` ref to the decision in `rates.py` and recorded a `retries-via-client conforms` line in `.brief/SIGNOFF`.\n- **Not run:** I didn't run `brief pin` or `brief doctor`. The `// Context:` ref already points at the pinned `@0001` revision, so there was nothing floating to pin.\n- **Failure behavior:** if all 5 attempts fail, the last `TransientError` is raised. Invalid JSON or a bad decimal string raises an error and is not retried.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "retries-via-client conforms: rates.fetch_rates uses http.Client with default RetryPolicy; no legacy_retry\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "A\tledger/rates.py"
+ ]
+}

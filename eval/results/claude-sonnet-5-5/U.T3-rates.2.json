@@ -1,0 +1,27 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "U",
+ "task": "T3-rates",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-sonnet-5-5/U.T3-rates.2",
+ "seconds": 13.6,
+ "cost_usd": 0.060414800000000005,
+ "turns": 3,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. I didn't add tests for it, and I didn't run it against a flaky transport. The four existing tests pass.\n\n- **Retries:** It makes the request through `http.Client` with the default `RetryPolicy`: 5 attempts with exponential backoff. `docs/DECISIONS.md` requires new HTTP code to go through `Client`. It also says not to use `legacy_retry`, so I didn't write a retry loop of my own. `sleep` is passed through to `Client`, so tests can inject a fake one.\n- **Failure behavior:** If all 5 attempts fail, the last `TransientError` is raised.\n- **Parsing:** The response is read as JSON and each rate is converted with `Decimal(str)`, never through `float`. Rates like `\"0.9\"` stay exact.\n- **Docs:** I put a `# Why:` comment next to the code, in the same format as the other modules. The existing \"Outbound HTTP\" decision already covers this use, so `docs/DECISIONS.md` needed no change.\n\nI didn't add any validation of the response beyond the parse. A malformed body raises `json.JSONDecodeError` or `decimal.InvalidOperation`, and neither is retried.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

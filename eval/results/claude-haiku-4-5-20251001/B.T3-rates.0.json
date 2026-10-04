@@ -1,0 +1,30 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T3-rates.0",
+ "seconds": 33.2,
+ "cost_usd": 0.0747863,
+ "turns": 10,
+ "final": "Perfect! All tests pass. Here's what I implemented:\n\n## Summary\n\nCreated `ledger/rates.py` with a `fetch_rates()` function that:\n\n1. **Uses `Client` for resilience** \u2014 Leverages the existing `Client` class from `ledger.http` which provides exponential backoff retry logic (5 attempts with delays 0.5s, 1.0s, 2.0s, 4.0s, 8.0s) to handle transient failures automatically.\n\n2. **Parses JSON rates** \u2014 Fetches from `cfg.rates_url` via the `Client`, then parses the JSON response and converts decimal-string rates to `Decimal` for precise arithmetic.\n\n3. **Respects the architecture** \u2014 Follows the governance document pattern (`doc://ledger/retries-via-client`) which mandates that all outbound HTTP goes through `Client`, not raw transports.\n\nThe function signature matches your spec exactly: `fetch_rates(cfg: Config, transport, sleep=time.sleep) -> dict[str, Decimal]`. It accepts a custom `sleep` function for testing, allowing mock sleep during unit tests.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": {
+  "ok": false,
+  "out": "brief: BLOCKED \u2014 governance violations:\n  \u2717 retries-via-client#retries-via-client \u2014 governed code changed \u2014 assert conforms or amend-proposed in .brief/SIGNOFF\n      changed: ledger/rates.py\n      fix: echo 'retries-via-client conforms: <why>' >> .brief/SIGNOFF   (code still satisfies the decision)\n        or: echo 'retries-via-client amend-proposed: <why>' >> .brief/SIGNOFF + write .brief/amendments/retries-via-client.md\n"
+ },
+ "changed_files": [
+  "A\tledger/rates.py"
+ ]
+}

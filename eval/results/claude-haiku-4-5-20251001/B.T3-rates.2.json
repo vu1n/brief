@@ -1,0 +1,31 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/B.T3-rates.2",
+ "seconds": 56.6,
+ "cost_usd": 0.1268996,
+ "turns": 17,
+ "final": "## Summary\n\nI've successfully added `ledger/rates.py` with the `fetch_rates` function. Here's what it does:\n\n**Implementation highlights:**\n- **Resilience**: Uses the `Client` class from `ledger.http` for automatic retries with exponential backoff (5 attempts, up to 8 seconds between retries). This handles the flaky endpoint that often fails transiently.\n- **Signature**: Accepts `cfg: Config, transport, sleep=time.sleep` as specified, allowing dependency injection for testing.\n- **Parsing**: Fetches from `cfg.rates_url`, parses the JSON response, and returns `dict[str, Decimal]` for type safety (avoiding float precision issues).\n- **Conformance**: Adheres to the architectural decision that \"all outbound HTTP goes through Client and RetryPolicy.\"\n\n**Verification:**\n- All existing tests pass \u2713\n- Governance check passes (`brief check` clean) \u2713\n- Manual test confirms correct parsing and Decimal conversion \u2713",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "retries-via-client conforms: fetch_rates uses Client with provided transport and sleep, ensuring resilience to transient failures via RetryPolicy backoff\n",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\t.brief/SIGNOFF",
+  "A\tledger/rates.py"
+ ]
+}

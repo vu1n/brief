@@ -1,0 +1,27 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "cond": "U",
+ "task": "T6-rate",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-claude/c58311ee-7f92-55ce-ab1a-cb3b9f224597/scratchpad/evalwork/claude-haiku-4-5-20251001/U.T6-rate.0",
+ "seconds": 33.9,
+ "cost_usd": 0.08136819999999999,
+ "turns": 11,
+ "final": "Perfect! I've successfully added the `apply_rate` method to the Money class. Here's what I did:\n\n## Summary\n\n**Added method:** `Money.apply_rate(self, rate: Decimal) -> Money`\n\n**Implementation details:**\n- Multiplies the amount (stored as integer cents) by the given rate\n- Rounds to the nearest cent using `ROUND_HALF_UP` via `Decimal.quantize()`\n- Returns a new Money object with the result\n- Imported `ROUND_HALF_UP` from the decimal module\n\n**Why this approach:**\nThe method follows the design decision documented in `docs/DECISIONS.md` (\"Rate math rounds half-up\"): rates must round to the cent using `ROUND_HALF_UP` to match bank statements and ensure reconciliation accuracy. Using `quantize` with `ROUND_HALF_UP` ensures consistent, predictable behavior across all rate calculations.\n\n**Testing:**\n- All 4 existing tests pass\n- Manual verification confirms correct behavior for positive/negative amounts and various rates (e.g., $1.00 \u00d7 1.5 = $1.50, $0.01 \u00d7 0.5 = $0.01 with half-up rounding)",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "signoff": "",
+ "brief_check": null,
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}
