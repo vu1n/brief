@@ -40,7 +40,17 @@ def _agents_file(repo: Path) -> Path:
 def _inject_snippet(agents: Path, actions: list[str]) -> None:
     existing = agents.read_text(encoding="utf-8") if agents.exists() else ""
     if MARKER in existing:
-        actions.append(f"convention already present in {agents.name} (skipped)")
+        # Refresh in place: the block runs from the marker to the next `## ` heading (or
+        # EOF), so re-running init upgrades an older convention without touching the rest.
+        start = existing.index(MARKER)
+        nxt = existing.find("\n## ", start + len(MARKER))
+        end = len(existing) if nxt == -1 else nxt + 1
+        block = AGENTS_SNIPPET if nxt == -1 else AGENTS_SNIPPET + "\n"
+        if existing[start:end] == block:
+            actions.append(f"convention already current in {agents.name} (skipped)")
+            return
+        agents.write_text(existing[:start] + block + existing[end:], encoding="utf-8")
+        actions.append(f"refreshed brief convention in {agents.name}")
         return
     sep = "" if not existing else ("\n" if existing.endswith("\n") else "\n\n")
     agents.write_text(existing + sep + AGENTS_SNIPPET, encoding="utf-8")
@@ -111,7 +121,7 @@ def init_vault(
 
     pj = brief_dir / "project.yaml"
     if not pj.exists():
-        pid = project_id or repo.name
+        pid = project_id or repo.resolve().name
         pj.write_text(f"id: {pid}\ntitle: {pid}\n", encoding="utf-8")
         actions.append(f"wrote .brief/project.yaml (id: {pid})")
 

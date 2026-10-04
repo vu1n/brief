@@ -49,8 +49,10 @@ related_code:           # the governed surface — globs, not every file
 
 ## After authoring
 
-Reference it from code with a short `// Context: doc://<project>/<doc-id>@latest#<anchor>`
-instead of re-explaining it. The pre-commit gate verifies the ref resolves.
+Reference it from each governing site with a one-line comment:
+`// Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>`. The ref is
+checked by the gate; the one-line rule is what the next agent actually reads at that spot,
+and it outweighs stale memory there. Keep the reasoning in the doc, not the comment.
 
 Then **run `brief doctor`** and close what it reports for this decision — it is how you
 confirm you actually wired it, not just wrote it:
