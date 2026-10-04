@@ -83,7 +83,7 @@ jobs:
           latest=$(git ls-remote --tags --refs {BRIEF_REPO} 'v*' | sed 's|.*refs/tags/||' | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+$' | sort -V | tail -1)
           if [ -n "$latest" ] && [ "$latest" != "v{__version__}" ] \\
              && [ "$(printf '%s\\n' v{__version__} "$latest" | sort -V | tail -1)" = "$latest" ]; then
-            echo "::notice title=brief $latest is available (this repo pins v{__version__})::Upgrade: uvx --from git+{BRIEF_REPO}@$latest brief init --ci --with-skills, then commit."
+            echo "::notice title=brief $latest is available (this repo pins v{__version__})::Read {BRIEF_REPO}/blob/$latest/UPGRADING.md for what to do, then run: uvx --from git+{BRIEF_REPO}@$latest brief init --ci --with-skills, and commit."
           fi
 """
 

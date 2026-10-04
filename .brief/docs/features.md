@@ -132,6 +132,9 @@ CI workflow, a pre-commit hook, and the skills.
 - The CI workflow installs from `git+https://github.com/vu1n/brief@v<version>`, never
   `uvx brief` (an unrelated PyPI package). Bumping the version needs a pushed tag.
 - Re-running init replaces the convention from its marker to the next `## ` heading.
+- `--with-skills` owns every `brief-*` skill dir: it replaces each whole and deletes ones no
+  longer shipped. Never name a user skill `brief-*`.
+- Every release needs a `## v<version>` UPGRADING.md entry (Changed/Do); a test enforces it.
 
 <!-- brief:anchor backfill -->
 ## Backfill

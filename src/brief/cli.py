@@ -62,6 +62,10 @@ def check(
     # Globs and doc paths are root-relative; from a subdirectory git would report cwd-relative ones.
     repo_path = gitutil.toplevel(Path(repo).resolve())
     bd = _brief_dir(brief, repo_path)
+    from .init import version_drift
+
+    if drift := version_drift(repo_path):
+        typer.echo(f"brief: warning — {drift}", err=True)
     violations = gate_check(repo_path, bd, base)
     if not violations:
         typer.echo("brief: OK — no governance violations")

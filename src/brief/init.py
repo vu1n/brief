@@ -80,6 +80,22 @@ def _pinned_version(workflow: str) -> tuple[int, ...]:
     return tuple(int(x) for x in m.group(1).split(".")) if m else ()
 
 
+def version_drift(repo: Path) -> str | None:
+    """A warning when this brief differs from the version the repo's CI gate pins: the two
+    can then disagree on the same change. None when they match or nothing is pinned."""
+    from . import __version__
+    from .templates import BRIEF_REPO
+
+    wf = repo / ".github" / "workflows" / "brief.yml"
+    pinned = _pinned_version(wf.read_text(encoding="utf-8")) if wf.exists() else ()
+    mine = tuple(int(x) for x in re.findall(r"\d+", __version__)[:3])
+    if not pinned or pinned == mine:
+        return None
+    tag = "v" + ".".join(map(str, pinned))
+    return (f"brief {__version__} differs from the {tag} this repo's CI pins; results can differ. "
+            f"Run the pinned one: uvx --from git+{BRIEF_REPO}@{tag} brief check")
+
+
 def _install_ci(repo: Path, actions: list[str]) -> None:
     from .templates import CI_MARKER, CI_WORKFLOW
 
@@ -112,12 +128,17 @@ def _install_skills(repo: Path, actions: list[str]) -> None:
         return
     dest = repo / ".claude" / "skills"
     dest.mkdir(parents=True, exist_ok=True)
-    n = 0
-    for d in sorted(src.iterdir()):
-        if d.is_dir() and (d / "SKILL.md").exists():
-            shutil.copytree(d, dest / d.name, dirs_exist_ok=True)
-            n += 1
-    actions.append(f"installed {n} skills into .claude/skills/")
+    shipped = {d.name for d in src.iterdir() if d.is_dir() and (d / "SKILL.md").exists()}
+    # `brief-*` skills are brief-owned: replace each whole, and drop ones brief no longer
+    # ships, so a renamed or removed skill doesn't linger with stale instructions.
+    for old in sorted(dest.glob("brief-*")):
+        if old.is_dir() and old.name not in shipped:
+            shutil.rmtree(old)
+            actions.append(f"removed .claude/skills/{old.name} (no longer shipped)")
+    for name in sorted(shipped):
+        shutil.rmtree(dest / name, ignore_errors=True)
+        shutil.copytree(src / name, dest / name)
+    actions.append(f"installed {len(shipped)} skills into .claude/skills/")
 
 
 def init_vault(
