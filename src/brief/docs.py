@@ -106,6 +106,20 @@ def status_of(text: str) -> str | None:
     return str(s) if s is not None else None
 
 
+def doc_id_of(text: str, path: Path) -> str:
+    """The doc id a raw doc text declares (frontmatter `id`), else the file stem —
+    the same rule as parse_doc, for docs that exist only at a git ref."""
+    fm = FRONTMATTER_RE.match(text)
+    if fm:
+        try:
+            meta = yaml.safe_load(fm.group(1)) or {}
+        except yaml.YAMLError:
+            meta = {}
+        if meta.get("id"):
+            return str(meta["id"])
+    return path.stem
+
+
 def project_name(brief_dir: Path) -> str:
     pj = brief_dir / "project.yaml"
     if pj.exists():

@@ -384,26 +384,104 @@ def test_ratify_flow(tmp_path):
     assert (bd / "amendments" / "archive" / "sandbox-backend-single-only-v0002.md").exists()
 
 
-def test_gate_allows_ratification(tmp_path):
+def _published_repo(tmp_path):
     from brief import versions
-    from brief.gate import check
 
     repo = tmp_path
     _init(repo)
     make_brief(repo)
     bd = repo / ".brief"
     versions.publish(bd, "ADR-001-backend")
+    write(repo / "src" / "sandbox" / "mod.rs", "// base\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "init+publish")
+    return repo, bd
 
-    # a ratification: the locked decision is edited, with the archived amendment present
+
+def _kinds(repo, bd):
+    from brief.gate import check
+
+    _git(repo, "add", "-A")
+    return {x.kind for x in check(repo, bd)}
+
+
+def test_gate_allows_ratification(tmp_path):
+    from brief import versions
+    from brief.ratify import ratify
+
+    repo, bd = _published_repo(tmp_path)
+    write(bd / "amendments" / "sandbox-backend-single-only.md", "# proposal\nadmit qemu\n")
+    live = versions.live_doc(bd, "ADR-001-backend")
+    live.write_text(live.read_text() + "\n- amended.\n")  # the human edits the decision
+    ratify(bd, "sandbox-backend-single-only", by="vu")
+    assert "ratified-edit" not in _kinds(repo, bd)
+
+
+def test_gate_blocks_forged_archive(tmp_path):
+    # a bare file in the archive is not a ratification: no published revision backs it
+    repo, bd = _published_repo(tmp_path)
+    live = bd / "docs" / "ADR-001-backend.md"
+    live.write_text(live.read_text().replace("is deleted", "is back"))
+    write(bd / "amendments" / "archive" / "sandbox-backend-single-only-v0009.md", "ratified\n")
+    assert "ratified-edit" in _kinds(repo, bd)
+
+
+def test_gate_blocks_archive_without_matching_revision(tmp_path):
+    # the archive's rev must name a revision published in this change, equal to the live doc
+    from brief import versions
+
+    repo, bd = _published_repo(tmp_path)
     live = versions.live_doc(bd, "ADR-001-backend")
     live.write_text(live.read_text() + "\n- amended.\n")
-    (bd / "amendments" / "archive").mkdir(parents=True, exist_ok=True)
-    (bd / "amendments" / "archive" / "sandbox-backend-single-only-v0002.md").write_text("ratified\n")
+    versions.publish(bd, "ADR-001-backend")  # v2 frozen…
+    live.write_text(live.read_text() + "\n- and quietly more.\n")  # …then edited past it
+    write(bd / "amendments" / "archive" / "sandbox-backend-single-only-v0002.md", "x\n\n---\nratified_rev: 0002\n")
+    assert "ratified-edit" in _kinds(repo, bd)
+
+
+def test_gate_blocks_deleting_locked_decision(tmp_path):
+    repo, bd = _published_repo(tmp_path)
+    _git(repo, "rm", "-q", ".brief/docs/ADR-001-backend.md")
+    (repo / "src" / "sandbox" / "mod.rs").write_text("// docker is back\n")
+    assert "ratified-edit" in _kinds(repo, bd)
+
+
+def test_gate_blocks_rename_and_demote(tmp_path):
+    repo, bd = _published_repo(tmp_path)
+    _git(repo, "mv", ".brief/docs/ADR-001-backend.md", ".brief/docs/ADR-001-old.md")
+    old = bd / "docs" / "ADR-001-old.md"
+    old.write_text(old.read_text().replace("status: active", "status: superseded"))
+    (repo / "src" / "sandbox" / "mod.rs").write_text("// docker is back\n")
+    assert "ratified-edit" in _kinds(repo, bd)
+
+
+def test_gate_blocks_rewriting_published_revision(tmp_path):
+    from brief import versions
+
+    repo, bd = _published_repo(tmp_path)
+    v1 = versions.version_path(bd, "ADR-001-backend", 1)
+    v1.write_text(v1.read_text().replace("is deleted", "is back"))
+    assert "ratified-edit" in _kinds(repo, bd)
+
+
+def test_gate_allows_ratification_in_range_mode(tmp_path):
+    from brief import versions
+    from brief.gate import check
+    from brief.ratify import ratify
+
+    repo, bd = _published_repo(tmp_path)
+    base = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True
+    ).stdout.strip()
+    write(bd / "amendments" / "sandbox-backend-single-only.md", "# proposal\n")
     _git(repo, "add", "-A")
-    v = check(repo, bd)
-    assert not any(x.kind == "ratified-edit" for x in v)
+    _git(repo, "commit", "-qm", "propose")
+    live = versions.live_doc(bd, "ADR-001-backend")
+    live.write_text(live.read_text() + "\n- amended.\n")
+    ratify(bd, "sandbox-backend-single-only", by="vu")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "ratify")
+    assert not any(x.kind == "ratified-edit" for x in check(repo, bd, base=base))
 
 
 def test_check_range_mode(tmp_path):

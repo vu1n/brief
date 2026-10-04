@@ -3,9 +3,9 @@
 A ratified decision is a CONSTRAINT the coding loop is checked against, not state
 the coding loop may rewrite. So the gate enforces:
 
-1. ratified-edit   — a coding commit must NOT modify a locked (active/ratified)
-                     decision. To change one, propose an amendment for human
-                     ratification. (This is the fix for "reversal by fiat": the
+1. ratified-edit   — a coding commit must NOT modify, delete, or rename a locked
+                     (active/ratified) decision, nor touch a published revision.
+                     To change one, propose an amendment for human ratification. (This is the fix for "reversal by fiat": the
                      constrained party cannot edit the constraint to pass.)
 2. needs-conformance — when governed code changes, the author must record either
                      `<anchor> conforms: <why>` (code still satisfies the decision)
@@ -28,7 +28,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import docs, gitutil
+from . import docs, gitutil, versions
 from .docs import Decision, load_index
 from .refs import find_refs
 from .resolve import resolve
@@ -164,6 +164,49 @@ def _relpath(p: Path, repo: Path) -> str:
         return str(p)
 
 
+ARCHIVE_RE = re.compile(r"^(?P<anchor>[a-z0-9][a-z0-9-]*)-v(?P<rev>\d+)\.md$")
+
+
+def _ratified(
+    repo: Path,
+    brief_dir: Path,
+    index: list[Decision],
+    changed: list[str],
+    changed_set: set[str],
+    baseline_ref: str,
+    rng: str | None,
+) -> set[str]:
+    """Doc ids whose locked edit in this change is an authorized ratification (L3), i.e.
+    carries what `brief ratify` writes: a NEW archived amendment `<anchor>-vNNNN.md`
+    stamped `ratified_rev: NNNN`, plus a NEW frozen `versions/vNNNN.md` of that doc equal
+    to its live text. A bare file dropped in the archive is not enough. Hand-forging the
+    full set is still possible — authority is the human approving the PR (L3), which is
+    why a ratification is only ever exempted alongside its published revision."""
+    out: set[str] = set()
+    for f in changed:
+        m = ARCHIVE_RE.match(f.rsplit("/", 1)[-1])
+        if not m or "/amendments/archive/" not in f"/{f}":
+            continue
+        if gitutil.content_at(repo, f, baseline_ref):
+            continue  # pre-existing archive entry: not this change's ratification
+        rev = int(m["rev"])
+        stamp = re.compile(rf"^ratified_rev:\s*0*{rev}\s*$", re.M)
+        if not stamp.search(gitutil.content_after(repo, f, rng)):
+            continue
+        for d in index:
+            if not d.anchor(m["anchor"]):
+                continue
+            ver = _relpath(versions.version_path(brief_dir, d.doc_id, rev), repo)
+            if (
+                ver in changed_set
+                and not gitutil.content_at(repo, ver, baseline_ref)
+                and gitutil.content_after(repo, ver, rng)
+                == gitutil.content_after(repo, _relpath(d.path, repo), rng)
+            ):
+                out.add(d.doc_id)
+    return out
+
+
 def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violation]:
     """Evaluate the gate over staged changes (base=None, local) or base..HEAD (CI)."""
     repo = repo.resolve()
@@ -173,25 +216,25 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
     changed_set = set(changed)
     index = load_index(brief_dir)
 
-    # locked decisions modified in the range (status read at the baseline, so flipping
-    # status in the same change can't dodge the check)
+    # Locked decisions are read from the BASELINE tree, not the working tree: a decision
+    # deleted, or renamed aside and demoted, in this change no longer exists in `index`,
+    # but its baseline path still shows as changed (changed_files uses --no-renames).
+    # Status is read at the baseline too, so flipping it in the same change can't dodge.
+    # Published revisions (`versions/vNNNN.md`) are immutable whatever the doc's status.
     locked_edits: set[str] = set()
-    for d in index:
-        rel = _relpath(d.path, repo)
-        if rel in changed_set:
-            head = gitutil.content_at(repo, rel, baseline_ref)
-            if head and _is_locked(docs.status_of(head)):
-                locked_edits.add(d.doc_id)
+    frozen_edits: set[str] = set()  # never exempt: ratify adds a revision, it never rewrites one
+    docs_prefix = f"{_relpath(brief_dir, repo)}/docs/"
+    for path in gitutil.files_at(repo, baseline_ref, docs_prefix):
+        if path not in changed_set or not path.endswith(".md"):
+            continue
+        before = gitutil.content_at(repo, path, baseline_ref)
+        if "versions" in path[len(docs_prefix):].split("/"):
+            frozen_edits.add(path.split("/")[-3])  # docs/<doc-id>/versions/vNNNN.md
+        elif _is_locked(docs.status_of(before)):
+            locked_edits.add(docs.doc_id_of(before, Path(path)))
 
-    # Ratification exemption: a locked decision edited alongside an archived amendment
-    # for one of its anchors is an authorized ratification (L3), not a coding-loop reversal.
-    for f in changed:
-        name = f.rsplit("/", 1)[-1]
-        if "/amendments/archive/" in f"/{f}" and name.endswith(".md"):
-            anchor = re.sub(r"-v\d+\.md$", "", name)
-            for d in index:
-                if d.anchor(anchor):
-                    locked_edits.discard(d.doc_id)
+    locked_edits -= _ratified(repo, brief_dir, index, changed, changed_set, baseline_ref, rng)
+    locked_edits |= frozen_edits
 
     conforms: set[str] = set()
     amend: set[str] = set()
