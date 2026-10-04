@@ -68,3 +68,18 @@ def test_scan_skips_noise_dirs(tmp_path):
     assert "src/keep.ts" in files
     assert not any("node_modules" in f for f in files)
     assert not any("node_modules" in mod for mod in m.modules)
+
+
+def test_installed_skills_are_not_decision_docs(tmp_path):
+    # A skill about decisions (with "status:" lines in its body) is agent tooling, not an ADR.
+    skill = tmp_path / ".claude" / "skills" / "brief-amend" / "SKILL.md"
+    skill.parent.mkdir(parents=True)
+    skill.write_text("---\nname: brief-amend\n---\n# Amend\nstatus: active decisions are read-only\n")
+    other = tmp_path / "tools" / "skills" / "x" / "SKILL.md"
+    other.parent.mkdir(parents=True)
+    other.write_text("# x\nSupersedes the old flow.\n")
+    m = scan.build_map(tmp_path)
+    genres = {d.path: d.genre for d in m.docs}
+    assert genres[".claude/skills/brief-amend/SKILL.md"] == "agent-tooling"
+    assert genres["tools/skills/x/SKILL.md"] == "agent-tooling"
+    assert not m.decision_docs
