@@ -49,6 +49,11 @@ uv tool install git+https://github.com/vu1n/brief@v0.2.0   # not on PyPI; `brief
 brief --help
 ```
 
+Releases are cut by bumping `version` in `pyproject.toml` and `src/brief/__init__.py`: on
+merge to main, `release.yml` tags `v<version>` and publishes a GitHub release. Repos set up
+with `brief init --ci` get a PR notice when a newer tag exists, with the one command that
+upgrades them.
+
 ## Quickstart
 
 ```sh

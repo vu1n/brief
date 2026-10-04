@@ -75,11 +75,18 @@ def _install_hook(repo: Path, actions: list[str]) -> None:
 
 
 def _install_ci(repo: Path, actions: list[str]) -> None:
-    from .templates import CI_WORKFLOW
+    from .templates import CI_MARKER, CI_WORKFLOW
 
     wf = repo / ".github" / "workflows" / "brief.yml"
     if wf.exists():
-        actions.append(".github/workflows/brief.yml exists — left as-is")
+        current = wf.read_text(encoding="utf-8")
+        if CI_MARKER not in current:
+            actions.append(".github/workflows/brief.yml is hand-managed — left as-is; bump its brief tag by hand")
+        elif current == CI_WORKFLOW:
+            actions.append(".github/workflows/brief.yml already current")
+        else:
+            wf.write_text(CI_WORKFLOW, encoding="utf-8")
+            actions.append("refreshed .github/workflows/brief.yml to this brief version")
         return
     wf.parent.mkdir(parents=True, exist_ok=True)
     wf.write_text(CI_WORKFLOW, encoding="utf-8")

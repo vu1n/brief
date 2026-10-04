@@ -296,6 +296,37 @@ def test_init_optin_hook_and_ci(tmp_path):
     assert "uvx --from git+https://github.com/vu1n/brief@v" in wf
 
 
+def test_version_is_consistent():
+    # release.yml tags v<pyproject version>; the CI template pins v<__version__>. They must agree,
+    # or `brief init --ci` writes a workflow pinned to a tag that never gets created.
+    import tomllib
+    from pathlib import Path
+
+    import brief
+
+    root = Path(__file__).resolve().parents[1]
+    assert tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"] == brief.__version__
+    lock = (root / "uv.lock").read_text()
+    assert f'name = "brief"\nversion = "{brief.__version__}"' in lock
+
+
+def test_init_ci_refreshes_managed_workflow_only(tmp_path):
+    from brief.init import init_vault
+    from brief.templates import CI_WORKFLOW
+
+    wf = tmp_path / ".github" / "workflows" / "brief.yml"
+    init_vault(tmp_path, ci=True)
+    old = CI_WORKFLOW.replace(CI_WORKFLOW.split("brief@")[1].split(" ")[0], "v0.0.1")
+    wf.write_text(old)
+    assert any("refreshed" in a for a in init_vault(tmp_path, ci=True))
+    assert wf.read_text() == CI_WORKFLOW
+    assert any("already current" in a for a in init_vault(tmp_path, ci=True))
+    hand = "name: brief\n# my own workflow, pinned to brief@v0.0.1\n"
+    wf.write_text(hand)
+    assert any("hand-managed" in a for a in init_vault(tmp_path, ci=True))
+    assert wf.read_text() == hand
+
+
 def test_init_refreshes_stale_convention(tmp_path):
     from brief.init import init_vault
     from brief.templates import AGENTS_SNIPPET, MARKER

@@ -53,8 +53,11 @@ from . import __version__
 # Installed from a pinned tag, never from PyPI: `brief` on PyPI is an unrelated package, and
 # an unpinned source would let any push to brief's main change every governed repo's gate.
 BRIEF_SOURCE = f"git+https://github.com/vu1n/brief@v{__version__}"
+BRIEF_REPO = "https://github.com/vu1n/brief"
+CI_MARKER = "# Managed by `brief init --ci`: re-running it rewrites this file. Delete this line to own it."
 
 CI_WORKFLOW = f"""\
+{CI_MARKER}
 name: brief
 on: pull_request
 jobs:
@@ -66,10 +69,18 @@ jobs:
           fetch-depth: 0          # need the base ref for the range check
       - uses: astral-sh/setup-uv@v5
       - name: brief governance gate
-        # pinned; bump the tag deliberately
+        # pinned; upgrade by re-running `brief init --ci` from a newer brief
         run: uvx --from {BRIEF_SOURCE} brief check --base "origin/${{{{ github.base_ref }}}}"
       - name: brief doctor (advisory — latent drift; does not block)
         if: always()   # surface drift even when the gate blocks, for the human PR view
         run: uvx --from {BRIEF_SOURCE} brief doctor --repo .
+      - name: brief update check (advisory)
+        if: always()
+        run: |
+          latest=$(git ls-remote --tags --refs {BRIEF_REPO} 'v*' | sed 's|.*refs/tags/||' | sort -V | tail -1)
+          if [ -n "$latest" ] && [ "$latest" != "v{__version__}" ] \\
+             && [ "$(printf '%s\\n' v{__version__} "$latest" | sort -V | tail -1)" = "$latest" ]; then
+            echo "::notice title=brief $latest is available (this repo pins v{__version__})::Upgrade: uvx --from git+{BRIEF_REPO}@$latest brief init --ci --with-skills, then commit."
+          fi
 """
 
