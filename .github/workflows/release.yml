@@ -1,0 +1,36 @@
+# Tags and releases vX.Y.Z when a push to main carries a version no tag has yet.
+# Bumping `version` in pyproject.toml (and src/brief/__init__.py) is the release decision;
+# consuming repos see the new tag via their brief CI's update check.
+name: release
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency: release
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - name: version
+        id: v
+        run: |
+          v="v$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)"
+          echo "tag=$v" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then echo "new=false" >> "$GITHUB_OUTPUT"; else echo "new=true" >> "$GITHUB_OUTPUT"; fi
+      - name: tests
+        if: steps.v.outputs.new == 'true'
+        run: uv run --extra dev pytest -q
+      - name: tag and release
+        if: steps.v.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
+          gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"

@@ -16,7 +16,7 @@ list it in the PR instead of guessing.
 
 1. Install and initialize (brief is not on PyPI; the PyPI package named `brief` is
    unrelated):
-     uv tool install git+https://github.com/vu1n/brief@v0.1.0
+     uv tool install git+https://github.com/vu1n/brief@v0.2.0
      brief init --with-skills --ci
    This scaffolds `.brief/`, injects the governance convention into AGENTS.md (or
    CLAUDE.md), installs the brief skills into `.claude/skills/`, and adds a pinned CI gate.
@@ -72,5 +72,8 @@ After merging, agents working in the repo follow the injected convention:
 - A change that needs a decision changed writes an amendment and stops for you to run
   `brief ratify`.
 
-To upgrade brief later, bump the tag in `.github/workflows/brief.yml` and re-run `brief init`
-to refresh the convention.
+To upgrade: brief's CI posts a notice on PRs when a newer brief release exists. Run the command
+it gives (`uvx --from git+https://github.com/vu1n/brief@<new tag> brief init --ci --with-skills`)
+and commit the result. That refreshes the convention, the skills, and the pinned workflow. A
+`brief.yml` without the "Managed by `brief init --ci`" line is left alone, so bump its tag by
+hand.
