@@ -10,6 +10,28 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
+## v0.5.1
+
+- **Changed:** CI triage needs no secret. The `govern` job gains `permissions: id-token:
+  write`, and its triage step, when the repo has no `TYPESAFE_API_KEY` secret, fetches a
+  GitHub Actions OIDC token whose audience is `TYPESAFE_BASE_URL` (trailing slash removed)
+  and sends it as the bearer, for that step only. `TYPESAFE_DEFAULT_MODEL` now defaults to
+  `clef`, and `TYPESAFE_BASE_URL` to the kypp Worker URL written into the workflow by
+  `brief init --ci --kypp-url https://<worker>` (a re-run without the flag keeps the URL
+  already there). brief pins no public kypp URL, so without the flag or a
+  `TYPESAFE_BASE_URL` repo variable there is still no model and every amendment escalates.
+  Repo variables override both defaults, and a `TYPESAFE_API_KEY` secret wins over OIDC.
+  Failure is closed as before: no URL, no token, a refused token or any model error
+  escalates. **Fork PRs get no OIDC token** (and no secrets), so their amendments always
+  escalate.
+- **Do:** re-run `brief init --ci --kypp-url https://<your kypp worker>` (or set the
+  `TYPESAFE_BASE_URL` repo variable). On the Worker, list your GitHub owner in
+  `KYPP_OIDC_OWNERS` and make sure its `KYPP_PUBLIC_URL` is exactly the URL you gave, since
+  that is the token's audience. Then delete the `TYPESAFE_API_KEY` secret and the
+  `TYPESAFE_DEFAULT_MODEL` variable if they only pointed at kypp; keep them to use
+  another TypeSafe endpoint. With `--kypp-url`, a repo that has the secret but no
+  `TYPESAFE_BASE_URL` variable sends that secret to the kypp URL: set the variable too.
+
 ## v0.5.0
 
 - **Changed:** merging an amendment PR is the ratification. A PR that edits a locked

@@ -207,11 +207,18 @@ def init(
     with_skills: bool = typer.Option(False, "--with-skills", help="install brief skills into .claude/skills/"),
     ci: bool = typer.Option(False, "--ci", help="write a CI workflow that enforces the gate on PRs"),
     hook: bool = typer.Option(False, "--hook", help="also install a local pre-commit hook (opt-in; CI is preferred)"),
+    kypp_url: str = typer.Option(None, "--kypp-url", help="with --ci: the kypp Worker CI triage calls with an OIDC token (a TYPESAFE_BASE_URL repo variable overrides it; default: keep the workflow's)"),
 ):
     """Scaffold .brief/ + inject the AGENTS convention. Enforcement is CI (--ci); the local hook is opt-in (--hook)."""
     from .init import init_vault
+    from .templates import kypp_url as check_url
 
-    for a in init_vault(Path(repo).resolve(), project_id, with_skills=with_skills, ci=ci, hook=hook):
+    if kypp_url is not None:
+        try:
+            kypp_url = check_url(kypp_url)
+        except ValueError as e:
+            raise typer.BadParameter(str(e), param_hint="--kypp-url")
+    for a in init_vault(Path(repo).resolve(), project_id, with_skills=with_skills, ci=ci, hook=hook, kypp_url=kypp_url):
         typer.echo(f"  {a}")
     typer.echo("brief: ready — decisions in .brief/docs/. Agents run `brief check` before committing; add --ci to enforce on PRs.")
 
