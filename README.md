@@ -90,12 +90,13 @@ every other check is green, CI merges the PR itself, code included, and the arch
 the model as the ratifier (`ratified_via: model`). Set the repo variable
 `BRIEF_AUTO_MERGE=off` to keep every merge a human's.
 
-The model needs no secret when it is a kypp Worker: `brief init --ci --kypp-url
-https://<worker>` writes that URL into the workflow, and the triage step sends the job's
-GitHub Actions OIDC token (audience: that URL) to Clef there. The Worker must list your
-GitHub owner in `KYPP_OIDC_OWNERS`. Repo variables `TYPESAFE_BASE_URL` and
-`TYPESAFE_DEFAULT_MODEL` (default `clef`) override it, and a `TYPESAFE_API_KEY` secret is
-sent instead of the OIDC token. Fork PRs get no token, so their amendments escalate.
+The model needs no secret when it is a kypp Worker: `brief init --ci` writes
+`https://kypp.vu1n.dev` into the workflow (`--kypp-url https://<worker>` picks another), and the
+triage step sends the job's GitHub Actions OIDC token (audience: that URL) to Clef there.
+The Worker must list your GitHub owner in `KYPP_OIDC_OWNERS`. Repo variables
+`TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL` (default `clef`) override it, and a
+`TYPESAFE_API_KEY` secret is sent instead of the OIDC token, but only to a
+`TYPESAFE_BASE_URL` the repo sets itself. Fork PRs get no token, so their amendments escalate.
 
 An escalated amendment also gets its own review thread on `.brief/amendments/<anchor>.md`.
 A maintainer replies `/ratify` or `/reject <reason>` there (or comments `/ratify <anchor>`

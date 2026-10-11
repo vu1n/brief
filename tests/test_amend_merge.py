@@ -135,7 +135,7 @@ def test_ci_template_ratifies_on_push_to_main():
     assert "--add-label needs-ratification" in esc["steps"][-1]["run"]
     triage = next(s for s in wf["jobs"]["govern"]["steps"] if s.get("id") == "triage")
     assert "BRIEF_S1=off" in triage["run"] and "--amendments --json" in triage["run"]
-    assert set(triage["env"]) == {"TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL"}
+    assert set(triage["env"]) == {"TYPESAFE_API_KEY", "TYPESAFE_BASE_URL", "TYPESAFE_DEFAULT_MODEL", "REPO_BASE_URL"}
 
 
 class Fake:

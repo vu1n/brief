@@ -176,7 +176,9 @@ CI workflow, a pre-commit hook, and the skills.
   shell against a fake `gh`; keep it running when you edit that step.
 - The triage step's OIDC audience is `TYPESAFE_BASE_URL` with one trailing slash cut, and
   kypp compares it byte for byte with its `KYPP_PUBLIC_URL`, so the two must be spelled the
-  same. `id-token: write` belongs to `govern` only. `init` keeps a baked `--kypp-url` across
+  same. `id-token: write` belongs to `govern` only. The step blanks a `TYPESAFE_API_KEY`
+  secret unless `REPO_BASE_URL` (the bare repo variable) is set, so a secret never reaches
+  the baked default URL. `init` keeps a baked `--kypp-url` across
   re-runs by reading it back from the managed workflow (`baked_kypp_url`); change the
   `TYPESAFE_BASE_URL` env line's shape and that read-back silently drops the URL.
 - The `automerge` job must never wait (no sleep loop: it billed a runner for the whole

@@ -69,10 +69,10 @@ BRIEF_SOURCE = f"git+{BRIEF_REPO}@v{__version__}"
 CI_MARKER = "# Managed by `brief init --ci`: re-running it rewrites this file. Delete this line to own it."
 
 # The kypp Worker that answers `brief triage` in CI with Clef (POST /v1/systemone), taking the
-# job's GitHub Actions OIDC token as the bearer. No public deployment is pinned here yet: set it
-# per repo with `brief init --ci --kypp-url https://<worker>` or the TYPESAFE_BASE_URL repo
-# variable (which wins). Empty means no model unless the repo configures one: every amendment escalates.
-DEFAULT_KYPP_URL = ""
+# job's GitHub Actions OIDC token as the bearer. It must equal that Worker's KYPP_PUBLIC_URL (the
+# token's audience), and the Worker only accepts owners in its KYPP_OIDC_OWNERS. Override per repo
+# with `brief init --ci --kypp-url https://<worker>` or the TYPESAFE_BASE_URL repo variable (which wins).
+DEFAULT_KYPP_URL = "https://kypp.vu1n.dev"
 KYPP_SLOT = "__BRIEF_KYPP_URL__"  # ci_workflow fills it
 _KYPP_URL_RE = re.compile(r"https://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?")
 _BAKED_RE = re.compile(r"vars\.TYPESAFE_BASE_URL \|\| '([^']*)'")
@@ -132,15 +132,18 @@ on:
         id: triage
         # Optional System One model. Sends the decision edit, amendment and governed diff to
         # TYPESAFE_BASE_URL: the kypp Worker (Clef) unless repo variables say otherwise. The
-        # bearer is a TYPESAFE_API_KEY secret if the repo has one, else a GitHub Actions OIDC
-        # token whose audience is that URL (no secret needed). No URL, no token (a fork PR gets
-        # none) or any error = escalate.
+        # bearer is a TYPESAFE_API_KEY secret if the repo has one and names its own URL (the
+        # secret never goes to the default kypp URL), else a GitHub Actions OIDC token whose
+        # audience is that URL (no secret needed). No URL, no token (a fork PR gets none) or any
+        # error = escalate.
         env:
           TYPESAFE_API_KEY: ${{{{ secrets.TYPESAFE_API_KEY }}}}
           TYPESAFE_BASE_URL: ${{{{ vars.TYPESAFE_BASE_URL{KYPP_SLOT} }}}}
           TYPESAFE_DEFAULT_MODEL: ${{{{ vars.TYPESAFE_DEFAULT_MODEL || 'clef' }}}}
+          REPO_BASE_URL: ${{{{ vars.TYPESAFE_BASE_URL }}}}
         run: |
           TYPESAFE_BASE_URL="${{TYPESAFE_BASE_URL%/}}"
+          if [ -z "$REPO_BASE_URL" ]; then TYPESAFE_API_KEY=""; fi   # a secret only goes where the repo points it
           if [ -z "$TYPESAFE_API_KEY" ] && [ -n "$TYPESAFE_BASE_URL" ] && [ -n "${{ACTIONS_ID_TOKEN_REQUEST_URL:-}}" ]; then
             aud=$(jq -rn --arg a "$TYPESAFE_BASE_URL" '$a|@uri')
             TYPESAFE_API_KEY=$(curl -fsS --max-time 10 "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$aud" \\

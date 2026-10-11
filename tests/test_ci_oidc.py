@@ -13,7 +13,7 @@ from typer.testing import CliRunner
 
 from brief.cli import app
 from brief.init import init_vault
-from brief.templates import CI_WORKFLOW, baked_kypp_url, ci_workflow, kypp_url
+from brief.templates import CI_WORKFLOW, DEFAULT_KYPP_URL, baked_kypp_url, ci_workflow, kypp_url
 
 URL = "https://kypp.owner.workers.dev"
 WF = yaml.safe_load(CI_WORKFLOW)
@@ -34,9 +34,9 @@ def test_defaults_are_clef_and_the_baked_kypp_url_and_repo_vars_win():
     assert env["TYPESAFE_BASE_URL"] == f"${{{{ vars.TYPESAFE_BASE_URL || '{URL}' }}}}"
     assert env["TYPESAFE_DEFAULT_MODEL"] == "${{ vars.TYPESAFE_DEFAULT_MODEL || 'clef' }}"
     assert env["TYPESAFE_API_KEY"] == "${{ secrets.TYPESAFE_API_KEY }}"
-    # brief pins no public kypp URL: without one the repo variable is the only source
-    assert _step(WF)["env"]["TYPESAFE_BASE_URL"] == "${{ vars.TYPESAFE_BASE_URL }}"
-    assert baked_kypp_url(ci_workflow(kypp=URL)) == URL and baked_kypp_url(CI_WORKFLOW) is None
+    assert baked_kypp_url(ci_workflow(kypp=URL)) == URL and baked_kypp_url(CI_WORKFLOW) == DEFAULT_KYPP_URL
+    # --kypp-url "" bakes none: the repo variable is then the only source
+    assert _step(yaml.safe_load(ci_workflow(kypp="")))["env"]["TYPESAFE_BASE_URL"] == "${{ vars.TYPESAFE_BASE_URL }}"
 
 
 @pytest.mark.parametrize("bad", ["http://kypp.x", "https://x' }} evil", "kypp.x", "https://x/$(id)"])
@@ -103,8 +103,14 @@ def test_no_secret_means_an_oidc_token_for_the_worker_url(tmp_path):
 
 
 def test_a_secret_wins_over_oidc(tmp_path):
-    seen, curl, _ = _triage(tmp_path, TYPESAFE_API_KEY="sk-repo")
+    seen, curl, _ = _triage(tmp_path, TYPESAFE_API_KEY="sk-repo", REPO_BASE_URL=URL)
     assert seen["key"] == "sk-repo" and seen["s1"] == "" and curl == []
+
+
+def test_a_secret_never_goes_to_the_baked_url(tmp_path):
+    # secret but no TYPESAFE_BASE_URL repo variable: the baked kypp URL gets an OIDC token instead
+    seen, curl, _ = _triage(tmp_path, TYPESAFE_API_KEY="sk-repo")
+    assert seen["key"] == "oidc.jwt.sig" and len(curl) == 1
 
 
 @pytest.mark.parametrize("over", [

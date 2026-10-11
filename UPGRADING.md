@@ -17,20 +17,20 @@ one PR.
   GitHub Actions OIDC token whose audience is `TYPESAFE_BASE_URL` (trailing slash removed)
   and sends it as the bearer, for that step only. `TYPESAFE_DEFAULT_MODEL` now defaults to
   `clef`, and `TYPESAFE_BASE_URL` to the kypp Worker URL written into the workflow by
-  `brief init --ci --kypp-url https://<worker>` (a re-run without the flag keeps the URL
-  already there). brief pins no public kypp URL, so without the flag or a
-  `TYPESAFE_BASE_URL` repo variable there is still no model and every amendment escalates.
-  Repo variables override both defaults, and a `TYPESAFE_API_KEY` secret wins over OIDC.
+  `brief init --ci`: `https://kypp.vu1n.dev` unless `--kypp-url https://<worker>` names
+  another (a re-run without the flag keeps the URL already there; `--kypp-url ""` writes
+  none). Repo variables override both defaults. A `TYPESAFE_API_KEY` secret wins over OIDC,
+  but only when the repo also sets `TYPESAFE_BASE_URL`: a secret is never sent to the
+  written-in kypp URL.
   Failure is closed as before: no URL, no token, a refused token or any model error
   escalates. **Fork PRs get no OIDC token** (and no secrets), so their amendments always
   escalate.
-- **Do:** re-run `brief init --ci --kypp-url https://<your kypp worker>` (or set the
-  `TYPESAFE_BASE_URL` repo variable). On the Worker, list your GitHub owner in
-  `KYPP_OIDC_OWNERS` and make sure its `KYPP_PUBLIC_URL` is exactly the URL you gave, since
-  that is the token's audience. Then delete the `TYPESAFE_API_KEY` secret and the
-  `TYPESAFE_DEFAULT_MODEL` variable if they only pointed at kypp; keep them to use
-  another TypeSafe endpoint. With `--kypp-url`, a repo that has the secret but no
-  `TYPESAFE_BASE_URL` variable sends that secret to the kypp URL: set the variable too.
+- **Do:** re-run `brief init --ci` (add `--kypp-url https://<your kypp worker>` for your
+  own Worker). On the Worker, list your GitHub owner in `KYPP_OIDC_OWNERS` and make sure
+  its `KYPP_PUBLIC_URL` is exactly the workflow's URL, since that is the token's audience.
+  Then delete the `TYPESAFE_API_KEY` secret, the `TYPESAFE_BASE_URL` variable and the
+  `TYPESAFE_DEFAULT_MODEL` variable if they only pointed at kypp; keep all three to use
+  another TypeSafe endpoint.
 
 ## v0.5.0
 
