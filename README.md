@@ -45,7 +45,7 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.4.2   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.5.0   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
@@ -76,9 +76,17 @@ matching, is what routes an agent to an amendment.
 When a task can't be done without changing a ratified decision:
 
 ```sh
-# write .brief/amendments/<anchor>.md + "<anchor> amend-proposed: ..." in .brief/SIGNOFF, then STOP
-brief ratify <anchor> --by you        # (human) accept it: publishes a new revision, archives the proposal
+# write .brief/amendments/<anchor>.md + "<anchor> amend-proposed: ..." in .brief/SIGNOFF,
+# optionally put the proposed decision text in the same PR, then STOP
+# merging the PR ratifies it: CI runs `brief ratify --pending` and commits the new revision
+brief ratify <anchor> --by you        # without CI: a human edits the decision, then ratifies by hand
 ```
+
+On the PR the gate reports the edit as `pending-ratification` (it does not block); an edit
+to a locked decision without its amendment is still blocked. With a System One model
+configured (`TYPESAFE_API_KEY` secret, `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL`
+repo variables), CI rates each amendment for reversal and impact and labels the PR
+`needs-ratification` unless both are low.
 
 ## The governance stack
 
@@ -87,7 +95,7 @@ brief ratify <anchor> --by you        # (human) accept it: publishes a new revis
 | **L0** | mechanical gate: decisions read-only; conformance asserted | `brief check` (local self-check + CI) |
 | **L1** | independent verifier audits a conformance claim or amendment | the `brief-review` skill (spawns a fresh agent) |
 | **L2** | conformance tests enforce testable invariants | your project's own tests (`test://`) |
-| **L3** | human ratifies amendments | `brief ratify` + PR review |
+| **L3** | merging the amendment PR ratifies it | PR merge + `brief ratify --pending` in CI |
 
 Only L0 must be code; only CI must enforce it. The heavy lifting is the **behavior layer**:
 the always-on convention (`brief init` injects it into your `AGENTS.md`) plus on-demand
@@ -99,10 +107,11 @@ operates.
 - `brief resolve <ref>` — ref → file, anchor, lines, body, hash (+ stale flag)
 - `brief check [--base <ref>]` — the L0 gate (staged locally; a commit range in CI)
 - `brief doctor [--strict]` — advisory lint: latent drift the gate *doesn't* block — an active decision that was never published, a governed file with no back-ref, a floating `@latest`, a stale pin. Agents run it and close what it flags; `--strict` fails CI on warnings.
+- `brief triage --amendments [--json]` — rate each pending amendment (reverses/weakens? high-impact?): `auto-ratifiable` or `escalate`; writes nothing; no model = escalate
 - `brief triage [--base <ref>]` — optional (`brief[s1]` + `TYPESAFE_API_KEY`): a System One model rates each sign-off ask; below p=0.1 it writes the `conforms` line itself, tagged with the score. It sends the decision text and the governed files' diff to `TYPESAFE_BASE_URL`, so only enable it where that is acceptable. The gate never calls the model. See `eval/s1/`.
 - `brief pin [files]` — freeze `@latest`/`@current` code refs to a concrete revision
 - `brief publish <doc-id>` — mint the next immutable revision
-- `brief ratify <anchor>` — accept an amendment → new revision, archive the proposal
+- `brief ratify <anchor>` / `brief ratify --pending` — accept an amendment → new revision, archive the proposal (`--pending`: every amendment whose decision the tree already changed; CI runs it after a merge)
 - `brief init` — scaffold + inject the convention (`--with-skills`, `--ci`, `--hook`)
 - `brief features [files]` — the feature map: each feature's ref and `paths:` globs, or only the features those files touch (see below)
 - `brief backfill` — scan code + docs + comments into a context map for reconstructing the decision layer (pairs with the `brief-backfill` skill)

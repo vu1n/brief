@@ -59,7 +59,8 @@ paths:
 ```
 
 Separation of powers over a staged diff or a `base..HEAD` range: ratified-edit,
-needs-conformance, amendment-required, broken-ref, and empty-glob for the feature map.
+needs-conformance, amendment-required, broken-ref, empty-glob for the feature map, and
+pending-ratification (a locked edit carrying its amendments; non-blocking on a range only).
 
 ### Gotchas
 - Locked status is read from the baseline tree and `changed_files` uses `--no-renames`;
@@ -80,11 +81,15 @@ paths:
 ```
 
 The authorized way a locked decision changes: publish a new revision and archive the
-amendment stamped `ratified_rev`.
+amendment stamped `ratified_rev`. `ratify --pending` records a merged amendment PR in CI.
 
 ### Gotchas
 - The gate only exempts a locked edit that carries the full ratify output (new archive
   entry plus a new version equal to the live doc). A partial hand-made set is blocked.
+- `_pending` (gate) and `ratify_pending` must agree on what a merge may ratify: published
+  doc, same path, no revision minted in the PR, every changed anchor amended. Change both.
+- `ratify_pending` decides "changed" against the latest published revision, not the push
+  range, so a queued or re-run CI job is idempotent.
 
 <!-- brief:anchor doctor -->
 ## Doctor
@@ -190,17 +195,22 @@ Optional client for System One decision models over the TypeSafe API (`brief[s1]
 Jev, Clef, any compatible endpoint): typed questions in, calibrated probabilities out. Used to triage what
 reaches a human or agent. `brief triage` writes tagged `conforms` lines for the
 sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold comes from.
+`brief triage --amendments` rates pending amendments for reversal and impact.
 
 ### Gotchas
 - `decide` returns None (or drops an answer) on any failure; callers must read that as
   "no opinion" and fall back to the mechanical rule, never as "no".
 - Out-of-range, non-finite, or wrong-type answers are dropped in `s1._answer`/`noul_p`:
   a confidence is not P(no), and -0.5 must not read as a confident "no".
+- Amendment triage fails closed: no model, an error, or a missing/invalid answer on either
+  question escalates. `FIAT_THRESHOLD`/`IMPACT_THRESHOLD` are placeholders with no eval yet.
 - The gate matches `conforms` on the bare anchor id across docs, so triage clears an id only
   when every ask sharing it is under the threshold; staged mode writes only its own lines
   to the index (`gitutil.stage_content`), never `git add` of the whole SIGNOFF.
-- It may only remove asks or rank queues. Never let it ratify, block, or pass the gate:
-  the gate must stay deterministic and keyless in every consuming repo's CI.
+- It may remove asks, rank queues, and rate amendments (`auto-ratifiable` / `escalate`).
+  Never let it block or pass the gate: the gate must stay deterministic and keyless in
+  every consuming repo's CI. A model-made merge (ratification) is not wired into the CI
+  template; adding one is a deliberate owner decision, not a refactor.
 
 <!-- brief:anchor eval -->
 ## Eval

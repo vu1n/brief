@@ -24,12 +24,12 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `versions.py` | `publish` frozen `vNNNN` snapshots + `aliases.yaml` (`latest`) |
 | `gate.py` | the L0 gate (separation of powers): `check(repo, brief_dir, base=None)` |
 | `doctor.py` | advisory lint (repo-wide): latent drift the gate doesn't block — unwired / unpublished / unpinned / stale refs. Machine-first `Report`, `--strict` opt-in |
-| `ratify.py` | the authorized decision change (publish new revision + archive amendment) |
+| `ratify.py` | the authorized decision change (publish new revision + archive amendment); `ratify_pending` records a merge |
 | `features.py` | feature map: `type: features` docs → features (anchor + `paths:` globs); diff → features; dead-glob detection for the gate |
 | `pin.py` | rewrite `@latest`/`@current` → concrete revision in code |
 | `scan.py` | `brief backfill` scanner: inventory docs (genre/status/tracked) + code signals + module tree into a context map |
 | `s1.py` | optional System One client over the TypeSafe SDK (Jev/Clef): typed questions → calibrated probabilities, for triage only; None = no opinion |
-| `triage.py` | `brief triage`: writes tagged `conforms` lines for sign-off asks the System One model clears; never inside the gate |
+| `triage.py` | `brief triage`: writes tagged `conforms` lines for sign-off asks the System One model clears; `--amendments` rates pending amendments auto-ratifiable vs escalate; never inside the gate |
 | `init.py` / `templates.py` | `brief init` + the injected convention / CI workflow |
 | `gitutil.py` | minimal git plumbing (staged + range modes) |
 | `cli.py` | Typer entrypoint |
@@ -66,7 +66,8 @@ conforms (or, for a `signoff: required` decision whose `// Context:` block chang
 author records `<anchor> conforms:` / proposes an amendment and stops). Sign-off is opt-in
 because sign-offs on every governed edit get rubber-stamped; read-only is the real guard.
 L0 (`check`) is mechanical and runs locally + in CI; L1 is the `brief-review` skill; L2 is
-the host project's tests; L3 is a human running `ratify`. Reversal-by-fiat (rewriting a
+the host project's tests; L3 is the merge of the amendment PR (CI records it with
+`ratify --pending`). Reversal-by-fiat (rewriting a
 decision to ratify your own code) is the failure the whole design exists to prevent.
 
 ## Dogfood TODO

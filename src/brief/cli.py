@@ -67,16 +67,29 @@ def check(
     if drift := version_drift(repo_path):
         typer.echo(f"brief: warning — {drift}", err=True)
     violations = gate_check(repo_path, bd, base)
-    if not violations:
+    for v in violations:
+        if v.kind == "pending-ratification" and not v.blocking:
+            typer.echo(f"brief: pending ratification — {v.doc_id}#{v.anchor_id}: the decision edit carries its amendment.")
+            typer.echo("      merging this PR ratifies it (CI runs `brief ratify --pending`); review it as a decision change.")
+    blocking = [v for v in violations if v.blocking]
+    if not blocking:
         typer.echo("brief: OK — no governance violations")
         raise typer.Exit(0)
     typer.echo("brief: BLOCKED — governance violations:", err=True)
-    for v in violations:
-        if v.kind == "ratified-edit":
+    for v in blocking:
+        if v.kind == "pending-ratification":
+            typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — decision edit with its amendment: a commit can't ratify it.", err=True)
+            typer.echo(
+                "      push the branch and open a PR: CI reports it as pending, and merging the PR ratifies it.\n"
+                "      (without CI, a human ratifies it locally: `brief ratify <anchor> --by <name>`.)",
+                err=True,
+            )
+        elif v.kind == "ratified-edit":
             typer.echo(f"  ✗ {v.doc_id} — ratified decision is READ-ONLY; you may not edit it to pass.", err=True)
             typer.echo(
-                f"      to change it: write .brief/amendments/<anchor>.md and record\n"
-                f"      '<anchor> amend-proposed: <why>' in .brief/SIGNOFF, then stop — it needs human ratification.",
+                "      to change it: write .brief/amendments/<anchor>.md and record\n"
+                "      '<anchor> amend-proposed: <why>' in .brief/SIGNOFF (an amendment per anchor you change),\n"
+                "      then stop: a human ratifies it by merging the PR.",
                 err=True,
             )
         elif v.kind == "needs-conformance":
@@ -103,12 +116,25 @@ def triage(
     repo: str = typer.Option(".", "--repo", help="repo root"),
     brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
     base: str = typer.Option(None, "--base", help="triage the range base..HEAD instead of staged changes"),
+    amendments: bool = typer.Option(False, "--amendments", help="rate pending amendments instead: auto-ratifiable or escalate (writes nothing)"),
+    json_out: bool = typer.Option(False, "--json", help="with --amendments: emit JSON (verdict, stamp, per-amendment scores, summary)"),
 ):
     """Clear sign-off asks a System One model rates as conforming (optional: brief[s1] + TYPESAFE_API_KEY)."""
     from .triage import THRESHOLD
     from .triage import triage as run_triage
+    from .triage import triage_amendments
 
     repo_path = gitutil.toplevel(Path(repo).resolve())
+    if amendments:
+        from .triage import verdict
+
+        out = verdict(triage_amendments(repo_path, _brief_dir(brief, repo_path), base))
+        if json_out:
+            out["summary"] = _amendment_summary(out)
+            typer.echo(json.dumps(out, indent=2))
+            return
+        typer.echo(_amendment_summary(out))
+        return
     verdicts = run_triage(repo_path, _brief_dir(brief, repo_path), base)
     if not verdicts:
         typer.echo("brief triage: no sign-off asks")
@@ -122,6 +148,20 @@ def triage(
             typer.echo(f"  ask {v.doc_id}#{v.anchor_id} (p={v.p:.3f}): may cut against the decision — read it, then sign off or amend")
     if base and any(v.cleared for v in verdicts):
         typer.echo("commit .brief/SIGNOFF to record the cleared asks")
+
+
+def _amendment_summary(out: dict) -> str:
+    if out["verdict"] == "none":
+        return "brief triage: no pending amendments"
+    head = {
+        "auto-ratifiable": f"brief: auto-ratifiable ({out['stamp']}) — the model rates every amendment low-risk; merging the PR ratifies it.",
+        "escalate": "brief: needs-ratification — a human should review this decision change; merging the PR ratifies it.",
+    }[out["verdict"]]
+    lines = [head]
+    for a in out["amendments"]:
+        p = "" if a["fiat"] is None or a["impact"] is None else f" p={a['fiat']:.3f}/{a['impact']:.3f}"
+        lines.append(f"  - {a['doc_id']}#{a['anchor_id']}{p}: {a['why']}")
+    return "\n".join(lines)
 
 
 @app.command()
@@ -180,21 +220,29 @@ def publish(
 
 @app.command()
 def ratify(
-    anchor: str,
+    anchor: str = typer.Argument(None, help="the amended anchor (omit with --pending)"),
     by: str = typer.Option(None, "--by", help="who is ratifying (recorded with the amendment)"),
+    pending: bool = typer.Option(False, "--pending", help="ratify every amendment whose decision the tree already changed (CI, after a merge)"),
     brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
 ):
     """Ratify an amendment: publish a new revision + archive the proposal. Run after editing the decision."""
     from .ratify import RatifyError
     from .ratify import ratify as do_ratify
+    from .ratify import ratify_pending
 
+    if pending == bool(anchor):
+        typer.echo("ratify error: give an anchor or --pending (exactly one)", err=True)
+        raise typer.Exit(2)
     bd = _brief_dir(brief, Path.cwd())
     try:
-        r = do_ratify(bd, anchor, by)
+        done = ratify_pending(bd, by) if pending else [do_ratify(bd, anchor, by)]
     except (RatifyError, FileNotFoundError, FileExistsError) as e:
         typer.echo(f"ratify error: {e}", err=True)
         raise typer.Exit(1)
-    typer.echo(f"brief: ratified {r.anchor} → {r.doc_id} @ {r.rev:04d}; amendment archived to {r.archived}")
+    if not done:
+        typer.echo("brief: nothing pending ratification")
+    for r in done:
+        typer.echo(f"brief: ratified {r.anchor} → {r.doc_id} @ {r.rev:04d}; amendment archived to {r.archived}")
 
 
 @app.command()

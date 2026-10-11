@@ -24,9 +24,11 @@ Decisions are **ratified constraints, not editable notes**. Develop *to* them:
   `brief triage` (optional System One model) writes that line itself for the asks it
   rates as clearly conforming; read and answer the ones it leaves.
 - If the task CANNOT be done without changing a ratified decision, you may NOT change it
-  yourself. Write `.brief/amendments/<anchor-id>.md` (what should change and why), record
-  `<anchor-id> amend-proposed: <reason>` in `.brief/SIGNOFF`, and STOP — it needs human
-  ratification before code can land. Never bypass the commit hook.
+  on your own authority. Write `.brief/amendments/<anchor-id>.md` (what should change and
+  why), record `<anchor-id> amend-proposed: <reason>` in `.brief/SIGNOFF`, and STOP — it
+  needs human ratification before code can land. The amendment PR may also carry the
+  proposed decision text (one amendment per anchor it changes); a human merging that PR is
+  the ratification. Never bypass the commit hook.
 - At each site that embodies a decision, leave a one-line comment:
   `// Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>`.
   The ref makes it checkable; the one-line rule puts the constraint in front of the next
@@ -62,10 +64,16 @@ CI_MARKER = "# Managed by `brief init --ci`: re-running it rewrites this file. D
 CI_WORKFLOW = f"""\
 {CI_MARKER}
 name: brief
-on: pull_request
+on:
+  pull_request:
+  push:
+    branches: [main]      # merging an amendment PR ratifies it (the ratify job)
 jobs:
   govern:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    outputs:
+      verdict: ${{{{ steps.triage.outputs.verdict }}}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,6 +82,21 @@ jobs:
       - name: brief governance gate
         # pinned; upgrade by re-running `brief init --ci` from a newer brief
         run: uvx --from {BRIEF_SOURCE} brief check --base "origin/${{{{ github.base_ref }}}}"
+      - name: brief amendment triage (auto-ratifiable or escalate)
+        id: triage
+        # Optional System One model. Sends the decision edit, amendment and governed diff to
+        # TYPESAFE_BASE_URL. Unset (or a fork PR, which gets no secrets) = escalate.
+        env:
+          TYPESAFE_API_KEY: ${{{{ secrets.TYPESAFE_API_KEY }}}}
+          TYPESAFE_BASE_URL: ${{{{ vars.TYPESAFE_BASE_URL }}}}
+          TYPESAFE_DEFAULT_MODEL: ${{{{ vars.TYPESAFE_DEFAULT_MODEL }}}}
+        run: |
+          if [ -z "$TYPESAFE_API_KEY" ] || [ -z "$TYPESAFE_BASE_URL" ] || [ -z "$TYPESAFE_DEFAULT_MODEL" ]; then
+            export BRIEF_S1=off
+          fi
+          uvx --from "brief[s1] @ {BRIEF_SOURCE}" brief triage --amendments --json --base "origin/${{{{ github.base_ref }}}}" > "$RUNNER_TEMP/triage.json"
+          jq -r .summary "$RUNNER_TEMP/triage.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "verdict=$(jq -r .verdict "$RUNNER_TEMP/triage.json")" >> "$GITHUB_OUTPUT"
       - name: brief doctor (advisory — latent drift; does not block)
         if: always()   # surface drift even when the gate blocks, for the human PR view
         run: uvx --from {BRIEF_SOURCE} brief doctor --repo .
@@ -85,5 +108,56 @@ jobs:
              && [ "$(printf '%s\\n' v{__version__} "$latest" | sort -V | tail -1)" = "$latest" ]; then
             echo "::notice title=brief $latest is available (this repo pins v{__version__})::Read {BRIEF_REPO}/blob/$latest/UPGRADING.md for what to do, then run: uvx --from git+{BRIEF_REPO}@$latest brief init --ci --with-skills, and commit."
           fi
+  escalate:
+    # A pending amendment the model did not clear (or no model): flag it for a human.
+    needs: govern
+    if: needs.govern.outputs.verdict == 'escalate'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{{{ github.token }}}}
+          PR: ${{{{ github.event.pull_request.number }}}}
+        run: |
+          gh label create needs-ratification --repo "$GITHUB_REPOSITORY" --color B60205 \\
+            --description "brief: a decision change waiting for a human merge" 2>/dev/null || true
+          gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --add-label needs-ratification
+  ratify:
+    # The merge was the ratification; this records it: publish each decision the merge
+    # changed and archive its amendment as ratified by the merger. No loop: a push made with
+    # GITHUB_TOKEN starts no workflow, the bot's own pushes are skipped, and a re-run finds
+    # nothing pending.
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    concurrency:
+      group: brief-ratify
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{{{ github.ref }}}}   # the branch tip, so a queued run sees the previous run's commit
+      - uses: astral-sh/setup-uv@v5
+      - name: ratify merged amendments
+        env:
+          GH_TOKEN: ${{{{ github.token }}}}
+        run: |
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '[.[] | select(.merged_at)][0].number // empty' 2>/dev/null || true)
+          if [ -n "$pr" ]; then
+            who=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.merged_by.login // empty' 2>/dev/null || true)
+            by="${{who:-$GITHUB_ACTOR}} (merge of #$pr)"
+          else
+            by="$GITHUB_ACTOR (push of $GITHUB_SHA)"
+          fi
+          uvx --from {BRIEF_SOURCE} brief ratify --pending --by "$by"
+          if [ -z "$(git status --porcelain -- .brief)" ]; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .brief
+          git commit -qm "brief: ratify amendments ($by)"
+          git push
 """
-

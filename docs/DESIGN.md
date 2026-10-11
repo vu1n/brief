@@ -43,7 +43,7 @@ the governance stack (below), not by the ref. We make no "cannot lie" claim.
 | 12 | Two projections: `pack` (agent), `site` (human). Both generated, never hand-edited. |
 | 13 | Defer task-tracking/Kanban — later view over frontmatter. Don't reimplement git or Linear. |
 | 14 | **Vault is in-repo `.brief/` by default** (doc+code atomic, one PR, native governance review). Separate-vault + `.brief.lock` pins is the opt-in for multi-repo only. |
-| 15 | **Separation of powers: ratified decisions are READ-ONLY to the coding loop.** A coding commit may not modify a locked decision; the party being checked cannot edit the check. Changing a decision is an **amendment** (L1 advice + L3 human ratification), not a coding side-effect. |
+| 15 | **Separation of powers: ratified decisions are READ-ONLY to the coding loop.** A coding commit may not modify a locked decision; the party being checked cannot edit the check. Changing a decision is an **amendment** (L1 advice + L3 ratification), not a coding side-effect. The amendment PR may carry the proposed text; **merging it is the ratification** — the coding loop can propose but not merge. |
 | 16 | **Decision firmness:** `draft` (freely editable while forming) → `active`/`ratified` (locked; amendment-only) → `superseded` (historical). Cheap to change while forming, expensive once committed. |
 | 17 | **Brief owns the feature map.** A `type: features` doc, one anchor per feature (user-facing or internal) with `paths:` globs and Gotchas. Descriptive, not governing: `paths` are not `related_code`. L0 blocks a glob that matches nothing. Other tools (kypp, verification skills) reference `doc://<project>/features@latest#<id>` rather than keeping their own map. |
 
@@ -64,7 +64,7 @@ the party being checked cannot edit the check.
   5. *Live feature map* — every `paths:` glob in a feature map (`type: features`) must match at least one tracked file, so moving code can't silently drop it from the map.
 - **L1 — Independent verification (probabilistic).** A fresh-context agent (codex/second Claude) audits *amendment proposals* and samples `conforms` claims — "does this code actually satisfy the decision?" Because the decision is read-only, a `conforms` claim is falsifiable against a *fixed* target. Runs on amendments + sampling, not every commit.
 - **L2 — Conformance tests (mechanical, certain — strongest layer).** A decision linking acceptance tests (`test://`) cannot be violated without red CI. Zero agent honesty required.
-- **L3 — Human ratification.** The authority that turns an amendment into a new `active` decision; the coding loop cannot self-grant it.
+- **L3 — Ratification is the merge.** The authority that turns an amendment into a new `active` decision; the coding loop cannot self-grant it. On a PR, a locked-decision edit that carries an amendment for every anchor it changes is `pending-ratification`, not a failure; merging the PR ratifies it, and CI (`brief ratify --pending` on the default branch) publishes the revision and archives the amendment stamped with the merger. The System One model triages each such PR on two questions — does it reverse or weaken the decision (or rewrite it to fit the code), and is it high-impact (widens authority or security, removes a guarantee, reaches many governed paths). Below both thresholds it is `auto-ratifiable`; anything else, and any missing model opinion, escalates with a `needs-ratification` label for a human. The intended default is that the model ratifies the `auto-ratifiable` ones by merging (stamped `ratified_by: s1 <model> p=<a>/<b> (merge of #N)`); that merge step is not yet wired into the CI template, so today every merge is a human's.
 
 L0's read-only rule is the cheap mechanical root-fix; the expensive semantic checks
 (L1/L2) run at the rare amendment, not on every commit.
@@ -72,10 +72,14 @@ L0's read-only rule is the cheap mechanical root-fix; the expensive semantic che
 ## Amendment workflow (how a ratified decision changes)
 
 A coding agent that cannot finish without changing a locked decision does **not** edit
-it. It writes `.brief/amendments/<anchor>.md` (what should change + why), records
-`<anchor> amend-proposed:` in SIGNOFF, and stops — the code is blocked until L3 ratifies
-the amendment (with L1 advice). Only then does the decision move to a new revision and
-the code land. Develop *to* the decision; change the decision through ratification.
+it on its own authority. It writes `.brief/amendments/<anchor>.md` (what should change +
+why), records `<anchor> amend-proposed:` in SIGNOFF, and may put the proposed decision
+text in the same PR (one amendment per anchor it changes). Then it stops. The gate reports
+the PR as `pending-ratification`; L1 (the `brief-review` skill, the System One triage)
+advises; the merge is L3 and ratifies it, and CI publishes the new revision. Locally a
+commit can't ratify, so a staged check still blocks the edit; a published `versions/`
+file is never editable. Without CI, a human edits the decision and runs `brief ratify
+<anchor>`. Develop *to* the decision; change the decision through ratification.
 
 ## Doc-first ordering (the teeth)
 
@@ -161,7 +165,7 @@ validated this: the AGENTS.md convention alone drove correct behavior with the g
 - **AGENTS.md convention** — the always-on *floor*: read-only decisions, conforms/amend-proposed, resolve-don't-guess. Self-sufficient with zero skills, any harness. Injected by `brief init`. (`src/brief/templates.py`)
 - **Skills** (accelerants, on-demand): `brief-author-decision`, `brief-amend`, `brief-review` (L1 verifier as a skill that spawns a fresh auditor). (`skills/`)
 
-**Governance layers map onto this, not onto the CLI:** L0 = the mechanical `check` (agent self-runs locally; **CI enforces** on PRs — not a local hook); **L1 = the `brief-review` skill** (spawn a verifier, no binary); L2 = the host project's own tests (`test://`); L3 = human judgment + the thin `ratify` primitive. Only L0 must be code; only CI must enforce it.
+**Governance layers map onto this, not onto the CLI:** L0 = the mechanical `check` (agent self-runs locally; **CI enforces** on PRs — not a local hook); **L1 = the `brief-review` skill** (spawn a verifier, no binary); L2 = the host project's own tests (`test://`); L3 = the merge, recorded by `ratify --pending` in CI (or a human running `ratify`). Only L0 must be code; only CI must enforce it.
 
 The CLI is optimized for machine invocation; humans touch `init` once and `ratify`
 occasionally, otherwise reading `.brief/docs/*.md` directly (plain markdown) or a later `site`.

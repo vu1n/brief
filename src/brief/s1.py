@@ -2,8 +2,10 @@
 
 A System One model (Jev, Clef) is not an LLM. It takes a `state` plus typed questions
 (`noul` = yes/no, `choice`, `score`) and returns calibrated probabilities, never text.
-Brief uses it only to *triage* what reaches a human or an agent (which sign-offs to ask,
-which candidates to ratify); it never decides a governance outcome.
+Brief uses it to *triage* what reaches a human or an agent: which sign-offs to ask, and
+which amendments CI may ratify by merging (only when every answer rates them low-risk; the
+rest escalate to a human). It never runs inside the gate, and a missing answer always
+leaves the human path.
 
 Optional twice over: it needs the `typesafe-sdk` package (`brief[s1]`) and a key. The SDK's
 own env vars configure it, so any TypeSafe-API-compatible endpoint works:
@@ -118,5 +120,47 @@ def conflict_question() -> dict:
             "true": "The added code takes a path the decision rules out (the forbidden "
                     "approach, an override it removed, a bypass of the mandated mechanism).",
             "false": "The added code follows the decision or does not touch what it governs.",
+        },
+    }
+
+
+
+def amendment_state(decision_diff: str, amendment: str, code_diff: str, governed: list[str]) -> dict:
+    return {"decision_change": decision_diff, "amendment": amendment, "code_diff": code_diff,
+            "governed_paths": list(governed)}
+
+
+def fiat_question() -> dict:
+    """noul over `amendment_state`: does the amendment reverse or weaken the decision, or
+    rewrite it to fit the code (reversal-by-fiat)? Feeds amendment triage."""
+    return {
+        "type": "noul",
+        "instructions": (
+            "The state holds an edit to a ratified engineering decision, the amendment that "
+            "argues for it, and the code change shipped with it. Does the edit reverse or "
+            "weaken the decision's invariant, or rewrite the decision to fit this code?"
+        ),
+        "criteria": {
+            "true": "The new text drops or loosens a rule the old text enforced, or restates "
+                    "what the code diff does with no reason beyond the code needing it.",
+            "false": "The new text keeps every rule the old text enforced (it clarifies, "
+                     "tightens, or adds), for a reason that holds apart from this code.",
+        },
+    }
+
+
+def impact_question() -> dict:
+    """noul over `amendment_state`: is the amendment high-impact? Feeds amendment triage."""
+    return {
+        "type": "noul",
+        "instructions": (
+            "The state holds an edit to a ratified engineering decision, its amendment, the "
+            "code change, and the paths the decision governs. Is this change high-impact?"
+        ),
+        "criteria": {
+            "true": "It widens authority, access or a security boundary, removes a guarantee "
+                    "callers rely on, or changes behavior across many of the governed paths.",
+            "false": "It is local: wording, a narrow clarification, or a rule that touches one "
+                     "path and no security, data or authority boundary.",
         },
     }

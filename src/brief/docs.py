@@ -93,7 +93,11 @@ class Decision:
 
 
 def parse_doc(path: Path, project: str) -> Decision:
-    text = path.read_text(encoding="utf-8")
+    return parse_text(path.read_text(encoding="utf-8"), path, project)
+
+
+def parse_text(text: str, path: Path, project: str) -> Decision:
+    """parse_doc over raw text, e.g. a doc as it stood at a git ref."""
     meta = load_frontmatter(text, path)
     doc_id = str(meta.get("id") or path.stem)
     related = meta.get("related_code") or []

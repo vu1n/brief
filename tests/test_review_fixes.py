@@ -113,7 +113,10 @@ def test_update_check_ignores_prerelease_tags(tmp_path):
     from brief import __version__
     from brief.templates import CI_WORKFLOW
 
-    script = CI_WORKFLOW.split("run: |\n", 1)[1]
+    import yaml
+
+    steps = yaml.safe_load(CI_WORKFLOW)["jobs"]["govern"]["steps"]
+    script = next(s["run"] for s in steps if s.get("name", "").startswith("brief update check"))
     fake = tmp_path / "bin" / "git"
     fake.parent.mkdir()
     fake.write_text(

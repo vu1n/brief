@@ -10,6 +10,22 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
+## v0.5.0
+
+- **Changed:** merging an amendment PR is the ratification. A PR that edits a locked
+  decision and carries `.brief/amendments/<anchor>.md` for every anchor it changes is
+  reported as `pending-ratification` and does not block (a bare edit is still
+  `ratified-edit`; staged commits still block). The CI workflow gains a `push` to `main`
+  job that runs `brief ratify --pending` after a merge and commits the new revision as
+  `github-actions[bot]`, stamped `ratified_by: <merger> (merge of #N)`. With a
+  `TYPESAFE_API_KEY` secret plus `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL` repo
+  variables, each such PR is rated `auto-ratifiable` or labeled `needs-ratification`;
+  without them every one is labeled.
+- **Do:** re-run `brief init --ci`. If `main` is protected, let `github-actions[bot]` push
+  to it (or the ratify job fails and the merged decision stays unpublished until someone
+  runs `brief ratify --pending` by hand). If your default branch is not `main`, edit the
+  `push` branch in `brief.yml` and drop the managed marker.
+
 ## v0.4.2
 
 - **Changed:** `brief check` warns when your local brief differs from the version CI pins.
