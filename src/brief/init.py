@@ -96,24 +96,48 @@ def version_drift(repo: Path) -> str | None:
             f"Run the pinned one: uvx --from git+{BRIEF_REPO}@{tag} brief check")
 
 
-def _install_ci(repo: Path, actions: list[str]) -> None:
-    from .templates import CI_MARKER, CI_WORKFLOW
+def _pr_workflows(repo: Path) -> list[str]:
+    """Names of the repo's other workflows that run on pull requests: the CI workflow
+    re-tries its auto-merge when one completes. An unnamed workflow goes by its path, as
+    GitHub names it. Unreadable files are skipped."""
+    import yaml
 
+    names = []
+    for f in sorted((repo / ".github" / "workflows").glob("*.y*ml")):
+        if f.name == "brief.yml":
+            continue
+        try:
+            data = yaml.safe_load(f.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        on = data.get("on", data.get(True))  # YAML 1.1 reads a bare `on:` key as True
+        events = [on] if isinstance(on, str) else list(on or [])
+        if {"pull_request", "pull_request_target"} & set(events):
+            names.append(str(data.get("name") or f.relative_to(repo).as_posix()))
+    return names
+
+
+def _install_ci(repo: Path, actions: list[str]) -> None:
+    from .templates import CI_MARKER, ci_workflow
+
+    want = ci_workflow(_pr_workflows(repo))
     wf = repo / ".github" / "workflows" / "brief.yml"
     if wf.exists():
         current = wf.read_text(encoding="utf-8")
         if CI_MARKER not in current:
             actions.append(".github/workflows/brief.yml is hand-managed — left as-is; bump its brief tag by hand")
-        elif current == CI_WORKFLOW:
+        elif current == want:
             actions.append(".github/workflows/brief.yml already current")
-        elif _pinned_version(current) > _pinned_version(CI_WORKFLOW):
+        elif _pinned_version(current) > _pinned_version(want):
             actions.append(".github/workflows/brief.yml pins a newer brief — left as-is; run init from that version")
         else:
-            wf.write_text(CI_WORKFLOW, encoding="utf-8")
+            wf.write_text(want, encoding="utf-8")
             actions.append("refreshed .github/workflows/brief.yml to this brief version")
         return
     wf.parent.mkdir(parents=True, exist_ok=True)
-    wf.write_text(CI_WORKFLOW, encoding="utf-8")
+    wf.write_text(want, encoding="utf-8")
     actions.append("wrote .github/workflows/brief.yml (PR enforcement)")
 
 

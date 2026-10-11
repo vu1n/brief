@@ -57,6 +57,8 @@ advisory, not a gate: it exists so *you* catch latent drift instead of leaving i
 human to notice later.
 """
 
+import json
+
 from . import __version__
 
 # Installed from a pinned tag, never from PyPI: `brief` on PyPI is an unrelated package, and
@@ -65,7 +67,11 @@ BRIEF_REPO = "https://github.com/vu1n/brief"
 BRIEF_SOURCE = f"git+{BRIEF_REPO}@v{__version__}"
 CI_MARKER = "# Managed by `brief init --ci`: re-running it rewrites this file. Delete this line to own it."
 
-CI_WORKFLOW = f"""\
+# Where `ci_workflow` lists the repo's other PR workflows: their completion retries the
+# auto-merge (workflow_run must name workflows; there is no wildcard).
+WATCH_SLOT = "  # brief: workflow_run on the repo's other PR workflows goes here (`brief init --ci`)\n"
+
+CI_TEMPLATE = f"""\
 {CI_MARKER}
 name: brief
 on:
@@ -76,13 +82,15 @@ on:
     types: [created]      # a maintainer's /ratify or /reject in an amendment thread
   issue_comment:
     types: [created]      # ... or top-level: /ratify <anchor>, /reject <anchor> <reason>
+  check_suite:
+    types: [completed]    # a third-party CI app finished: retry the auto-merge (Actions' own suites never fire this)
   workflow_dispatch:      # the bot's verdict commits start no run, so it dispatches one
     inputs:
       pr:
         required: true
       base:
         required: true
-jobs:
+{WATCH_SLOT}jobs:
   govern:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -121,11 +129,20 @@ jobs:
           if [ -z "$TYPESAFE_API_KEY" ] || [ -z "$TYPESAFE_BASE_URL" ] || [ -z "$TYPESAFE_DEFAULT_MODEL" ]; then
             export BRIEF_S1=off
           fi
-          uvx --from "brief[s1] @ {BRIEF_SOURCE}" brief triage --amendments --json --base "origin/$BASE" > "$RUNNER_TEMP/triage.json"
+          uvx --from "brief[s1] @ {BRIEF_SOURCE}" brief triage --amendments --json --base "origin/$BASE" > "$RUNNER_TEMP/out.json"
+          # the judged commit rides in the verdict, so a later merge attempt can match it
+          jq -c --arg sha "$(git rev-parse HEAD)" '. + {{sha: $sha}}' "$RUNNER_TEMP/out.json" > "$RUNNER_TEMP/triage.json"
           jq -r .summary "$RUNNER_TEMP/triage.json" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "verdict=$(jq -r .verdict "$RUNNER_TEMP/triage.json")" >> "$GITHUB_OUTPUT"
           echo "triage=$(jq -c . "$RUNNER_TEMP/triage.json")" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: keep the verdict for a merge attempt started by another workflow's completion
+        uses: actions/upload-artifact@v4
+        with:
+          name: brief-triage
+          path: ${{{{ runner.temp }}}}/triage.json
+          retention-days: 30
+          overwrite: true
       - name: brief doctor (advisory — latent drift; does not block)
         if: always()   # surface drift even when the gate blocks, for the human PR view
         run: uvx --from {BRIEF_SOURCE} brief doctor --repo .
@@ -197,66 +214,101 @@ jobs:
     # pending amendment auto-ratifiable (one escalated amendment means a human decides). Any
     # code in the PR is merged with the amendment. Skips fork PRs, drafts, a PR labelled
     # local-verified or needs-ratification, a head that moved past the judged commit, and any
-    # other check on that commit that is not green (it waits up to 30 minutes for running
-    # ones). Opt out: set the repository variable BRIEF_AUTO_MERGE=off.
+    # other check on that commit that failed. It never waits: while another check is still
+    # running it exits, and the completion of another workflow on the PR (workflow_run) or of
+    # a third-party CI app (check_suite) starts it again. A re-started attempt never asks the
+    # model: it merges only the head the latest brief run on it judged auto-ratifiable after
+    # the gate passed (that run's brief-triage artifact). Opt out: set the repository variable
+    # BRIEF_AUTO_MERGE=off.
     name: brief auto-merge
     needs: govern
     if: >-
-      needs.govern.outputs.verdict == 'auto-ratifiable' && vars.BRIEF_AUTO_MERGE != 'off'
-      && (github.event_name == 'workflow_dispatch'
-      || (github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft))
+      !cancelled() && vars.BRIEF_AUTO_MERGE != 'off'
+      && ((needs.govern.result == 'success' && needs.govern.outputs.verdict == 'auto-ratifiable' && (github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft)))
+      || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && github.event.workflow_run.pull_requests[0] != null)
+      || (github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success'
+      && github.event.check_suite.pull_requests[0] != null))
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       checks: read
       contents: write
       pull-requests: write
       statuses: read
     concurrency:
-      group: brief-merge-${{{{ github.event.pull_request.number || inputs.pr }}}}
+      # one attempt per PR at a time: a second one finds the PR merged, or the head moved
+      group: brief-merge-${{{{ github.event.pull_request.number || inputs.pr || github.event.workflow_run.pull_requests[0].number || github.event.check_suite.pull_requests[0].number }}}}
       cancel-in-progress: false
     outputs:
       merged: ${{{{ steps.merge.outputs.merged }}}}
       pr: ${{{{ steps.merge.outputs.pr }}}}
+      triage: ${{{{ steps.merge.outputs.triage }}}}
     steps:
       - name: merge the PR on the model's verdict
         id: merge
         env:
           GH_TOKEN: ${{{{ github.token }}}}
-          PR: ${{{{ github.event.pull_request.number || inputs.pr }}}}
-          SHA: ${{{{ needs.govern.outputs.sha }}}}
+          PR: ${{{{ github.event.pull_request.number || inputs.pr || github.event.workflow_run.pull_requests[0].number || github.event.check_suite.pull_requests[0].number }}}}
+          SHA: ${{{{ needs.govern.outputs.sha }}}}         # empty when another workflow started this
+          TRIAGE: ${{{{ needs.govern.outputs.triage }}}}
+          WORKFLOW_REF: ${{{{ github.workflow_ref }}}}
         run: |
           skip() {{ echo "::notice title=brief auto-merge skipped::$1"; echo "brief auto-merge skipped: $1" >> "$GITHUB_STEP_SUMMARY"; exit 0; }}
-          [ -n "$SHA" ] || skip "no judged commit"
+          [ -n "$PR" ] || skip "no pull request"
           pr=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json state,isDraft,isCrossRepository,headRefOid,labels) || skip "cannot read PR #$PR"
           [ "$(jq -r .state <<<"$pr")" = OPEN ] || skip "PR #$PR is not open"
           [ "$(jq -r .isCrossRepository <<<"$pr")" = false ] || skip "fork PR: a maintainer merges it"
           [ "$(jq -r .isDraft <<<"$pr")" = false ] || skip "draft PR"
-          [ "$(jq -r .headRefOid <<<"$pr")" = "$SHA" ] || skip "the head moved past the judged commit $SHA"
           jq -e '[.labels[].name] | any(. == "local-verified" or . == "needs-ratification")' <<<"$pr" >/dev/null \\
             && skip "labelled local-verified or needs-ratification: a human merges it"
-          # Every other check on the judged commit must be green. This run's own jobs are
-          # excluded (govern passed, or this job would not run).
-          for _ in $(seq 60); do
-            runs=$(gh api --paginate "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs" \\
-              | jq -r --arg self "/actions/runs/$GITHUB_RUN_ID/" \\
-                '.check_runs[] | select((.details_url // "") | contains($self) | not) | [.status, (.conclusion // "-"), .name] | @tsv') \\
-              || skip "cannot read the check runs"
-            bad=$(awk -F'\\t' '$1 == "completed" && $2 != "success" && $2 != "skipped" && $2 != "neutral" {{print $3}}' <<<"$runs")
-            [ -z "$bad" ] || skip "checks not green: $(echo $bad)"
-            status=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/status" --jq '"\\(.total_count) \\(.state)"') || skip "cannot read the commit status"
-            case "$status" in 0\\ *|*\\ success) ;; *\\ pending) running=1 ;; *) skip "commit status is ${{status#* }}" ;; esac
-            if [ -z "$(awk -F'\\t' '$1 != "completed"' <<<"$runs")" ] && [ -z "${{running:-}}" ]; then
-              gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$SHA" \\
-                || {{ echo "::warning title=brief auto-merge failed::merge it by hand (branch protection may require a review)"; exit 0; }}
-              echo "merged=true" >> "$GITHUB_OUTPUT"
-              echo "pr=$PR" >> "$GITHUB_OUTPUT"
-              echo "brief: merged #$PR on the model's verdict" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
-            fi
-            running=
-            sleep 30
-          done
-          skip "other checks still running after 30 minutes: merge it by hand"
+          judged=$GITHUB_RUN_ID
+          if [ -z "$SHA" ]; then
+            # Started by another workflow: never re-ask the model. The verdict is the triage the
+            # latest brief run on the PR head recorded, and only if that run's gate passed.
+            SHA=$(jq -r .headRefOid <<<"$pr")
+            wf=${{WORKFLOW_REF%@*}}
+            judged=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/${{wf##*/}}/runs?head_sha=$SHA&per_page=20" \\
+              | jq -r '[.workflow_runs[] | select(.event == "pull_request" or .event == "workflow_dispatch")][0].id // empty') \\
+              || skip "cannot read the brief runs"
+            [ -n "$judged" ] || skip "no brief run judged $SHA"
+            gate=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$judged/jobs" \\
+              | jq -r '[.jobs[] | select(.name == "govern")][0].conclusion // "-"') || skip "cannot read run $judged"
+            [ "$gate" = success ] || skip "the gate has not passed on $SHA (run $judged: $gate)"
+            gh run download "$judged" --repo "$GITHUB_REPOSITORY" --name brief-triage --dir "$RUNNER_TEMP/judged" \\
+              || skip "run $judged kept no triage for $SHA"
+            TRIAGE=$(cat "$RUNNER_TEMP/judged/triage.json")
+          fi
+          [ -n "$SHA" ] || skip "no judged commit"
+          [ "$(jq -r .headRefOid <<<"$pr")" = "$SHA" ] || skip "the head moved past the judged commit $SHA"
+          [ "$(jq -r .verdict <<<"$TRIAGE")" = auto-ratifiable ] && [ "$(jq -r .sha <<<"$TRIAGE")" = "$SHA" ] \\
+            || skip "$SHA was not judged auto-ratifiable"
+          # Every other check on the judged commit must have passed. This run and the judged
+          # brief run are left out (its gate passed, or nothing got here).
+          runs=$(gh api --paginate "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs" \\
+            | jq -r --arg self "/actions/runs/$GITHUB_RUN_ID/" --arg judged "/actions/runs/$judged/" \\
+              '.check_runs[] | select((.details_url // "") | contains($self) or contains($judged) | not) | [.status, (.conclusion // "-"), .name] | @tsv') \\
+            || skip "cannot read the check runs"
+          bad=$(awk -F'\\t' '$1 == "completed" && $2 != "success" && $2 != "skipped" && $2 != "neutral" {{print $3}}' <<<"$runs")
+          [ -z "$bad" ] || skip "checks not green: $(echo $bad)"
+          status=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/status" --jq '"\\(.total_count) \\(.state)"') || skip "cannot read the commit status"
+          case "$status" in 0\\ *|*\\ success) ;; *\\ pending) running="commit status" ;; *) skip "commit status is ${{status#* }}" ;; esac
+          running=$(echo $(awk -F'\\t' '$1 != "completed" {{print $3}}' <<<"$runs") ${{running:-}})
+          if [ -n "$running" ]; then
+            echo "::notice title=brief auto-merge not yet::still running on $SHA: $running. The next workflow on the PR to finish retries the merge."
+            echo "brief auto-merge not yet: still running on $SHA: $running" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$SHA" \\
+            || {{ echo "::warning title=brief auto-merge failed::merge it by hand (branch protection may require a review)"; exit 0; }}
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+          echo "triage=$(jq -c . <<<"$TRIAGE")" >> "$GITHUB_OUTPUT"
+          echo "brief: merged #$PR on the model's verdict" >> "$GITHUB_STEP_SUMMARY"
   ratify:
     # The merge was the ratification; this records it: publish each decision the merge
     # changed and archive its amendment as ratified by the merger, or by the model when the
@@ -284,7 +336,7 @@ jobs:
       - name: ratify merged amendments
         env:
           GH_TOKEN: ${{{{ github.token }}}}
-          TRIAGE: ${{{{ needs.automerge.outputs.merged == 'true' && needs.govern.outputs.triage || '' }}}}
+          TRIAGE: ${{{{ needs.automerge.outputs.merged == 'true' && needs.automerge.outputs.triage || '' }}}}
           MERGED_PR: ${{{{ needs.automerge.outputs.pr }}}}
         run: |
           if [ -n "$TRIAGE" ]; then
@@ -302,3 +354,20 @@ jobs:
           fi
           uvx --from {BRIEF_SOURCE} brief ratify --pending --push --by "$by" "$@"
 """
+
+
+def ci_workflow(watch: list[str] | tuple[str, ...] = ()) -> str:
+    """The CI workflow for a repo whose other pull-request workflows are named `watch`: each
+    one's completion re-runs the auto-merge attempt (no runner waits for them). None: no
+    `workflow_run` trigger, since the brief run itself is then the last check."""
+    if not watch:
+        return CI_TEMPLATE.replace(WATCH_SLOT, "")
+    names = ", ".join(json.dumps(n) for n in watch)
+    return CI_TEMPLATE.replace(WATCH_SLOT, (
+        "  workflow_run:           # another PR workflow finished: retry the auto-merge (re-run\n"
+        "    # `brief init --ci` after adding or renaming a workflow)\n"
+        f"    workflows: [{names}]\n"
+        "    types: [completed]\n"))
+
+
+CI_WORKFLOW = ci_workflow()  # a repo with no other pull-request workflow

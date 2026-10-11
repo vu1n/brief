@@ -12,7 +12,7 @@ import yaml
 
 from brief import verdicts, versions
 from brief.ratify import RatifyError, ratify_and_push, ratify_pending
-from brief.templates import CI_WORKFLOW
+from brief.templates import CI_WORKFLOW, WATCH_SLOT, ci_workflow
 from brief.triage import triage_amendments, verdict
 from tests.test_amend_merge import ANCHOR, Fake, _amend_pr
 from tests.test_thin import _git, write
@@ -31,17 +31,58 @@ def test_automerge_job_gates():
     job = WF["jobs"]["automerge"]
     assert job["needs"] == "govern"
     cond = job["if"]
-    assert "needs.govern.outputs.verdict == 'auto-ratifiable'" in cond
+    assert "needs.govern.result == 'success' && needs.govern.outputs.verdict == 'auto-ratifiable'" in cond
     assert "vars.BRIEF_AUTO_MERGE != 'off'" in cond
     assert "github.event.pull_request.head.repo.full_name == github.repository" in cond
     assert "!github.event.pull_request.draft" in cond
+    # a re-trigger starts a runner only for a same-repo PR whose workflow / app suite passed
+    assert "github.event.workflow_run.conclusion == 'success'" in cond
+    assert "github.event.workflow_run.head_repository.full_name == github.repository" in cond
+    assert "github.event.workflow_run.pull_requests[0] != null" in cond
+    assert "github.event.check_suite.conclusion == 'success'" in cond
     assert job["permissions"]["contents"] == "write" and job["permissions"]["pull-requests"] == "write"
+    assert job["permissions"]["actions"] == "read"  # the judged run's triage artifact
+    assert job["concurrency"]["group"].startswith("brief-merge-${{ github.event.pull_request.number || inputs.pr")
+    assert "workflow_run.pull_requests[0].number" in job["concurrency"]["group"]
+    assert job["concurrency"]["cancel-in-progress"] is False
     run = job["steps"][0]["run"]
     assert 'gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$SHA"' in run
     assert "local-verified" in run and "needs-ratification" in run
     assert "isCrossRepository" in run and "isDraft" in run and "check-runs" in run and "/status" in run
+    assert "sleep" not in run and "seq" not in run  # never holds a runner waiting
     assert job["steps"][0]["env"]["SHA"] == "${{ needs.govern.outputs.sha }}"
     assert WF["jobs"]["govern"]["outputs"]["sha"] == "${{ steps.triage.outputs.sha }}"
+
+
+def test_govern_keeps_the_verdict_for_a_later_attempt():
+    steps = WF["jobs"]["govern"]["steps"]
+    triage = next(s for s in steps if s.get("id") == "triage")
+    assert "'. + {sha: $sha}'" in triage["run"]  # the verdict names the commit it judged
+    up = steps[steps.index(triage) + 1]
+    assert up["uses"] == "actions/upload-artifact@v4" and up["with"]["name"] == "brief-triage"
+    assert up["with"]["overwrite"] is True
+
+
+def test_other_workflows_retrigger_the_merge():
+    on = WF[True]
+    assert on["check_suite"] == {"types": ["completed"]}
+    assert "workflow_run" not in on  # nothing else to wait for: the brief run is the last check
+    on = yaml.safe_load(ci_workflow(["test", "lint it"]))[True]
+    assert on["workflow_run"] == {"workflows": ["test", "lint it"], "types": ["completed"]}
+    assert WATCH_SLOT not in ci_workflow(["test"]) and WATCH_SLOT not in ci_workflow()
+
+
+def test_init_watches_the_repos_pull_request_workflows(tmp_path):
+    from brief.init import _pr_workflows
+
+    wfs = tmp_path / ".github" / "workflows"
+    wfs.mkdir(parents=True)
+    (wfs / "test.yml").write_text("name: test\non:\n  pull_request:\n  push:\n")
+    (wfs / "lint.yaml").write_text("on: pull_request\n")
+    (wfs / "release.yml").write_text("name: release\non:\n  push:\n")
+    (wfs / "brief.yml").write_text("name: brief\non: [pull_request]\n")
+    (wfs / "broken.yml").write_text("on: [\n")
+    assert _pr_workflows(tmp_path) == [".github/workflows/lint.yaml", "test"]
 
 
 def test_ratify_job_is_shared_with_automerge():
@@ -51,7 +92,8 @@ def test_ratify_job_is_shared_with_automerge():
     assert "!cancelled()" in job["if"] and "needs.automerge.outputs.merged == 'true'" in job["if"]
     assert "github.event_name == 'push' && github.actor != 'github-actions[bot]'" in job["if"]
     step = job["steps"][-1]
-    assert "needs.automerge.outputs.merged == 'true' && needs.govern.outputs.triage" in step["env"]["TRIAGE"]
+    # the merging attempt hands over the triage it merged on, whichever event started it
+    assert "needs.automerge.outputs.merged == 'true' && needs.automerge.outputs.triage" in step["env"]["TRIAGE"]
     run = step["run"]
     assert 'brief ratify --pending --push --by "$by" "$@"' in run
     assert '--triage "$RUNNER_TEMP/triage.json"' in run and "(merge of #$MERGED_PR)" in run
@@ -60,7 +102,7 @@ def test_ratify_job_is_shared_with_automerge():
 
 # --- the merge step, run against a fake `gh` ----------------------------------------------
 
-FAKE_GH = r'''
+FAKE_GH = r"""
 import json, os, sys
 st = json.load(open(os.environ["FAKE_GH"]))
 a = sys.argv[1:]
@@ -69,14 +111,26 @@ if a[:2] == ["pr", "view"]:
     print(json.dumps(st["pr"]))
 elif a[:2] == ["pr", "merge"]:
     st["merged"] = a; save()
+elif a[:2] == ["run", "download"]:
+    triage = st["artifacts"].get(a[2])
+    if triage is None:
+        sys.exit("no artifact")
+    d = a[a.index("--dir") + 1]
+    os.makedirs(d, exist_ok=True)
+    json.dump(triage, open(os.path.join(d, "triage.json"), "w"))
 elif a[0] == "api" and a[-1].endswith("/check-runs"):
-    runs = st["runs"].pop(0) if len(st["runs"]) > 1 else st["runs"][0]; save()
-    print(json.dumps({"check_runs": runs}))
+    print(json.dumps({"check_runs": st["runs"]}))
 elif a[0] == "api" and "/status" in a[1]:
     print(st["status"])
+elif a[0] == "api" and "/actions/workflows/brief.yml/runs?head_sha=" in a[1]:
+    sha = a[1].split("head_sha=")[1].split("&")[0]
+    print(json.dumps({"workflow_runs": [r for r in st["brief_runs"] if r["head_sha"] == sha]}))
+elif a[0] == "api" and a[1].endswith("/jobs"):
+    run = a[1].split("/runs/")[1].split("/")[0]
+    print(json.dumps({"jobs": [{"name": "govern", "conclusion": st["gate"].get(run)}]}))
 else:
     sys.exit(f"unexpected gh {a}")
-'''
+"""
 
 
 def _run(name, status="completed", conclusion="success", run_id=1):
@@ -84,43 +138,105 @@ def _run(name, status="completed", conclusion="success", run_id=1):
             "details_url": f"https://github.com/o/r/actions/runs/{run_id}/job/9"}
 
 
-def _merge(tmp_path, pr=None, runs=None, status="0 pending"):
+AUTO = {"verdict": "auto-ratifiable", "stamp": "s1 clef p=0.010/0.020", "amendments": [], "sha": "abc"}
+
+
+def _merge(tmp_path, pr=None, runs=None, status="0 pending", retrigger=None):
+    """Run the automerge step. `retrigger` (brief_runs, gate, artifacts) starts it as another
+    workflow's completion would: no govern outputs, the verdict read back from the judged run."""
     if shutil.which("jq") is None:
         pytest.skip("jq not installed")
     bin_ = tmp_path / "bin"
     bin_.mkdir()
     (bin_ / "gh.py").write_text(FAKE_GH)
     (bin_ / "gh").write_text(f'#!/bin/sh\nexec {sys.executable} "{bin_ / "gh.py"}" "$@"\n')
-    (bin_ / "sleep").write_text("#!/bin/sh\n:\n")
+    (bin_ / "sleep").write_text(f'#!/bin/sh\ntouch "{tmp_path / "slept"}"\n')
     for f in ("gh", "sleep"):
         (bin_ / f).chmod(0o755)
     state = tmp_path / "gh.json"
     pr = {"state": "OPEN", "isDraft": False, "isCrossRepository": False, "headRefOid": "abc",
           "labels": [], **(pr or {})}
-    runs = runs if runs is not None else [[_run("govern", run_id=42), _run("pytest", run_id=7)]]
-    state.write_text(json.dumps({"pr": pr, "runs": runs, "status": status}))
+    runs = runs if runs is not None else [_run("govern", run_id=42), _run("pytest", run_id=7)]
+    brief_runs, gate, artifacts = retrigger or ([], {}, {})
+    state.write_text(json.dumps({"pr": pr, "runs": runs, "status": status, "brief_runs": brief_runs,
+                                 "gate": gate, "artifacts": artifacts}))
     out = tmp_path / "out"
+    (tmp_path / "temp").mkdir()
     env = {**os.environ, "PATH": f"{bin_}:{os.environ['PATH']}", "FAKE_GH": str(state),
-           "PR": "9", "SHA": "abc", "GITHUB_REPOSITORY": "o/r", "GITHUB_RUN_ID": "42",
+           "PR": "9", "SHA": "", "TRIAGE": "", "GITHUB_REPOSITORY": "o/r", "GITHUB_RUN_ID": "42",
+           "WORKFLOW_REF": "o/r/.github/workflows/brief.yml@refs/heads/main",
+           "RUNNER_TEMP": str(tmp_path / "temp"),
            "GITHUB_OUTPUT": str(out), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    if retrigger is None:
+        env.update(SHA="abc", TRIAGE=json.dumps(AUTO))
+    else:
+        env["GITHUB_RUN_ID"] = "50"  # the workflow_run attempt, on the default branch
     r = subprocess.run(["bash", "-eo", "pipefail", "-c", WF["jobs"]["automerge"]["steps"][0]["run"]],
-                       env=env, capture_output=True, text=True)
+                       env=env, capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, r.stderr
+    assert not (tmp_path / "slept").exists()
     st = json.loads(state.read_text())
     return st.get("merged"), (out.read_text() if out.exists() else ""), r.stdout
 
 
+MERGE = ["pr", "merge", "9", "--repo", "o/r", "--squash", "--match-head-commit", "abc"]
+
+
 def test_merge_step_merges_when_every_other_check_is_green(tmp_path):
     merged, out, _ = _merge(tmp_path)
-    assert merged == ["pr", "merge", "9", "--repo", "o/r", "--squash", "--match-head-commit", "abc"]
+    assert merged == MERGE
     assert "merged=true" in out and "pr=9" in out
+    assert json.loads(out.split("triage=", 1)[1].splitlines()[0])["stamp"] == AUTO["stamp"]
 
 
-def test_merge_step_waits_for_running_checks_and_ignores_its_own_run(tmp_path):
-    runs = [[_run("pytest", "in_progress", None, 7), _run("brief auto-merge", "in_progress", None, 42)],
-            [_run("pytest", run_id=7), _run("brief auto-merge", "in_progress", None, 42)]]
-    merged, _, _ = _merge(tmp_path, runs=runs)
-    assert merged is not None
+def test_merge_step_exits_at_once_while_checks_run_and_ignores_its_own_run(tmp_path):
+    runs = [_run("pytest", "in_progress", None, 7), _run("brief auto-merge", "in_progress", None, 42)]
+    merged, out, stdout = _merge(tmp_path, runs=runs)
+    assert merged is None and "merged=true" not in out
+    assert "still running on abc: pytest. The next workflow" in stdout  # its own job is not waited on
+
+
+def test_a_pending_commit_status_exits_at_once(tmp_path):
+    merged, _, stdout = _merge(tmp_path, runs=[_run("pytest", run_id=7)], status="1 pending")
+    assert merged is None and "still running on abc: commit status." in stdout
+
+
+def _judged(sha="abc", run_id=30, triage=AUTO, gate="success", older=()):
+    runs = [{"id": run_id, "event": "pull_request", "head_sha": sha}, *older]
+    arts = {str(run_id): triage} if triage is not None else {}
+    gates = {str(run_id): gate}
+    for r in older:
+        arts.setdefault(str(r["id"]), AUTO)
+        gates.setdefault(str(r["id"]), "success")
+    return runs, gates, arts
+
+
+def test_a_completion_event_merges_the_judged_head(tmp_path):
+    # the judged brief run (30) is still finishing; only the other checks count
+    runs = [_run("pytest", run_id=7), _run("brief auto-merge", "in_progress", None, 30)]
+    merged, out, _ = _merge(tmp_path, runs=runs, retrigger=_judged())
+    assert merged == MERGE
+    assert "merged=true" in out and "pr=9" in out
+    assert json.loads(out.split("triage=", 1)[1].splitlines()[0])["verdict"] == "auto-ratifiable"
+
+
+@pytest.mark.parametrize("judged,why", [
+    (([], {}, {}), "no brief run judged abc"),
+    (_judged(sha="old"), "no brief run judged abc"),
+    (_judged(gate="failure"), "the gate has not passed on abc"),
+    (_judged(gate=None), "the gate has not passed on abc"),
+    (_judged(triage=None), "kept no triage for abc"),
+    (_judged(triage={**AUTO, "verdict": "escalate", "stamp": ""}), "abc was not judged auto-ratifiable"),
+    (_judged(triage={**AUTO, "verdict": "none"}), "abc was not judged auto-ratifiable"),
+    (_judged(triage={**AUTO, "sha": "old"}), "abc was not judged auto-ratifiable"),
+    # the newest verdict on the head counts, not any earlier auto-ratifiable one
+    (_judged(triage={**AUTO, "verdict": "escalate"}, older=[{"id": 20, "event": "pull_request", "head_sha": "abc"}]),
+     "abc was not judged auto-ratifiable"),
+])
+def test_a_retrigger_never_merges_an_unjudged_head(tmp_path, judged, why):
+    merged, out, stdout = _merge(tmp_path, retrigger=judged)
+    assert merged is None and "merged=true" not in out
+    assert why in stdout
 
 
 @pytest.mark.parametrize("pr,runs,status,why", [
@@ -129,15 +245,22 @@ def test_merge_step_waits_for_running_checks_and_ignores_its_own_run(tmp_path):
     ({"labels": [{"name": "needs-ratification"}]}, None, "0 pending", "labelled"),
     ({"labels": [{"name": "local-verified"}]}, None, "0 pending", "labelled"),
     ({"headRefOid": "def"}, None, "0 pending", "head moved"),
-    ({"state": "MERGED"}, None, "0 pending", "not open"),
-    (None, [[_run("pytest", conclusion="failure", run_id=7)]], "0 pending", "checks not green"),
+    ({"state": "MERGED"}, None, "0 pending", "not open"),  # the other attempt merged it first
+    (None, [_run("pytest", conclusion="failure", run_id=7)], "0 pending", "checks not green: pytest"),
+    (None, [_run("pytest", conclusion="failure", run_id=7), _run("lint", "queued", None, 8)], "0 pending",
+     "checks not green: pytest"),
     (None, None, "2 failure", "commit status is failure"),
-    (None, [[_run("pytest", "in_progress", None, 7)]], "0 pending", "still running"),
 ])
 def test_merge_step_skips(tmp_path, pr, runs, status, why):
     merged, out, stdout = _merge(tmp_path, pr=pr, runs=runs, status=status)
     assert merged is None and "merged=true" not in out
     assert why in stdout
+
+
+def test_a_failed_check_skips_a_retrigger_too(tmp_path):
+    runs = [_run("pytest", conclusion="failure", run_id=7)]
+    merged, _, stdout = _merge(tmp_path, runs=runs, retrigger=_judged())
+    assert merged is None and "checks not green: pytest" in stdout
 
 
 # --- ratify --pending on the model's verdict ------------------------------------------------
@@ -180,7 +303,7 @@ def test_one_escalated_amendment_means_no_model_ratification(tmp_path):
     rated[0].fiat = 0.7  # the model would escalate one of the two
     out = verdict(rated)
     assert out["verdict"] == "escalate" and out["stamp"] == ""
-    assert WF["jobs"]["automerge"]["if"].startswith("needs.govern.outputs.verdict == 'auto-ratifiable'")
+    assert "needs.govern.outputs.verdict == 'auto-ratifiable'" in WF["jobs"]["automerge"]["if"]
     with pytest.raises(RatifyError, match="not auto-ratifiable"):
         ratify_pending(bd, by="s1 clef (merge of #9)", model=out)
     # a forged all-auto entry for only one anchor still holds the doc

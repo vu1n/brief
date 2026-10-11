@@ -174,6 +174,12 @@ CI workflow, a pre-commit hook, and the skills.
 - `CI_WORKFLOW` is an f-string: a shell `\` must be written `\\` and `{`/`}` doubled, or a
   line continuation silently vanishes. `tests/test_automerge.py` runs the automerge step's
   shell against a fake `gh`; keep it running when you edit that step.
+- The `automerge` job must never wait (no sleep loop: it billed a runner for the whole
+  wait). Pending checks end it; `workflow_run` (names from `init._pr_workflows`, written by
+  `ci_workflow`) and `check_suite` start it again. A re-started attempt has no govern
+  outputs: it trusts only the latest brief run on the PR head whose `govern` job passed and
+  whose `brief-triage` artifact names that sha, and it must leave that run's own check runs
+  out of the green check, or a still-finishing brief run blocks the merge forever.
 
 <!-- brief:anchor backfill -->
 ## Backfill

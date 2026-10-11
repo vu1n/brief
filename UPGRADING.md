@@ -31,8 +31,12 @@ one PR.
   `workflow_dispatch` triggers and a `verdict` job.
   **CI merges auto-ratifiable PRs itself.** When the triage rates every amendment on a PR
   `auto-ratifiable` (one escalated amendment leaves the PR to a human), the gate passes,
-  and every other check and status on the judged commit is green (it waits up to 30
-  minutes), the new `automerge` job squash-merges the PR with GITHUB_TOKEN. **Code in the
+  and every other check and status on the judged commit is green, the new `automerge` job
+  squash-merges the PR with GITHUB_TOKEN. It never waits on a runner: while another check
+  is still running it exits, and the next of your PR workflows to finish (`workflow_run`)
+  or a third-party CI app's check suite (`check_suite`) starts it again; that attempt reads
+  the verdict back from the brief run that judged the head (its `brief-triage` artifact),
+  never re-asking the model. **Code in the
   same PR is merged too**, on the model's verdict plus your other checks. Fork PRs, drafts,
   and PRs labelled `local-verified` or `needs-ratification` are skipped. The `ratify` job
   then records the merge with the model as ratifier: `ratified_by: s1 <model> p=<a>/<b>
@@ -45,7 +49,10 @@ one PR.
   `push` branch in `brief.yml` and drop the managed marker. If PR branches are protected,
   let `github-actions[bot]` push to them too (it commits the verdict lines there). If you
   require the `govern` check, nothing else: CI re-dispatches it after each verdict commit.
-  Decide on auto-merge: to keep every merge a human's, set the repository variable
+  `init --ci` lists your other pull-request workflows by name under `workflow_run`; re-run
+  it after adding or renaming one (or edit the list), or a PR whose last check is that
+  workflow waits for a human. A last check that is a legacy commit status (not a check run)
+  starts no retry either. Decide on auto-merge: to keep every merge a human's, set the repository variable
   `BRIEF_AUTO_MERGE=off`. Otherwise, if branch protection requires an approving review, the
   bot's merge fails (the job warns and a human merges as before); allow
   `github-actions[bot]` to merge, or accept that. Without the TypeSafe secret and variables
