@@ -29,12 +29,27 @@ one PR.
   anchor in it is ratified. A `RATIFICATIONS` line the bot didn't commit is
   `untrusted-verdict`. The workflow gains `pull_request_review_comment`, `issue_comment` and
   `workflow_dispatch` triggers and a `verdict` job.
+  **CI merges auto-ratifiable PRs itself.** When the triage rates every amendment on a PR
+  `auto-ratifiable` (one escalated amendment leaves the PR to a human), the gate passes,
+  and every other check and status on the judged commit is green (it waits up to 30
+  minutes), the new `automerge` job squash-merges the PR with GITHUB_TOKEN. **Code in the
+  same PR is merged too**, on the model's verdict plus your other checks. Fork PRs, drafts,
+  and PRs labelled `local-verified` or `needs-ratification` are skipped. The `ratify` job
+  then records the merge with the model as ratifier: `ratified_by: s1 <model> p=<a>/<b>
+  (merge of #N)` and a new `ratified_via: model` line (person-made ones say
+  `ratified_via: human`). An amendment escalated on a PR stays escalated through its
+  revisions on that PR. `brief ratify --pending` gains `--triage` and `--push`.
 - **Do:** re-run `brief init --ci`. If `main` is protected, let `github-actions[bot]` push
   to it (or the ratify job fails and the merged decision stays unpublished until someone
   runs `brief ratify --pending` by hand). If your default branch is not `main`, edit the
   `push` branch in `brief.yml` and drop the managed marker. If PR branches are protected,
   let `github-actions[bot]` push to them too (it commits the verdict lines there). If you
   require the `govern` check, nothing else: CI re-dispatches it after each verdict commit.
+  Decide on auto-merge: to keep every merge a human's, set the repository variable
+  `BRIEF_AUTO_MERGE=off`. Otherwise, if branch protection requires an approving review, the
+  bot's merge fails (the job warns and a human merges as before); allow
+  `github-actions[bot]` to merge, or accept that. Without the TypeSafe secret and variables
+  nothing is ever auto-ratifiable, so nothing auto-merges.
 
 ## v0.4.2
 

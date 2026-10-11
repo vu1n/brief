@@ -128,8 +128,7 @@ def test_ci_template_ratifies_on_push_to_main():
     assert job["permissions"]["contents"] == "write"
     assert "github-actions[bot]" in job["if"] and "push" in job["if"]
     run = job["steps"][-1]["run"]
-    assert "brief ratify --pending --by" in run and "merge of #$pr" in run
-    assert "git status --porcelain" in run and "git push" in run
+    assert "brief ratify --pending --push --by" in run and "merge of #$pr" in run
     assert wf["jobs"]["govern"]["if"] == "github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'"
     esc = wf["jobs"]["escalate"]
     assert esc["if"].startswith("needs.govern.outputs.verdict == 'escalate'")

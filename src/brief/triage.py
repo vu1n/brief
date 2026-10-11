@@ -108,14 +108,17 @@ class AmendmentVerdict:
     impact: float | None  # P(high impact: widens authority, removes a guarantee, reaches far)
     model: str = ""
     key: str = ""  # this version of the amendment (`verdicts.amendment_key`)
+    escalated: bool = False  # an earlier version was escalated on this PR: a human decides
 
     @property
     def auto(self) -> bool:
-        return (self.fiat is not None and self.impact is not None
+        return (not self.escalated and self.fiat is not None and self.impact is not None
                 and self.fiat < FIAT_THRESHOLD and self.impact < IMPACT_THRESHOLD)
 
     @property
     def why(self) -> str:
+        if self.escalated:
+            return "escalated earlier on this PR: once a human holds an amendment, its revisions stay with them"
         if self.fiat is None or self.impact is None:
             return "no model opinion (model unset, failed, or the change was too large to judge)"
         out = []
@@ -130,13 +133,19 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
                       via: s1.Client | None = None) -> list[AmendmentVerdict]:
     """Ask the model, per pending amendment, whether it reverses or weakens the decision (or
     rewrites it to fit the code) and whether it is high-impact. Writes nothing; `verdict`
-    turns the answers into auto-ratifiable or escalate. Any missing opinion escalates."""
+    turns the answers into auto-ratifiable or escalate. Any missing opinion escalates, and so
+    does any anchor this PR already escalated (any version): revising an amendment a human
+    holds must not turn it into one CI merges on the model's word."""
     repo, brief_dir = repo.resolve(), brief_dir.resolve()
     pend = [v for v in check(repo, brief_dir, base) if v.kind == "pending-ratification"]
     if not pend:
         return []
     client = via or s1.client()
     rng = gitutil.merge_base(repo, base) if base else None
+    log = (brief_dir / verdicts.RECORDS).relative_to(repo).as_posix()
+    before = set(gitutil.content_at(repo, log, rng or "HEAD").splitlines())
+    held = {r.anchor for ln in gitutil.content_after(repo, log, rng).splitlines()
+            if ln not in before and (r := verdicts.parse_line(ln))}
     index = {d.doc_id: d for d in load_index(brief_dir)}
     changed = gitutil.changed_files(repo, rng)
     out = []
@@ -158,14 +167,15 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
                 fiat, impact = s1.noul_p(a, "fiat"), s1.noul_p(a, "impact")
                 if a:
                     model = next((x.model for x in a.values() if x.model), "") or s1.model_name()
-        out.append(AmendmentVerdict(v.doc_id, v.anchor_id, fiat, impact, model, key))
+        out.append(AmendmentVerdict(v.doc_id, v.anchor_id, fiat, impact, model, key, v.anchor_id in held))
     return out
 
 
 def verdict(rated: list[AmendmentVerdict]) -> dict:
     """The PR-level call: `auto-ratifiable` only when every pending amendment is, else
     `escalate`; `none` when nothing is pending. `stamp` (`s1 <model> p=<a>/<b>`) is the
-    `ratified_by` prefix a model-made merge would record; no shipped job merges on it yet."""
+    `ratified_by` prefix of a model-made merge: CI's automerge job merges on `auto-ratifiable`
+    and `ratify --pending --triage` records the model as the ratifier."""
     if not rated:
         return {"verdict": "none", "stamp": "", "amendments": []}
     auto = all(a.auto for a in rated)

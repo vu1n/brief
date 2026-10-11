@@ -31,6 +31,12 @@ RECORDS = "RATIFICATIONS"
 BOT_LOGIN = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
 
+def bot_identity() -> dict[str, str]:
+    """Env, not `-c user.*`: GIT_AUTHOR_*/GIT_COMMITTER_* in the environment would win."""
+    return {f"GIT_{who}_{what}": val for who in ("AUTHOR", "COMMITTER")
+            for what, val in (("NAME", BOT_LOGIN), ("EMAIL", BOT_EMAIL))}
+
+
 LINE_RE = re.compile(
     r"^(?P<anchor>[a-z0-9][a-z0-9-]*) (?P<kind>escalated|ratified-by|rejected-by):"
     r"(?: (?P<who>[A-Za-z0-9][A-Za-z0-9-]*))? amendment=(?P<key>[0-9a-f]{12})"

@@ -54,6 +54,11 @@ ratify your own code is the one failure this system exists to prevent.)
 CI reports the PR as `pending-ratification`, and the System One triage (when configured)
 rates it `auto-ratifiable` or labels it `needs-ratification`. Merging the PR ratifies it:
 CI publishes the new revision and archives your amendment with `ratified_by:` the merger.
+When every amendment is `auto-ratifiable` and the other checks are green, CI merges the PR
+itself, with your code: so put nothing in an amendment PR you wouldn't want merged on that
+verdict. Never merge it yourself, and never add or remove its labels to steer this. Once
+an amendment is escalated on the PR, every revision of it stays escalated: rewording it
+won't get it auto-merged.
 
 ## When CI escalates it: the amendment's thread
 

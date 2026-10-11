@@ -91,6 +91,10 @@ amendment stamped `ratified_rev`. `ratify --pending` records a merged amendment 
   doc, same path, no revision minted in the PR, every changed anchor amended. Change both.
 - `ratify_pending` decides "changed" against the latest published revision, not the push
   range, so a queued or re-run CI job is idempotent.
+- With `model=` (CI merged the PR on the triage) a never-escalated anchor is ratified only
+  if the triage marked its current key `auto`; `--by` must start with the triage's stamp.
+  Both CI paths (push and automerge) commit through `ratify_and_push`; don't re-inline git
+  in the workflow template.
 
 <!-- brief:anchor amendment-threads -->
 ## Amendment threads
@@ -167,6 +171,9 @@ CI workflow, a pre-commit hook, and the skills.
 - `--with-skills` owns every `brief-*` skill dir: it replaces each whole and deletes ones no
   longer shipped. Never name a user skill `brief-*`.
 - Every release needs a `## v<version>` UPGRADING.md entry (Changed/Do); a test enforces it.
+- `CI_WORKFLOW` is an f-string: a shell `\` must be written `\\` and `{`/`}` doubled, or a
+  line continuation silently vanishes. `tests/test_automerge.py` runs the automerge step's
+  shell against a fake `gh`; keep it running when you edit that step.
 
 <!-- brief:anchor backfill -->
 ## Backfill
@@ -236,8 +243,10 @@ sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold com
   to the index (`gitutil.stage_content`), never `git add` of the whole SIGNOFF.
 - It may remove asks, rank queues, and rate amendments (`auto-ratifiable` / `escalate`).
   Never let it block or pass the gate: the gate must stay deterministic and keyless in
-  every consuming repo's CI. A model-made merge (ratification) is not wired into the CI
-  template; adding one is a deliberate owner decision, not a refactor.
+  every consuming repo's CI. The CI template's `automerge` job merges an all-auto-ratifiable
+  PR (the owner chose this, 2026-10-11): the model's thresholds now decide what merges
+  without a person, so raise them only with an eval. An anchor escalated on the PR stays
+  escalated (`AmendmentVerdict.escalated`), or rewording would launder a held amendment.
 
 <!-- brief:anchor eval -->
 ## Eval

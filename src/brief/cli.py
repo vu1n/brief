@@ -169,7 +169,7 @@ def _amendment_summary(out: dict) -> str:
     if out["verdict"] == "none":
         return "brief triage: no pending amendments"
     head = {
-        "auto-ratifiable": f"brief: auto-ratifiable ({out['stamp']}) — the model rates every amendment low-risk; merging the PR ratifies it.",
+        "auto-ratifiable": f"brief: auto-ratifiable ({out['stamp']}) — the model rates every amendment low-risk; CI merges the PR when every other check is green (the model's ratification; repo variable BRIEF_AUTO_MERGE=off disables it).",
         "escalate": "brief: needs-ratification — a human should review this decision change; merging the PR ratifies it.",
     }[out["verdict"]]
     lines = [head]
@@ -238,20 +238,26 @@ def ratify(
     anchor: str = typer.Argument(None, help="the amended anchor (omit with --pending)"),
     by: str = typer.Option(None, "--by", help="who is ratifying (recorded with the amendment)"),
     pending: bool = typer.Option(False, "--pending", help="ratify every amendment whose decision the tree already changed (CI, after a merge)"),
+    triage_json: str = typer.Option(None, "--triage", help="with --pending: the merged PR's `brief triage --amendments --json`; the model is the ratifier (CI auto-merge)"),
+    push: bool = typer.Option(False, "--push", help="with --pending: commit .brief as github-actions[bot] and push the branch (CI)"),
     brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
 ):
     """Ratify an amendment: publish a new revision + archive the proposal. Run after editing the decision."""
     from .ratify import RatifyError
     from .ratify import ratify as do_ratify
-    from .ratify import ratify_pending
+    from .ratify import ratify_and_push, ratify_pending
 
-    if pending == bool(anchor):
-        typer.echo("ratify error: give an anchor or --pending (exactly one)", err=True)
+    if pending == bool(anchor) or ((triage_json or push) and not pending):
+        typer.echo("ratify error: give an anchor or --pending (exactly one); --triage and --push need --pending", err=True)
         raise typer.Exit(2)
     bd = _brief_dir(brief, Path.cwd())
+    model = json.loads(Path(triage_json).read_text()) if triage_json else None
     held: list[str] = []
     try:
-        done = ratify_pending(bd, by, held) if pending else [do_ratify(bd, anchor, by)]
+        if push:
+            done, held = ratify_and_push(gitutil.toplevel(Path.cwd()), bd, by, model)
+        else:
+            done = ratify_pending(bd, by, held, model) if pending else [do_ratify(bd, anchor, by)]
     except (RatifyError, FileNotFoundError, FileExistsError) as e:
         typer.echo(f"ratify error: {e}", err=True)
         raise typer.Exit(1)

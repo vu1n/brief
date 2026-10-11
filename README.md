@@ -86,7 +86,10 @@ On the PR the gate reports the edit as `pending-ratification` (it does not block
 to a locked decision without its amendment is still blocked. With a System One model
 configured (`TYPESAFE_API_KEY` secret, `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL`
 repo variables), CI rates each amendment for reversal and impact and labels the PR
-`needs-ratification` unless both are low.
+`needs-ratification` unless both are low. When every amendment on the PR is low on both and
+every other check is green, CI merges the PR itself, code included, and the archive records
+the model as the ratifier (`ratified_via: model`). Set the repo variable
+`BRIEF_AUTO_MERGE=off` to keep every merge a human's.
 
 An escalated amendment also gets its own review thread on `.brief/amendments/<anchor>.md`.
 A maintainer replies `/ratify` or `/reject <reason>` there (or comments `/ratify <anchor>`

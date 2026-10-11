@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from . import gitutil, verdicts
+from .verdicts import bot_identity
 
 FOOTER_RE = re.compile(r"generated (?:by|with) \[claude code\]", re.IGNORECASE)
 MARKER_RE = re.compile(r"<!-- brief:amendment ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) -->")
@@ -201,12 +202,6 @@ def plan_escalation(amendments: list[dict], ms: list[Marker], records: list[verd
 
 def _rel(repo: Path, p: Path) -> str:
     return p.resolve().relative_to(repo.resolve()).as_posix()
-
-
-def bot_identity() -> dict[str, str]:
-    """Env, not `-c user.*`: GIT_AUTHOR_*/GIT_COMMITTER_* in the environment would win."""
-    return {f"GIT_{who}_{what}": val for who in ("AUTHOR", "COMMITTER")
-            for what, val in (("NAME", verdicts.BOT_LOGIN), ("EMAIL", verdicts.BOT_EMAIL))}
 
 
 def _commit_and_push(repo: Path, brief_dir: Path, lines: list[str], message: str, branch: str) -> bool:
