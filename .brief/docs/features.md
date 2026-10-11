@@ -59,8 +59,9 @@ paths:
 ```
 
 Separation of powers over a staged diff or a `base..HEAD` range: ratified-edit,
-needs-conformance, amendment-required, broken-ref, empty-glob for the feature map, and
-pending-ratification (a locked edit carrying its amendments; non-blocking on a range only).
+needs-conformance, amendment-required, broken-ref, empty-glob for the feature map,
+pending-ratification (a locked edit carrying its amendments; non-blocking on a range only,
+unless escalated and unanswered), amendment-rejected and untrusted-verdict.
 
 ### Gotchas
 - Locked status is read from the baseline tree and `changed_files` uses `--no-renames`;
@@ -90,6 +91,32 @@ amendment stamped `ratified_rev`. `ratify --pending` records a merged amendment 
   doc, same path, no revision minted in the PR, every changed anchor amended. Change both.
 - `ratify_pending` decides "changed" against the latest published revision, not the push
   range, so a queued or re-run CI job is idempotent.
+
+<!-- brief:anchor amendment-threads -->
+## Amendment threads
+
+```yaml
+paths:
+  - "src/brief/verdicts.py"
+  - "src/brief/threads.py"
+```
+
+Per-amendment verdicts. CI opens a PR thread for each escalated amendment; a maintainer's
+`/ratify` or `/reject` lands as a line in `.brief/RATIFICATIONS`; the gate and
+`ratify --pending` read it per anchor, keyed to the amendment version.
+
+### Gotchas
+- Trust has two halves: the gate's offline bot-commit check (`verdicts.provenance`) and
+  CI's `brief thread verify` against the bot's unedited replies. Git identity alone is
+  forgeable; don't drop `verify` from the template.
+- The key (`amendment_key`) must be computed the same way in triage, the gate, `command`
+  and `ratify_pending`: amendment file text + the live anchor's body hash.
+- Bot commits set identity via `GIT_AUTHOR_*`/`GIT_COMMITTER_*` env (`bot_identity`), since
+  those env vars beat `-c user.*` when the runner sets them.
+- A push with GITHUB_TOKEN starts no workflow: `escalate` and `command` dispatch `brief.yml`
+  on the head branch so the gate re-runs. Keep `workflow_dispatch` inputs `pr`/`base`.
+- `pull_request_review_comment` runs the PR's own copy of the workflow; like the gate, the
+  thread jobs trust that the PR didn't edit `brief.yml`.
 
 <!-- brief:anchor doctor -->
 ## Doctor

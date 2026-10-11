@@ -70,14 +70,29 @@ def check(
     for v in violations:
         if v.kind == "pending-ratification" and not v.blocking:
             typer.echo(f"brief: pending ratification — {v.doc_id}#{v.anchor_id}: the decision edit carries its amendment.")
-            typer.echo("      merging this PR ratifies it (CI runs `brief ratify --pending`); review it as a decision change.")
+            typer.echo(f"      {v.detail}" if "ratified by" in v.detail else
+                       "      merging this PR ratifies it (CI runs `brief ratify --pending`); review it as a decision change.")
     blocking = [v for v in violations if v.blocking]
     if not blocking:
         typer.echo("brief: OK — no governance violations")
         raise typer.Exit(0)
     typer.echo("brief: BLOCKED — governance violations:", err=True)
     for v in blocking:
-        if v.kind == "pending-ratification":
+        if v.kind == "pending-ratification" and base:
+            typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — {v.detail}", err=True)
+            typer.echo("      stop and wait: a maintainer answers in the amendment's PR thread; answer questions there.", err=True)
+        elif v.kind == "amendment-rejected":
+            typer.echo(f"  ✗ {v.doc_id}#{v.anchor_id} — {v.detail}", err=True)
+            typer.echo(
+                f"      revise: edit .brief/amendments/{v.anchor_id}.md (and the proposed text) to answer the reason;\n"
+                "      or withdraw: restore the decision and delete the amendment and its amend-proposed line.\n"
+                "      never edit .brief/RATIFICATIONS.",
+                err=True,
+            )
+        elif v.kind == "untrusted-verdict":
+            typer.echo(f"  ✗ untrusted-verdict — {v.detail}", err=True)
+            typer.echo("      .brief/RATIFICATIONS is written only by CI; restore it.", err=True)
+        elif v.kind == "pending-ratification":
             typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — decision edit with its amendment: a commit can't ratify it.", err=True)
             typer.echo(
                 "      push the branch and open a PR: CI reports it as pending, and merging the PR ratifies it.\n"
@@ -234,15 +249,78 @@ def ratify(
         typer.echo("ratify error: give an anchor or --pending (exactly one)", err=True)
         raise typer.Exit(2)
     bd = _brief_dir(brief, Path.cwd())
+    held: list[str] = []
     try:
-        done = ratify_pending(bd, by) if pending else [do_ratify(bd, anchor, by)]
+        done = ratify_pending(bd, by, held) if pending else [do_ratify(bd, anchor, by)]
     except (RatifyError, FileNotFoundError, FileExistsError) as e:
         typer.echo(f"ratify error: {e}", err=True)
         raise typer.Exit(1)
-    if not done:
+    for h in held:
+        typer.echo(f"brief: held {h} — its doc stays unpublished; a human ratifies by hand (`brief ratify <anchor>`)", err=True)
+    if not done and not held:
         typer.echo("brief: nothing pending ratification")
     for r in done:
         typer.echo(f"brief: ratified {r.anchor} → {r.doc_id} @ {r.rev:04d}; amendment archived to {r.archived}")
+
+
+thread_app = typer.Typer(help="CI only: per-amendment PR threads (needs `gh` and GH_TOKEN).")
+app.add_typer(thread_app, name="thread")
+
+
+def _gh_context(repo_name: str | None, brief: str | None) -> tuple[str, Path, Path]:
+    import os
+
+    name = repo_name or os.environ.get("GITHUB_REPOSITORY")
+    if not name:
+        typer.echo("thread: give --repo-name or set GITHUB_REPOSITORY", err=True)
+        raise typer.Exit(2)
+    repo_path = gitutil.toplevel(Path.cwd())
+    return name, repo_path, _brief_dir(brief, repo_path)
+
+
+@thread_app.command("escalate")
+def thread_escalate(
+    pr: int = typer.Option(..., "--pr"),
+    triage_json: str = typer.Option(..., "--triage", help="`brief triage --amendments --json` output file"),
+    repo_name: str = typer.Option(None, "--repo-name", help="owner/repo (default: $GITHUB_REPOSITORY)"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+):
+    """Open a thread per escalated amendment and record it as escalated (run on the PR head)."""
+    from .threads import CliGH, escalate
+
+    name, repo_path, bd = _gh_context(repo_name, brief)
+    for line in escalate(CliGH(), name, pr, json.loads(Path(triage_json).read_text()), repo_path, bd):
+        typer.echo(f"brief: {line}")
+
+
+@thread_app.command("command")
+def thread_command(
+    event: str = typer.Option(..., "--event", help="the comment event payload ($GITHUB_EVENT_PATH)"),
+    repo_name: str = typer.Option(None, "--repo-name", help="owner/repo (default: $GITHUB_REPOSITORY)"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+):
+    """Record a maintainer's `/ratify` or `/reject` (run on the PR head)."""
+    from .threads import CliGH, command
+
+    name, repo_path, bd = _gh_context(repo_name, brief)
+    typer.echo(f"brief: {command(CliGH(), name, json.loads(Path(event).read_text()), repo_path, bd)}")
+
+
+@thread_app.command("verify")
+def thread_verify(
+    pr: int = typer.Option(..., "--pr"),
+    base: str = typer.Option(..., "--base", help="the PR's base ref, e.g. origin/main"),
+    repo_name: str = typer.Option(None, "--repo-name", help="owner/repo (default: $GITHUB_REPOSITORY)"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+):
+    """Fail unless every verdict line the PR adds matches the bot's own reply on the PR."""
+    from .threads import CliGH, verify
+
+    name, repo_path, bd = _gh_context(repo_name, brief)
+    bad = verify(CliGH(), name, pr, repo_path, bd, base)
+    for line in bad:
+        typer.echo(f"brief: unattested verdict (no matching github-actions[bot] reply on #{pr}): {line}", err=True)
+    raise typer.Exit(1 if bad else 0)
 
 
 @app.command()

@@ -21,10 +21,20 @@ one PR.
   `TYPESAFE_API_KEY` secret plus `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL` repo
   variables, each such PR is rated `auto-ratifiable` or labeled `needs-ratification`;
   without them every one is labeled.
+  An escalated amendment also gets its own PR review thread: a maintainer replies `/ratify`
+  or `/reject <reason>` (or comments `/ratify <anchor>` on the PR), CI records the verdict
+  in `.brief/RATIFICATIONS` on the PR branch, and the gate blocks the PR while any
+  escalated amendment is unanswered (`pending-ratification`) or rejected
+  (`amendment-rejected`). `ratify --pending` publishes a doc only when every escalated
+  anchor in it is ratified. A `RATIFICATIONS` line the bot didn't commit is
+  `untrusted-verdict`. The workflow gains `pull_request_review_comment`, `issue_comment` and
+  `workflow_dispatch` triggers and a `verdict` job.
 - **Do:** re-run `brief init --ci`. If `main` is protected, let `github-actions[bot]` push
   to it (or the ratify job fails and the merged decision stays unpublished until someone
   runs `brief ratify --pending` by hand). If your default branch is not `main`, edit the
-  `push` branch in `brief.yml` and drop the managed marker.
+  `push` branch in `brief.yml` and drop the managed marker. If PR branches are protected,
+  let `github-actions[bot]` push to them too (it commits the verdict lines there). If you
+  require the `govern` check, nothing else: CI re-dispatches it after each verdict commit.
 
 ## v0.4.2
 

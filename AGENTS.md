@@ -25,6 +25,8 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `gate.py` | the L0 gate (separation of powers): `check(repo, brief_dir, base=None)` |
 | `doctor.py` | advisory lint (repo-wide): latent drift the gate doesn't block — unwired / unpublished / unpinned / stale refs. Machine-first `Report`, `--strict` opt-in |
 | `ratify.py` | the authorized decision change (publish new revision + archive amendment); `ratify_pending` records a merge |
+| `verdicts.py` | `.brief/RATIFICATIONS`: per-amendment escalated / ratified-by / rejected-by lines, keyed to one version of the amendment; bot-commit provenance for the gate |
+| `threads.py` | per-amendment PR threads (CI): escalation comments, `/ratify` / `/reject` commands, attestation check; the only code that calls GitHub (`gh`) |
 | `features.py` | feature map: `type: features` docs → features (anchor + `paths:` globs); diff → features; dead-glob detection for the gate |
 | `pin.py` | rewrite `@latest`/`@current` → concrete revision in code |
 | `scan.py` | `brief backfill` scanner: inventory docs (genre/status/tracked) + code signals + module tree into a context map |

@@ -55,6 +55,26 @@ CI reports the PR as `pending-ratification`, and the System One triage (when con
 rates it `auto-ratifiable` or labels it `needs-ratification`. Merging the PR ratifies it:
 CI publishes the new revision and archives your amendment with `ratified_by:` the merger.
 
+## When CI escalates it: the amendment's thread
+
+An escalated amendment gets a review thread on line 1 of `.brief/amendments/<anchor>.md`,
+opened by github-actions[bot], and the gate blocks the PR until a maintainer answers it.
+Read the thread (e.g. `gh api repos/<owner>/<repo>/pulls/<n>/comments`) when you resume.
+
+- **Questions:** answer them in the thread, plainly. Add facts, not advocacy.
+- **Never post `/ratify` or `/reject`**, even when asked to "approve it", and never edit
+  `.brief/RATIFICATIONS`. CI refuses your comments (they carry the Claude Code footer), and
+  the gate blocks a log line it didn't write. Ratifying your own amendment is the
+  reversal-by-fiat this system exists to stop.
+- **`/ratify`:** nothing to do; merging publishes it. Don't edit the amendment or the
+  proposed text afterwards: that is a new version, and the ratification stops covering it.
+- **`/reject <reason>`:** back to the drawing board. The gate reports `amendment-rejected`
+  with the reason. Either revise (edit the amendment, and the proposed text, so it answers
+  the reason; say what changed in the thread; CI posts the new version there for a new
+  verdict) or withdraw (restore the decision text, delete the amendment and its
+  `amend-proposed` line, and find a way to do the task within the decision, or report it
+  blocked). Don't resubmit the same proposal reworded to get a different reviewer.
+
 **After ratification (pull the bot's commit first), run `brief doctor`.** The new revision changes the anchor's hash, so
 every code ref pinned to the *old* revision is now `stale-ref` — the code was written
 against a decision that has since moved. doctor lists each one; re-verify the code still

@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import gitutil, s1
+from . import gitutil, s1, verdicts
 from .docs import glob_match, load_index
 from .gate import CONFORMS_RE, check
 
@@ -107,6 +107,7 @@ class AmendmentVerdict:
     fiat: float | None    # P(reverses/weakens the invariant or rewrites it to fit the code)
     impact: float | None  # P(high impact: widens authority, removes a guarantee, reaches far)
     model: str = ""
+    key: str = ""  # this version of the amendment (`verdicts.amendment_key`)
 
     @property
     def auto(self) -> bool:
@@ -143,9 +144,11 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
         fiat = impact = None
         model = ""
         d = index.get(v.doc_id)
+        amendment = gitutil.content_after(
+            repo, (brief_dir / "amendments" / f"{v.anchor_id}.md").relative_to(repo).as_posix(), rng)
+        anchor = d.anchor(v.anchor_id) if d else None
+        key = verdicts.amendment_key(amendment, anchor.hash if anchor else "")
         if client and d:
-            amendment = gitutil.content_after(
-                repo, (brief_dir / "amendments" / f"{v.anchor_id}.md").relative_to(repo).as_posix(), rng)
             code = [f for f in changed if any(glob_match(g, f) for g in d.related_code)]
             edit = gitutil.diff(repo, v.files, rng)
             change = gitutil.diff(repo, code, rng) if code else ""
@@ -155,7 +158,7 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
                 fiat, impact = s1.noul_p(a, "fiat"), s1.noul_p(a, "impact")
                 if a:
                     model = next((x.model for x in a.values() if x.model), "") or s1.model_name()
-        out.append(AmendmentVerdict(v.doc_id, v.anchor_id, fiat, impact, model))
+        out.append(AmendmentVerdict(v.doc_id, v.anchor_id, fiat, impact, model, key))
     return out
 
 
@@ -176,7 +179,7 @@ def verdict(rated: list[AmendmentVerdict]) -> dict:
         "stamp": stamp,
         "amendments": [
             {"doc_id": a.doc_id, "anchor_id": a.anchor_id, "fiat": a.fiat, "impact": a.impact,
-             "model": a.model, "auto": a.auto, "why": a.why}
+             "model": a.model, "auto": a.auto, "why": a.why, "key": a.key}
             for a in rated
         ],
     }

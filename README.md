@@ -88,6 +88,13 @@ configured (`TYPESAFE_API_KEY` secret, `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT
 repo variables), CI rates each amendment for reversal and impact and labels the PR
 `needs-ratification` unless both are low.
 
+An escalated amendment also gets its own review thread on `.brief/amendments/<anchor>.md`.
+A maintainer replies `/ratify` or `/reject <reason>` there (or comments `/ratify <anchor>`
+on the PR); the agent can answer questions in the thread but can't ratify. CI records each
+verdict in `.brief/RATIFICATIONS`, and the gate blocks the PR while any escalated amendment
+is unanswered or rejected. A rejected amendment goes back to the agent: revising it makes a
+new version that comes back to the thread. Merging publishes only what was ratified.
+
 ## The governance stack
 
 | Layer | What | Where it lives |
@@ -112,6 +119,7 @@ operates.
 - `brief pin [files]` — freeze `@latest`/`@current` code refs to a concrete revision
 - `brief publish <doc-id>` — mint the next immutable revision
 - `brief ratify <anchor>` / `brief ratify --pending` — accept an amendment → new revision, archive the proposal (`--pending`: every amendment whose decision the tree already changed; CI runs it after a merge)
+- `brief thread escalate|command|verify` — CI only: open amendment threads, record a `/ratify` or `/reject`, check each recorded verdict against the bot's own reply
 - `brief init` — scaffold + inject the convention (`--with-skills`, `--ci`, `--hook`)
 - `brief features [files]` — the feature map: each feature's ref and `paths:` globs, or only the features those files touch (see below)
 - `brief backfill` — scan code + docs + comments into a context map for reconstructing the decision layer (pairs with the `brief-backfill` skill)

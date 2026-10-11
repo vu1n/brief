@@ -130,9 +130,9 @@ def test_ci_template_ratifies_on_push_to_main():
     run = job["steps"][-1]["run"]
     assert "brief ratify --pending --by" in run and "merge of #$pr" in run
     assert "git status --porcelain" in run and "git push" in run
-    assert wf["jobs"]["govern"]["if"] == "github.event_name == 'pull_request'"
+    assert wf["jobs"]["govern"]["if"] == "github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'"
     esc = wf["jobs"]["escalate"]
-    assert esc["if"] == "needs.govern.outputs.verdict == 'escalate'"
+    assert esc["if"].startswith("needs.govern.outputs.verdict == 'escalate'")
     assert "--add-label needs-ratification" in esc["steps"][-1]["run"]
     triage = next(s for s in wf["jobs"]["govern"]["steps"] if s.get("id") == "triage")
     assert "BRIEF_S1=off" in triage["run"] and "--amendments --json" in triage["run"]

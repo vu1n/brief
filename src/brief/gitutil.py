@@ -41,9 +41,9 @@ def changed_files(repo: Path, base: str | None = None) -> list[str]:
     return [ln for ln in out.splitlines() if ln.strip()]
 
 
-def added_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
-    """Added (+) lines for one path, staged (base=None) or over base..HEAD."""
-    args = [*_CONTENT, "-U0", base, "HEAD", "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
+def added_lines(repo: Path, path: str, base: str | None = None, head: str = "HEAD") -> list[str]:
+    """Added (+) lines for one path, staged (base=None) or over base..head."""
+    args = [*_CONTENT, "-U0", base, head, "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
     try:
         out = _git(repo, *args)
     except subprocess.CalledProcessError:
@@ -75,9 +75,9 @@ def stage_content(repo: Path, path: str, text: str) -> None:
     _git(repo, "update-index", "--add", "--cacheinfo", f"100644,{blob},{path}")
 
 
-def removed_lines(repo: Path, path: str, base: str | None = None) -> list[str]:
-    """Removed (-) lines for one path, staged (base=None) or over base..HEAD."""
-    args = [*_CONTENT, "-U0", base, "HEAD", "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
+def removed_lines(repo: Path, path: str, base: str | None = None, head: str = "HEAD") -> list[str]:
+    """Removed (-) lines for one path, staged (base=None) or over base..head."""
+    args = [*_CONTENT, "-U0", base, head, "--", path] if base else [*_CONTENT, "--cached", "-U0", "--", path]
     try:
         out = _git(repo, *args)
     except subprocess.CalledProcessError:
@@ -138,4 +138,25 @@ def tracked_files(repo: Path) -> list[str]:
         out = _git(repo, "ls-files")
     except (subprocess.CalledProcessError, FileNotFoundError):
         return []
+    return [ln for ln in out.splitlines() if ln.strip()]
+
+
+def commits_touching(repo: Path, rng: str, path: str) -> list[tuple[str, str, str, list[str]]]:
+    """(sha, author email, committer email, parents) of each non-merge commit in rng..HEAD
+    that changes `path`. --full-history: simplification must not hide a side branch's commit."""
+    try:
+        out = _git(repo, "log", "--full-history", "--no-merges", "--format=%H%x1f%ae%x1f%ce%x1f%P",
+                   f"{rng}..HEAD", "--", path)
+    except subprocess.CalledProcessError:
+        return []
+    rows = []
+    for ln in out.splitlines():
+        sha, ae, ce, parents = ln.split("\x1f")
+        rows.append((sha, ae, ce, parents.split()))
+    return rows
+
+
+def commit_files(repo: Path, sha: str) -> list[str]:
+    """Paths one commit changes against its first parent."""
+    out = _git(repo, "diff-tree", "--no-commit-id", "--no-renames", "--name-only", "-r", sha)
     return [ln for ln in out.splitlines() if ln.strip()]

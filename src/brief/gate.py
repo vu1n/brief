@@ -29,6 +29,16 @@ the coding loop may rewrite. So the gate enforces:
                      publishes it), so on a PR range it does not block. Staged, it still
                      blocks: a commit can't ratify, and a repo without CI has no merge
                      step that would. An edit without its amendment stays ratified-edit.
+                     Once CI escalated it to a human (`escalated` in .brief/RATIFICATIONS
+                     for this version of the amendment), it blocks until a maintainer
+                     replies `/ratify` in its PR thread.
+7. amendment-rejected — a maintainer replied `/reject` to this version of the amendment.
+                     Revising the amendment (or the decision text) is a new version, which
+                     re-escalates; withdrawing it removes the pending edit.
+8. untrusted-verdict — a .brief/RATIFICATIONS line added outside a github-actions[bot]
+                     commit, or any line removed: the log is the bot's, append-only. (CI's
+                     `brief thread verify` also checks each verdict against the bot's own
+                     PR comment, since a commit's identity is self-asserted.)
 
 Whether code *conforms* to a standing decision is semantic (L1 sampling / L2 tests);
 the gate does not attempt it. But because the decision is read-only, a "conforms"
@@ -41,7 +51,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import docs, gitutil, versions
+from . import docs, gitutil, verdicts, versions
 from .docs import Decision, glob_match, load_index
 from .features import empty_globs, load_features
 from .refs import find_refs
@@ -97,7 +107,8 @@ def _unwired(added: list[str], removed: list[str]) -> set[tuple[str, str | None]
 
 @dataclass
 class Violation:
-    kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref | empty-glob | pending-ratification
+    kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref | empty-glob
+    #            | pending-ratification | amendment-rejected | untrusted-verdict
     doc_id: str = ""
     anchor_id: str = ""
     files: list[str] = field(default_factory=list)
@@ -375,7 +386,55 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
         if v.kind == "pending-ratification":
             v.files = [_relpath(next(d.path for d in index if d.doc_id == v.doc_id), repo)]
             v.blocking = base is None  # staged: a commit can't ratify; only a merge does
+    violations += _verdict_log(repo, brief_dir, index, violations, changed_set, base, rng)
     return violations + _empty_globs(repo, brief_dir, index, base)
+
+
+def _verdict_log(
+    repo: Path,
+    brief_dir: Path,
+    index: list[Decision],
+    violations: list[Violation],
+    changed_set: set[str],
+    base: str | None,
+    rng: str | None,
+) -> list[Violation]:
+    """Apply .brief/RATIFICATIONS to the pending amendments (mutating their violations) and
+    report lines the bot didn't write. See `verdicts` for the format and the trust rule."""
+    rel = _relpath(brief_dir / verdicts.RECORDS, repo)
+    out: list[Violation] = []
+    untrusted: set[str] = set()
+    if rel in changed_set:
+        prov = verdicts.provenance(repo, rel, base, rng)
+        untrusted = set(prov.untrusted)
+        out += [Violation(kind="untrusted-verdict", files=[rel],
+                          detail=f"added outside a github-actions[bot] commit: {ln}") for ln in prov.untrusted]
+        out += [Violation(kind="untrusted-verdict", files=[rel],
+                          detail=f"removed (the log is append-only): {ln}") for ln in prov.removed]
+    text = gitutil.content_after(repo, rel, rng)
+    records = verdicts.parse("\n".join(ln for ln in text.splitlines() if ln not in untrusted))
+    if not records:
+        return out
+    by_id = {d.doc_id: d for d in index}
+    for v in violations:
+        if v.kind != "pending-ratification":
+            continue
+        a = by_id[v.doc_id].anchor(v.anchor_id)
+        key = verdicts.amendment_key(
+            gitutil.content_after(repo, _amendment_rel(repo, brief_dir, v.anchor_id), rng), a.hash if a else "")
+        r = verdicts.state(records, v.anchor_id, key)
+        if r is None:
+            continue
+        if r.kind == "rejected":
+            v.kind, v.blocking = "amendment-rejected", True
+            v.detail = (f"rejected by {r.who} ({r.url}): {r.reason} — revise the amendment (a new "
+                        "version re-escalates) or withdraw it")
+        elif r.kind == "escalated":
+            v.blocking = True
+            v.detail = "escalated to a human: waiting for a maintainer's /ratify in its PR thread"
+        else:
+            v.detail = f"ratified by {r.who} in its PR thread ({r.url}); merging publishes it"
+    return out
 
 
 _BLOCK_CLOSE = ("}", ")", "]", "end", "else", "elif", "except", "finally", "catch")
