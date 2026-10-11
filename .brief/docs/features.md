@@ -59,7 +59,9 @@ paths:
 ```
 
 Separation of powers over a staged diff or a `base..HEAD` range: ratified-edit,
-needs-conformance, amendment-required, broken-ref, and empty-glob for the feature map.
+needs-conformance, amendment-required, broken-ref, empty-glob for the feature map,
+pending-ratification (a locked edit carrying its amendments; non-blocking on a range only,
+unless escalated and unanswered), amendment-rejected and untrusted-verdict.
 
 ### Gotchas
 - Locked status is read from the baseline tree and `changed_files` uses `--no-renames`;
@@ -80,11 +82,45 @@ paths:
 ```
 
 The authorized way a locked decision changes: publish a new revision and archive the
-amendment stamped `ratified_rev`.
+amendment stamped `ratified_rev`. `ratify --pending` records a merged amendment PR in CI.
 
 ### Gotchas
 - The gate only exempts a locked edit that carries the full ratify output (new archive
   entry plus a new version equal to the live doc). A partial hand-made set is blocked.
+- `_pending` (gate) and `ratify_pending` must agree on what a merge may ratify: published
+  doc, same path, no revision minted in the PR, every changed anchor amended. Change both.
+- `ratify_pending` decides "changed" against the latest published revision, not the push
+  range, so a queued or re-run CI job is idempotent.
+- With `model=` (CI merged the PR on the triage) a never-escalated anchor is ratified only
+  if the triage marked its current key `auto`; `--by` must start with the triage's stamp.
+  Both CI paths (push and automerge) commit through `ratify_and_push`; don't re-inline git
+  in the workflow template.
+
+<!-- brief:anchor amendment-threads -->
+## Amendment threads
+
+```yaml
+paths:
+  - "src/brief/verdicts.py"
+  - "src/brief/threads.py"
+```
+
+Per-amendment verdicts. CI opens a PR thread for each escalated amendment; a maintainer's
+`/ratify` or `/reject` lands as a line in `.brief/RATIFICATIONS`; the gate and
+`ratify --pending` read it per anchor, keyed to the amendment version.
+
+### Gotchas
+- Trust has two halves: the gate's offline bot-commit check (`verdicts.provenance`) and
+  CI's `brief thread verify` against the bot's unedited replies. Git identity alone is
+  forgeable; don't drop `verify` from the template.
+- The key (`amendment_key`) must be computed the same way in triage, the gate, `command`
+  and `ratify_pending`: amendment file text + the live anchor's body hash.
+- Bot commits set identity via `GIT_AUTHOR_*`/`GIT_COMMITTER_*` env (`bot_identity`), since
+  those env vars beat `-c user.*` when the runner sets them.
+- A push with GITHUB_TOKEN starts no workflow: `escalate` and `command` dispatch `brief.yml`
+  on the head branch so the gate re-runs. Keep `workflow_dispatch` inputs `pr`/`base`.
+- `pull_request_review_comment` runs the PR's own copy of the workflow; like the gate, the
+  thread jobs trust that the PR didn't edit `brief.yml`.
 
 <!-- brief:anchor doctor -->
 ## Doctor
@@ -135,6 +171,15 @@ CI workflow, a pre-commit hook, and the skills.
 - `--with-skills` owns every `brief-*` skill dir: it replaces each whole and deletes ones no
   longer shipped. Never name a user skill `brief-*`.
 - Every release needs a `## v<version>` UPGRADING.md entry (Changed/Do); a test enforces it.
+- `CI_WORKFLOW` is an f-string: a shell `\` must be written `\\` and `{`/`}` doubled, or a
+  line continuation silently vanishes. `tests/test_automerge.py` runs the automerge step's
+  shell against a fake `gh`; keep it running when you edit that step.
+- The `automerge` job must never wait (no sleep loop: it billed a runner for the whole
+  wait). Pending checks end it; `workflow_run` (names from `init._pr_workflows`, written by
+  `ci_workflow`) and `check_suite` start it again. A re-started attempt has no govern
+  outputs: it trusts only the latest brief run on the PR head whose `govern` job passed and
+  whose `brief-triage` artifact names that sha, and it must leave that run's own check runs
+  out of the green check, or a still-finishing brief run blocks the merge forever.
 
 <!-- brief:anchor backfill -->
 ## Backfill
@@ -190,17 +235,24 @@ Optional client for System One decision models over the TypeSafe API (`brief[s1]
 Jev, Clef, any compatible endpoint): typed questions in, calibrated probabilities out. Used to triage what
 reaches a human or agent. `brief triage` writes tagged `conforms` lines for the
 sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold comes from.
+`brief triage --amendments` rates pending amendments for reversal and impact.
 
 ### Gotchas
 - `decide` returns None (or drops an answer) on any failure; callers must read that as
   "no opinion" and fall back to the mechanical rule, never as "no".
 - Out-of-range, non-finite, or wrong-type answers are dropped in `s1._answer`/`noul_p`:
   a confidence is not P(no), and -0.5 must not read as a confident "no".
+- Amendment triage fails closed: no model, an error, or a missing/invalid answer on either
+  question escalates. `FIAT_THRESHOLD`/`IMPACT_THRESHOLD` are placeholders with no eval yet.
 - The gate matches `conforms` on the bare anchor id across docs, so triage clears an id only
   when every ask sharing it is under the threshold; staged mode writes only its own lines
   to the index (`gitutil.stage_content`), never `git add` of the whole SIGNOFF.
-- It may only remove asks or rank queues. Never let it ratify, block, or pass the gate:
-  the gate must stay deterministic and keyless in every consuming repo's CI.
+- It may remove asks, rank queues, and rate amendments (`auto-ratifiable` / `escalate`).
+  Never let it block or pass the gate: the gate must stay deterministic and keyless in
+  every consuming repo's CI. The CI template's `automerge` job merges an all-auto-ratifiable
+  PR (the owner chose this, 2026-10-11): the model's thresholds now decide what merges
+  without a person, so raise them only with an eval. An anchor escalated on the PR stays
+  escalated (`AmendmentVerdict.escalated`), or rewording would launder a held amendment.
 
 <!-- brief:anchor eval -->
 ## Eval

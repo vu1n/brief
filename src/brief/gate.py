@@ -22,6 +22,23 @@ the coding loop may rewrite. So the gate enforces:
 5. empty-glob      — a feature-map `paths:` glob that matches no tracked file. The map is
                      how a diff finds its features; a dead glob silently drops that code
                      from it, so a move or delete must update the map in the same change.
+6. pending-ratification — a locked decision edit that carries its amendment: every anchor
+                     the edit changes has `.brief/amendments/<anchor>.md`, the doc is
+                     published and stays where it is, and no revision is minted by hand.
+                     Merging the PR is the ratification (CI's `brief ratify --pending`
+                     publishes it), so on a PR range it does not block. Staged, it still
+                     blocks: a commit can't ratify, and a repo without CI has no merge
+                     step that would. An edit without its amendment stays ratified-edit.
+                     Once CI escalated it to a human (`escalated` in .brief/RATIFICATIONS
+                     for this version of the amendment), it blocks until a maintainer
+                     replies `/ratify` in its PR thread.
+7. amendment-rejected — a maintainer replied `/reject` to this version of the amendment.
+                     Revising the amendment (or the decision text) is a new version, which
+                     re-escalates; withdrawing it removes the pending edit.
+8. untrusted-verdict — a .brief/RATIFICATIONS line added outside a github-actions[bot]
+                     commit, or any line removed: the log is the bot's, append-only. (CI's
+                     `brief thread verify` also checks each verdict against the bot's own
+                     PR comment, since a commit's identity is self-asserted.)
 
 Whether code *conforms* to a standing decision is semantic (L1 sampling / L2 tests);
 the gate does not attempt it. But because the decision is read-only, a "conforms"
@@ -34,7 +51,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import docs, gitutil, versions
+from . import docs, gitutil, verdicts, versions
 from .docs import Decision, glob_match, load_index
 from .features import empty_globs, load_features
 from .refs import find_refs
@@ -91,10 +108,12 @@ def _unwired(added: list[str], removed: list[str]) -> set[tuple[str, str | None]
 @dataclass
 class Violation:
     kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref | empty-glob
+    #            | pending-ratification | amendment-rejected | untrusted-verdict
     doc_id: str = ""
     anchor_id: str = ""
     files: list[str] = field(default_factory=list)
     detail: str = ""
+    blocking: bool = True  # only pending-ratification on a PR range is reported without blocking
 
 
 # anchors of `doc` a change to `file` touches: None = all of them, empty = none
@@ -117,12 +136,16 @@ def evaluate(
     bad_refs: list[tuple[str, str]] | None = None,
     exempt: set[str] | None = None,
     scope: Scope | None = None,
+    pending: dict[str, list[str]] | None = None,
 ) -> list[Violation]:
     """Pure core. `locked_edits` = doc_ids of locked decisions modified in this commit.
     `exempt` = code files whose change is ref-only (comment pointer, no behavior) and so
     does not trigger needs-conformance. `scope` narrows a governed file change to the
-    anchors it actually touches (default: all of them)."""
+    anchors it actually touches (default: all of them). `pending` = doc_id -> anchors whose
+    amendment this change carries along with the decision edit (see `_pending`); their
+    `amend-proposed` is answered by the merge, so it raises no amendment-required."""
     exempt = exempt or set()
+    pending = pending or {}
     code_changes = [f for f in changed_files if not _is_brief_path(f)]
     violations: list[Violation] = []
 
@@ -134,6 +157,17 @@ def evaluate(
                 detail="ratified decision is read-only — propose an amendment, do not edit it to pass",
             )
         )
+
+    for doc_id, anchors in sorted(pending.items()):
+        for a in anchors:
+            violations.append(
+                Violation(
+                    kind="pending-ratification",
+                    doc_id=doc_id,
+                    anchor_id=a,
+                    detail="decision edit carries its amendment — merging the PR ratifies it",
+                )
+            )
 
     for d in index:
         if not _is_locked(d.meta.get("status")):
@@ -160,6 +194,8 @@ def evaluate(
                 continue
             if a.anchor_id in conforms:
                 continue
+            if a.anchor_id in pending.get(d.doc_id, ()):
+                continue  # reported once, as pending-ratification
             if a.anchor_id in amend_proposed:
                 violations.append(
                     Violation(
@@ -236,6 +272,53 @@ def _ratified(
     return out
 
 
+def _amendment_rel(repo: Path, brief_dir: Path, anchor_id: str) -> str:
+    return _relpath(brief_dir / "amendments" / f"{anchor_id}.md", repo)
+
+
+def _pending(
+    repo: Path,
+    brief_dir: Path,
+    index: list[Decision],
+    locked_paths: dict[str, str],
+    changed: list[str],
+    baseline_ref: str,
+    rng: str | None,
+) -> dict[str, list[str]]:
+    """doc_id -> amended anchors, for each locked edit that is an amendment awaiting the
+    merge that ratifies it. Fails closed (stays ratified-edit) when the doc moved or was
+    deleted, was never published, has a revision minted or `latest` moved in this change
+    (only ratification publishes), its baseline won't parse, or any anchor the edit adds,
+    removes or rewrites lacks `.brief/amendments/<anchor>.md`: amending anchor A can't
+    cover a quiet edit of B."""
+    by_id = {d.doc_id: d for d in index}
+    out: dict[str, list[str]] = {}
+    if _relpath(versions.aliases_file(brief_dir), repo) in changed:
+        return out  # `latest` is ratification's to move
+    for doc_id, path in sorted(locked_paths.items()):
+        d = by_id.get(doc_id)
+        if d is None or _relpath(d.path, repo) != path:
+            continue
+        vdir = _relpath(versions.versions_dir(brief_dir, doc_id), repo) + "/"
+        if not gitutil.files_at(repo, baseline_ref, vdir) or any(f.startswith(vdir) for f in changed):
+            continue
+        try:
+            before = docs.parse_text(gitutil.content_at(repo, path, baseline_ref), Path(path), d.project)
+        except docs.DocError:
+            continue
+        old = {a.anchor_id: a.hash for a in before.anchors}
+        new = {a.anchor_id: a.hash for a in d.anchors}
+        moved = {a for a in old.keys() | new.keys() if old.get(a) != new.get(a)}
+        amended = {
+            a for a in old.keys() | new.keys()
+            if gitutil.content_after(repo, _amendment_rel(repo, brief_dir, a), rng)
+        }
+        if amended and moved <= amended:
+            # A frontmatter-only edit (status, related_code) is covered by any amendment.
+            out[doc_id] = sorted(moved or amended)
+    return out
+
+
 def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violation]:
     """Evaluate the gate over staged changes (base=None, local) or base..HEAD (CI)."""
     repo = repo.resolve()
@@ -250,7 +333,7 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
     # but its baseline path still shows as changed (changed_files uses --no-renames).
     # Status is read at the baseline too, so flipping it in the same change can't dodge.
     # Published revisions (`versions/vNNNN.md`) are immutable whatever the doc's status.
-    locked_edits: set[str] = set()
+    locked_paths: dict[str, str] = {}
     frozen_edits: set[str] = set()  # never exempt: ratify adds a revision, it never rewrites one
     docs_prefix = f"{_relpath(brief_dir, repo)}/docs/"
     for path in gitutil.files_at(repo, baseline_ref, docs_prefix):
@@ -260,9 +343,15 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
         if "versions" in path[len(docs_prefix):].split("/"):
             frozen_edits.add(path.split("/")[-3])  # docs/<doc-id>/versions/vNNNN.md
         elif _is_locked(docs.status_of(before)):
-            locked_edits.add(docs.doc_id_of(before, Path(path)))
+            locked_paths[docs.doc_id_of(before, Path(path))] = path
 
+    locked_edits = set(locked_paths)
     locked_edits -= _ratified(repo, brief_dir, index, changed, changed_set, baseline_ref, rng)
+    pending = _pending(
+        repo, brief_dir, index, {k: v for k, v in locked_paths.items() if k in locked_edits},
+        changed, baseline_ref, rng,
+    )
+    locked_edits -= set(pending)
     locked_edits |= frozen_edits
 
     conforms: set[str] = set()
@@ -291,9 +380,61 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
 
     violations = evaluate(
         changed, locked_edits, index, conforms, amend, bad_refs, exempt,
-        scope=_context_scope(repo, rng),
+        scope=_context_scope(repo, rng), pending=pending,
     )
+    for v in violations:
+        if v.kind == "pending-ratification":
+            v.files = [_relpath(next(d.path for d in index if d.doc_id == v.doc_id), repo)]
+            v.blocking = base is None  # staged: a commit can't ratify; only a merge does
+    violations += _verdict_log(repo, brief_dir, index, violations, changed_set, base, rng)
     return violations + _empty_globs(repo, brief_dir, index, base)
+
+
+def _verdict_log(
+    repo: Path,
+    brief_dir: Path,
+    index: list[Decision],
+    violations: list[Violation],
+    changed_set: set[str],
+    base: str | None,
+    rng: str | None,
+) -> list[Violation]:
+    """Apply .brief/RATIFICATIONS to the pending amendments (mutating their violations) and
+    report lines the bot didn't write. See `verdicts` for the format and the trust rule."""
+    rel = _relpath(brief_dir / verdicts.RECORDS, repo)
+    out: list[Violation] = []
+    untrusted: set[str] = set()
+    if rel in changed_set:
+        prov = verdicts.provenance(repo, rel, base, rng)
+        untrusted = set(prov.untrusted)
+        out += [Violation(kind="untrusted-verdict", files=[rel],
+                          detail=f"added outside a github-actions[bot] commit: {ln}") for ln in prov.untrusted]
+        out += [Violation(kind="untrusted-verdict", files=[rel],
+                          detail=f"removed (the log is append-only): {ln}") for ln in prov.removed]
+    text = gitutil.content_after(repo, rel, rng)
+    records = verdicts.parse("\n".join(ln for ln in text.splitlines() if ln not in untrusted))
+    if not records:
+        return out
+    by_id = {d.doc_id: d for d in index}
+    for v in violations:
+        if v.kind != "pending-ratification":
+            continue
+        a = by_id[v.doc_id].anchor(v.anchor_id)
+        key = verdicts.amendment_key(
+            gitutil.content_after(repo, _amendment_rel(repo, brief_dir, v.anchor_id), rng), a.hash if a else "")
+        r = verdicts.state(records, v.anchor_id, key)
+        if r is None:
+            continue
+        if r.kind == "rejected":
+            v.kind, v.blocking = "amendment-rejected", True
+            v.detail = (f"rejected by {r.who} ({r.url}): {r.reason} — revise the amendment (a new "
+                        "version re-escalates) or withdraw it")
+        elif r.kind == "escalated":
+            v.blocking = True
+            v.detail = "escalated to a human: waiting for a maintainer's /ratify in its PR thread"
+        else:
+            v.detail = f"ratified by {r.who} in its PR thread ({r.url}); merging publishes it"
+    return out
 
 
 _BLOCK_CLOSE = ("}", ")", "]", "end", "else", "elif", "except", "finally", "catch")

@@ -43,7 +43,7 @@ the governance stack (below), not by the ref. We make no "cannot lie" claim.
 | 12 | Two projections: `pack` (agent), `site` (human). Both generated, never hand-edited. |
 | 13 | Defer task-tracking/Kanban — later view over frontmatter. Don't reimplement git or Linear. |
 | 14 | **Vault is in-repo `.brief/` by default** (doc+code atomic, one PR, native governance review). Separate-vault + `.brief.lock` pins is the opt-in for multi-repo only. |
-| 15 | **Separation of powers: ratified decisions are READ-ONLY to the coding loop.** A coding commit may not modify a locked decision; the party being checked cannot edit the check. Changing a decision is an **amendment** (L1 advice + L3 human ratification), not a coding side-effect. |
+| 15 | **Separation of powers: ratified decisions are READ-ONLY to the coding loop.** A coding commit may not modify a locked decision; the party being checked cannot edit the check. Changing a decision is an **amendment** (L1 advice + L3 ratification), not a coding side-effect. The amendment PR may carry the proposed text; **merging it is the ratification** — the coding loop can propose but not merge. |
 | 16 | **Decision firmness:** `draft` (freely editable while forming) → `active`/`ratified` (locked; amendment-only) → `superseded` (historical). Cheap to change while forming, expensive once committed. |
 | 17 | **Brief owns the feature map.** A `type: features` doc, one anchor per feature (user-facing or internal) with `paths:` globs and Gotchas. Descriptive, not governing: `paths` are not `related_code`. L0 blocks a glob that matches nothing. Other tools (kypp, verification skills) reference `doc://<project>/features@latest#<id>` rather than keeping their own map. |
 
@@ -64,7 +64,7 @@ the party being checked cannot edit the check.
   5. *Live feature map* — every `paths:` glob in a feature map (`type: features`) must match at least one tracked file, so moving code can't silently drop it from the map.
 - **L1 — Independent verification (probabilistic).** A fresh-context agent (codex/second Claude) audits *amendment proposals* and samples `conforms` claims — "does this code actually satisfy the decision?" Because the decision is read-only, a `conforms` claim is falsifiable against a *fixed* target. Runs on amendments + sampling, not every commit.
 - **L2 — Conformance tests (mechanical, certain — strongest layer).** A decision linking acceptance tests (`test://`) cannot be violated without red CI. Zero agent honesty required.
-- **L3 — Human ratification.** The authority that turns an amendment into a new `active` decision; the coding loop cannot self-grant it.
+- **L3 — Ratification is the merge.** The authority that turns an amendment into a new `active` decision; the coding loop cannot self-grant it. On a PR, a locked-decision edit that carries an amendment for every anchor it changes is `pending-ratification`, not a failure; merging the PR ratifies it, and CI (`brief ratify --pending` on the default branch) publishes the revision and archives the amendment stamped with the merger. The System One model triages each such PR on two questions — does it reverse or weaken the decision (or rewrite it to fit the code), and is it high-impact (widens authority or security, removes a guarantee, reaches many governed paths). Below both thresholds it is `auto-ratifiable`; anything else, and any missing model opinion, escalates with a `needs-ratification` label and one PR thread per escalated amendment, where a maintainer ratifies or rejects it on its own (see the amendment workflow). When every amendment on the PR is `auto-ratifiable` (one escalated amendment is enough to leave the whole PR to a human), the gate passed, and every other check on the judged commit is green, CI's `automerge` job merges the PR itself (`gh pr merge --squash --match-head-commit <judged sha>`): the model is the ratifier. **The merge takes the whole PR, so any code riding with the amendment lands on the model's verdict too**; the model rated the decision change and the governed diff, but the code's correctness rests on the other checks (L2), which is why the job needs them green. It never holds a runner waiting: while one is still running it exits, and the completion of another PR workflow (`workflow_run`, the names `brief init --ci` found) or of a third-party CI app's check suite (`check_suite`) starts a new attempt. That attempt never re-asks the model: it merges only the PR's current head, and only when the latest brief run on that exact sha passed the gate and kept a triage artifact (`brief-triage`, which names the sha it judged) rating it `auto-ratifiable`. A concurrency group per PR serializes attempts and `--match-head-commit` pins the sha, so a second attempt finds the PR merged; whichever attempt merges runs `ratify`. It skips fork PRs, drafts, and PRs labelled `local-verified` or `needs-ratification`; the repo variable `BRIEF_AUTO_MERGE=off` turns it off. A GITHUB_TOKEN merge starts no push workflow, so the same workflow run then runs the `ratify` job on the default branch tip with the PR's triage: `ratify --pending --triage` publishes only amendment versions the triage cleared (`auto` for the anchor's current key, never escalated), stamped `ratified_by: s1 <model> p=<a>/<b> (merge of #N)` and `ratified_via: model`, so a consumer such as kypp ranks the revision below a person's (`verified`, not `human`). Anything else is held for a human. An anchor escalated on the PR (any earlier version, a `RATIFICATIONS` line the PR adds) is never rated `auto-ratifiable` again on that PR, so an agent can't reword a held amendment until the model clears it and CI merges it.
 
 L0's read-only rule is the cheap mechanical root-fix; the expensive semantic checks
 (L1/L2) run at the rare amendment, not on every commit.
@@ -72,10 +72,50 @@ L0's read-only rule is the cheap mechanical root-fix; the expensive semantic che
 ## Amendment workflow (how a ratified decision changes)
 
 A coding agent that cannot finish without changing a locked decision does **not** edit
-it. It writes `.brief/amendments/<anchor>.md` (what should change + why), records
-`<anchor> amend-proposed:` in SIGNOFF, and stops — the code is blocked until L3 ratifies
-the amendment (with L1 advice). Only then does the decision move to a new revision and
-the code land. Develop *to* the decision; change the decision through ratification.
+it on its own authority. It writes `.brief/amendments/<anchor>.md` (what should change +
+why), records `<anchor> amend-proposed:` in SIGNOFF, and may put the proposed decision
+text in the same PR (one amendment per anchor it changes). Then it stops. The gate reports
+the PR as `pending-ratification`; L1 (the `brief-review` skill, the System One triage)
+advises; the merge is L3 and ratifies it, and CI publishes the new revision. Locally a
+commit can't ratify, so a staged check still blocks the edit; a published `versions/`
+file is never editable. Without CI, a human edits the decision and runs `brief ratify
+<anchor>`. Develop *to* the decision; change the decision through ratification.
+
+**Escalated amendments are decided one by one, in PR threads.** For each amendment the
+triage escalates, CI opens a review thread on line 1 of `.brief/amendments/<anchor>.md`
+(hidden marker `<!-- brief:amendment <anchor> <key> -->`, the model's scores or "no model
+opinion") and appends `<anchor> escalated: amendment=<key>` to `.brief/RATIFICATIONS`. The
+key hashes the amendment file and the anchor's proposed text, so a verdict covers exactly
+the version a human read. A maintainer replies `/ratify` or `/reject <reason>`; the agent
+that wrote the amendment answers questions in the same thread. CI (GitHub Actions has no
+reaction trigger, so commands are replies) refuses bots, comments carrying the Claude Code
+footer (an agent using its owner's token looks like the owner), users without write access,
+fork PRs, and a command against a version the thread hasn't shown. It posts an attesting
+reply and commits `<anchor> ratified-by: <login> amendment=<key> comment=<id> (<url>)` (or
+`rejected-by ...: <reason>`) to the PR head, then re-dispatches the workflow (a
+GITHUB_TOKEN push starts none).
+
+- *Gate.* An escalated amendment with no verdict for its current key blocks; `rejected-by`
+  blocks as `amendment-rejected`. The agent revises (edits the amendment or the proposed
+  text: a new key, which CI escalates into the same thread) or withdraws (restores the
+  decision, deletes the amendment). Nobody deletes lines: a rejection simply stops matching.
+- *Anti-forgery.* `RATIFICATIONS` is the bot's, append-only. The gate (offline) accepts an
+  added line only from a non-merge commit authored and committed as github-actions[bot]
+  that touches only that file and only appends; any other addition or any removal is
+  `untrusted-verdict`. Git identity is self-asserted, so CI's `brief thread verify` also
+  requires every `ratified-by`/`rejected-by` line to match an unedited attesting reply from
+  github-actions[bot] on the PR, which nothing but the workflow token can post. An
+  `escalated` line needs no attestation: forging one only blocks the forger.
+- *Merge.* `ratify --pending` publishes a doc only when every changed anchor is cleared: a
+  `ratified-by` for its current key, or never escalated (the merger ratifies it, as
+  before). One unanswered or rejected anchor holds the whole doc unpublished and reports
+  it; the gate blocks that merge, so this only follows a merge past a red gate, and a human
+  then ratifies by hand. The archive stamps `ratified_by: <maintainer> via /ratify (<url>);
+  <merger> (merge of #N)`. The merged log is trusted as the PR's gate vetted it. Every
+  archive also says `ratified_via: human` or, for CI's own merge of an all-auto-ratifiable
+  PR, `ratified_via: model`; on that path a never-escalated anchor needs the triage's `auto`
+  for its current key, or it is held. Both paths commit through `brief ratify --pending
+  --push` (as github-actions[bot]; on a moved branch it resets to the new tip and redoes).
 
 ## Doc-first ordering (the teeth)
 
@@ -161,7 +201,7 @@ validated this: the AGENTS.md convention alone drove correct behavior with the g
 - **AGENTS.md convention** — the always-on *floor*: read-only decisions, conforms/amend-proposed, resolve-don't-guess. Self-sufficient with zero skills, any harness. Injected by `brief init`. (`src/brief/templates.py`)
 - **Skills** (accelerants, on-demand): `brief-author-decision`, `brief-amend`, `brief-review` (L1 verifier as a skill that spawns a fresh auditor). (`skills/`)
 
-**Governance layers map onto this, not onto the CLI:** L0 = the mechanical `check` (agent self-runs locally; **CI enforces** on PRs — not a local hook); **L1 = the `brief-review` skill** (spawn a verifier, no binary); L2 = the host project's own tests (`test://`); L3 = human judgment + the thin `ratify` primitive. Only L0 must be code; only CI must enforce it.
+**Governance layers map onto this, not onto the CLI:** L0 = the mechanical `check` (agent self-runs locally; **CI enforces** on PRs — not a local hook); **L1 = the `brief-review` skill** (spawn a verifier, no binary); L2 = the host project's own tests (`test://`); L3 = the merge, recorded by `ratify --pending` in CI (or a human running `ratify`). Only L0 must be code; only CI must enforce it.
 
 The CLI is optimized for machine invocation; humans touch `init` once and `ratify`
 occasionally, otherwise reading `.brief/docs/*.md` directly (plain markdown) or a later `site`.
