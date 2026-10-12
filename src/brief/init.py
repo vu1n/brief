@@ -119,13 +119,16 @@ def _pr_workflows(repo: Path) -> list[str]:
     return names
 
 
-def _install_ci(repo: Path, actions: list[str]) -> None:
-    from .templates import CI_MARKER, ci_workflow
+def _install_ci(repo: Path, actions: list[str], kypp_url: str | None = None) -> None:
+    from .templates import CI_MARKER, DEFAULT_KYPP_URL, baked_kypp_url, ci_workflow
 
-    want = ci_workflow(_pr_workflows(repo))
     wf = repo / ".github" / "workflows" / "brief.yml"
+    current = wf.read_text(encoding="utf-8") if wf.exists() else ""
+    # A re-run without --kypp-url keeps the URL the managed workflow was written with.
+    if kypp_url is None:
+        kypp_url = baked_kypp_url(current) if CI_MARKER in current else None
+    want = ci_workflow(_pr_workflows(repo), kypp=DEFAULT_KYPP_URL if kypp_url is None else kypp_url)
     if wf.exists():
-        current = wf.read_text(encoding="utf-8")
         if CI_MARKER not in current:
             actions.append(".github/workflows/brief.yml is hand-managed — left as-is; bump its brief tag by hand")
         elif current == want:
@@ -171,6 +174,7 @@ def init_vault(
     with_skills: bool = False,
     ci: bool = False,
     hook: bool = False,
+    kypp_url: str | None = None,
 ) -> list[str]:
     """Scaffold + inject the convention. Hook-free by default; enforcement is CI (`ci=True`)."""
     actions: list[str] = []
@@ -189,7 +193,7 @@ def init_vault(
     if with_skills:
         _install_skills(repo, actions)
     if ci:
-        _install_ci(repo, actions)
+        _install_ci(repo, actions, kypp_url)
     if hook:
         _install_hook(repo, actions)
     return actions

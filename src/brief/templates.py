@@ -58,6 +58,7 @@ human to notice later.
 """
 
 import json
+import re
 
 from . import __version__
 
@@ -66,6 +67,15 @@ from . import __version__
 BRIEF_REPO = "https://github.com/vu1n/brief"
 BRIEF_SOURCE = f"git+{BRIEF_REPO}@v{__version__}"
 CI_MARKER = "# Managed by `brief init --ci`: re-running it rewrites this file. Delete this line to own it."
+
+# The kypp Worker that answers `brief triage` in CI with Clef (POST /v1/systemone), taking the
+# job's GitHub Actions OIDC token as the bearer. It must equal that Worker's KYPP_PUBLIC_URL (the
+# token's audience), and the Worker only accepts owners in its KYPP_OIDC_OWNERS. Override per repo
+# with `brief init --ci --kypp-url https://<worker>` or the TYPESAFE_BASE_URL repo variable (which wins).
+DEFAULT_KYPP_URL = "https://kypp.vu1n.dev"
+KYPP_SLOT = "__BRIEF_KYPP_URL__"  # ci_workflow fills it
+_KYPP_URL_RE = re.compile(r"https://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?")
+_BAKED_RE = re.compile(r"vars\.TYPESAFE_BASE_URL \|\| '([^']*)'")
 
 # Where `ci_workflow` lists the repo's other PR workflows: their completion retries the
 # auto-merge (workflow_run must name workflows; there is no wildcard).
@@ -97,6 +107,7 @@ on:
     permissions:
       contents: read
       pull-requests: read
+      id-token: write         # the triage step's OIDC token for the System One endpoint (kypp)
     env:
       BASE: ${{{{ github.base_ref || inputs.base }}}}
       PR: ${{{{ github.event.pull_request.number || inputs.pr }}}}
@@ -120,12 +131,26 @@ on:
       - name: brief amendment triage (auto-ratifiable or escalate)
         id: triage
         # Optional System One model. Sends the decision edit, amendment and governed diff to
-        # TYPESAFE_BASE_URL. Unset (or a fork PR, which gets no secrets) = escalate.
+        # TYPESAFE_BASE_URL: the kypp Worker (Clef) unless repo variables say otherwise. The
+        # bearer is a TYPESAFE_API_KEY secret if the repo has one and names its own URL (the
+        # secret never goes to the default kypp URL), else a GitHub Actions OIDC token whose
+        # audience is that URL (no secret needed). No URL, no token (a fork PR gets none) or any
+        # error = escalate.
         env:
           TYPESAFE_API_KEY: ${{{{ secrets.TYPESAFE_API_KEY }}}}
-          TYPESAFE_BASE_URL: ${{{{ vars.TYPESAFE_BASE_URL }}}}
-          TYPESAFE_DEFAULT_MODEL: ${{{{ vars.TYPESAFE_DEFAULT_MODEL }}}}
+          TYPESAFE_BASE_URL: ${{{{ vars.TYPESAFE_BASE_URL{KYPP_SLOT} }}}}
+          TYPESAFE_DEFAULT_MODEL: ${{{{ vars.TYPESAFE_DEFAULT_MODEL || 'clef' }}}}
+          REPO_BASE_URL: ${{{{ vars.TYPESAFE_BASE_URL }}}}
         run: |
+          TYPESAFE_BASE_URL="${{TYPESAFE_BASE_URL%/}}"
+          if [ -z "$REPO_BASE_URL" ]; then TYPESAFE_API_KEY=""; fi   # a secret only goes where the repo points it
+          if [ -z "$TYPESAFE_API_KEY" ] && [ -n "$TYPESAFE_BASE_URL" ] && [ -n "${{ACTIONS_ID_TOKEN_REQUEST_URL:-}}" ]; then
+            aud=$(jq -rn --arg a "$TYPESAFE_BASE_URL" '$a|@uri')
+            TYPESAFE_API_KEY=$(curl -fsS --max-time 10 "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$aud" \\
+              -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.value // empty') || TYPESAFE_API_KEY=""
+            if [ -n "$TYPESAFE_API_KEY" ]; then echo "::add-mask::$TYPESAFE_API_KEY"; fi
+          fi
+          export TYPESAFE_API_KEY TYPESAFE_BASE_URL   # this step only
           if [ -z "$TYPESAFE_API_KEY" ] || [ -z "$TYPESAFE_BASE_URL" ] || [ -z "$TYPESAFE_DEFAULT_MODEL" ]; then
             export BRIEF_S1=off
           fi
@@ -356,14 +381,32 @@ on:
 """
 
 
-def ci_workflow(watch: list[str] | tuple[str, ...] = ()) -> str:
+def kypp_url(url: str) -> str:
+    """`url` as the triage's default TYPESAFE_BASE_URL (and OIDC audience): https, no trailing
+    slash, nothing that could break out of the workflow's quoted expression."""
+    url = url.strip().rstrip("/")
+    if url and not _KYPP_URL_RE.fullmatch(url):
+        raise ValueError(f"not an https URL brief can write into the workflow: {url!r}")
+    return url
+
+
+def baked_kypp_url(workflow: str) -> str | None:
+    """The kypp URL an existing managed workflow was written with, or None."""
+    m = _BAKED_RE.search(workflow)
+    return m.group(1) if m else None
+
+
+def ci_workflow(watch: list[str] | tuple[str, ...] = (), kypp: str = DEFAULT_KYPP_URL) -> str:
     """The CI workflow for a repo whose other pull-request workflows are named `watch`: each
     one's completion re-runs the auto-merge attempt (no runner waits for them). None: no
-    `workflow_run` trigger, since the brief run itself is then the last check."""
+    `workflow_run` trigger, since the brief run itself is then the last check. `kypp` is the
+    triage's default System One URL (a TYPESAFE_BASE_URL repo variable overrides it)."""
+    url = kypp_url(kypp)
+    wf = CI_TEMPLATE.replace(KYPP_SLOT, f" || '{url}'" if url else "")
     if not watch:
-        return CI_TEMPLATE.replace(WATCH_SLOT, "")
+        return wf.replace(WATCH_SLOT, "")
     names = ", ".join(json.dumps(n) for n in watch)
-    return CI_TEMPLATE.replace(WATCH_SLOT, (
+    return wf.replace(WATCH_SLOT, (
         "  workflow_run:           # another PR workflow finished: retry the auto-merge (re-run\n"
         "    # `brief init --ci` after adding or renaming a workflow)\n"
         f"    workflows: [{names}]\n"

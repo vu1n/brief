@@ -45,7 +45,7 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.5.0   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.5.1   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
@@ -84,12 +84,19 @@ brief ratify <anchor> --by you        # without CI: a human edits the decision, 
 
 On the PR the gate reports the edit as `pending-ratification` (it does not block); an edit
 to a locked decision without its amendment is still blocked. With a System One model
-configured (`TYPESAFE_API_KEY` secret, `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL`
-repo variables), CI rates each amendment for reversal and impact and labels the PR
+configured, CI rates each amendment for reversal and impact and labels the PR
 `needs-ratification` unless both are low. When every amendment on the PR is low on both and
 every other check is green, CI merges the PR itself, code included, and the archive records
 the model as the ratifier (`ratified_via: model`). Set the repo variable
 `BRIEF_AUTO_MERGE=off` to keep every merge a human's.
+
+The model needs no secret when it is a kypp Worker: `brief init --ci` writes
+`https://kypp.vu1n.dev` into the workflow (`--kypp-url https://<worker>` picks another), and the
+triage step sends the job's GitHub Actions OIDC token (audience: that URL) to Clef there.
+The Worker must list your GitHub owner in `KYPP_OIDC_OWNERS`. Repo variables
+`TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL` (default `clef`) override it, and a
+`TYPESAFE_API_KEY` secret is sent instead of the OIDC token, but only to a
+`TYPESAFE_BASE_URL` the repo sets itself. Fork PRs get no token, so their amendments escalate.
 
 An escalated amendment also gets its own review thread on `.brief/amendments/<anchor>.md`.
 A maintainer replies `/ratify` or `/reject <reason>` there (or comments `/ratify <anchor>`
