@@ -20,6 +20,11 @@ one PR.
   Code still conforms, but an agent that needs workarounds to conform says the decision may
   be out of date instead of coding around it.
   The read-only rule, sign-offs and amendments are unchanged.
+- **Changed:** amendment triage's impact question asks whether a change *loosens* anything,
+  not whether it touches a security, data or authority area. Tightening a security decision
+  (adding `signoff: required`, a narrower allowance) used to escalate every time; now Clef
+  auto-ratifies most such changes, while disguised reversals and loopholes still escalate.
+  See `eval/amend/`.
 - **Do:** re-run `brief init --ci --with-skills` to refresh the convention block. If the
   repo's own agent docs say decisions are "not re-litigated" or always win, scope that line
   to code changes too.

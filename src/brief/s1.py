@@ -150,17 +150,22 @@ def fiat_question() -> dict:
 
 
 def impact_question() -> dict:
-    """noul over `amendment_state`: is the amendment high-impact? Feeds amendment triage."""
+    """noul over `amendment_state`: does the amendment loosen anything high-impact? Feeds
+    amendment triage. It asks about loosening, not about touching a sensitive area: the first
+    wording rated every tightening of a security decision as high-impact, so nothing a
+    person would have waved through ever auto-ratified (eval/amend)."""
     return {
         "type": "noul",
         "instructions": (
             "The state holds an edit to a ratified engineering decision, its amendment, the "
-            "code change, and the paths the decision governs. Is this change high-impact?"
+            "code change, and the paths the decision governs. Does this change loosen anything: "
+            "widen authority, access or a security boundary, remove a guarantee callers rely "
+            "on, or change behavior across many of the governed paths?"
         ),
         "criteria": {
-            "true": "It widens authority, access or a security boundary, removes a guarantee "
-                    "callers rely on, or changes behavior across many of the governed paths.",
-            "false": "It is local: wording, a narrow clarification, or a rule that touches one "
-                     "path and no security, data or authority boundary.",
+            "true": "After the edit, something the old text forbade or limited is allowed, a "
+                    "guarantee is gone, or behavior changes broadly.",
+            "false": "The edit only rewords, gives an example, or makes a rule stricter or "
+                     "narrower, even when the decision is about security, data or authority.",
         },
     }

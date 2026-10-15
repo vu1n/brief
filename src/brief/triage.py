@@ -94,8 +94,9 @@ def _append(text: str, lines: dict[str, str]) -> str:
 
 
 # Amendment triage: both P(reversal) and P(high impact) must sit below these for the model to
-# ratify by merging. Placeholders, set conservatively with no data yet: there is no amendment
-# eval behind them (unlike THRESHOLD above). Raise them only with one.
+# ratify by merging. eval/amend (93 labeled amendments, 58 a human should see): at 0.05 Clef
+# auto-ratified none of the 58 and 22 of the 35 harmless ones; the closest should-see case
+# scored fiat 0.071, so raising these needs a bigger eval first.
 FIAT_THRESHOLD = 0.05
 IMPACT_THRESHOLD = 0.05
 
