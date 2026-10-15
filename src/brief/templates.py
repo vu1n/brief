@@ -42,6 +42,10 @@ When you change code, develop *to* them:
   questions there, never `/ratify` it yourself, and never edit `.brief/RATIFICATIONS`. On
   `/reject`, revise the amendment to meet the reason, or withdraw it. Never bypass the
   commit hook.
+- If conforming takes workarounds (contorted code, duplicated paths, a feature you can't
+  build cleanly), still conform, but say so: tell the person you work for that the
+  decision may be out of date and what it is costing, or propose an amendment. Don't keep
+  coding in circles around a rule that no longer fits.
 - At each site that embodies a decision, leave a one-line comment:
   `// Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>`.
   The ref makes it checkable; the one-line rule puts the constraint in front of the next
