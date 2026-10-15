@@ -16,6 +16,7 @@ one PR.
   agent writes, not the questions it is asked: when exploring or evaluating an option, an
   agent treats decisions as context, says where the option beats the current design, and
   names the decisions it would reverse, instead of ruling it out because a decision exists.
+  A decision is framed as a record that may have been wrong or overtaken, not a fixed truth.
   The read-only rule, sign-offs and amendments are unchanged.
 - **Do:** re-run `brief init --ci --with-skills` to refresh the convention block. If the
   repo's own agent docs say decisions are "not re-litigated" or always win, scope that line

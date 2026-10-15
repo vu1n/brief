@@ -18,8 +18,10 @@ Decisions are **ratified constraints on code, not editable notes**. They bind th
 write, not the questions you are asked. When the task is to explore, evaluate or compare
 (is X simpler? should we switch to Y?), treat decisions as context, not constraints: judge
 the option on its merits, say plainly where it beats the current design, and name the
-decisions it would reverse. Reversing one goes through an amendment when the work lands,
-so a decision is never by itself a reason to rule an option out.
+decisions it would reverse. A decision records what was chosen and why at the time; it
+may have been wrong, or the situation may have changed, so say so when you see it.
+Reversing one goes through an amendment when the work lands, so a decision is never by
+itself a reason to rule an option out.
 
 When you change code, develop *to* them:
 
