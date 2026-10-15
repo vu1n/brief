@@ -14,7 +14,14 @@ anchor (`<!-- brief:anchor id -->`), a `status`, and the code it governs (`relat
 globs). A decision is addressable as `doc://<project>/<doc-id>@latest#<anchor>` — resolve
 one with `brief resolve <ref>` to read the exact decision; don't infer it from the ref.
 
-Decisions are **ratified constraints, not editable notes**. Develop *to* them:
+Decisions are **ratified constraints on code, not editable notes**. They bind the code you
+write, not the questions you are asked. When the task is to explore, evaluate or compare
+(is X simpler? should we switch to Y?), treat decisions as context, not constraints: judge
+the option on its merits, say plainly where it beats the current design, and name the
+decisions it would reverse. Reversing one goes through an amendment when the work lands,
+so a decision is never by itself a reason to rule an option out.
+
+When you change code, develop *to* them:
 
 - A decision with `status: active` is READ-ONLY to coding work. Do NOT edit it to make
   your change fit — your code conforms to the decision, not the reverse.
@@ -37,7 +44,8 @@ Decisions are **ratified constraints, not editable notes**. Develop *to* them:
   `// Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>`.
   The ref makes it checkable; the one-line rule puts the constraint in front of the next
   agent exactly where it touches the code. Keep the full reasoning in the decision doc.
-- If your memory, notes, or habits disagree with an active decision, the decision wins:
+- If your memory, notes, or habits disagree with an active decision about how the code
+  behaves, the decision wins:
   it is versioned and reviewed with the code, memory is not. Follow the decision and say
   which memory looked stale.
 

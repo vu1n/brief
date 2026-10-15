@@ -10,6 +10,17 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
+## v0.5.2
+
+- **Changed:** the convention block scopes decisions to code. Decisions bind the code an
+  agent writes, not the questions it is asked: when exploring or evaluating an option, an
+  agent treats decisions as context, says where the option beats the current design, and
+  names the decisions it would reverse, instead of ruling it out because a decision exists.
+  The read-only rule, sign-offs and amendments are unchanged.
+- **Do:** re-run `brief init --ci --with-skills` to refresh the convention block. If the
+  repo's own agent docs say decisions are "not re-litigated" or always win, scope that line
+  to code changes too.
+
 ## v0.5.1
 
 - **Changed:** CI triage needs no secret. The `govern` job gains `permissions: id-token:

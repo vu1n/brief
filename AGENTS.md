@@ -71,6 +71,9 @@ L0 (`check`) is mechanical and runs locally + in CI; L1 is the `brief-review` sk
 the host project's tests; L3 is the merge of the amendment PR (CI records it with
 `ratify --pending`). Reversal-by-fiat (rewriting a
 decision to ratify your own code) is the failure the whole design exists to prevent.
+The guard binds code, not thinking: the convention tells agents to weigh options on their
+merits when exploring and to name the decisions an option would reverse, never to rule it
+out because a decision exists. Keep any new convention or skill text scoped the same way.
 
 ## Dogfood TODO
 
