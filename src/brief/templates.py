@@ -14,7 +14,16 @@ anchor (`<!-- brief:anchor id -->`), a `status`, and the code it governs (`relat
 globs). A decision is addressable as `doc://<project>/<doc-id>@latest#<anchor>` — resolve
 one with `brief resolve <ref>` to read the exact decision; don't infer it from the ref.
 
-Decisions are **ratified constraints, not editable notes**. Develop *to* them:
+Decisions are **ratified constraints on code, not editable notes**. They bind the code you
+write, not the questions you are asked. When the task is to explore, evaluate or compare
+(is X simpler? should we switch to Y?), treat decisions as context, not constraints: judge
+the option on its merits, say plainly where it beats the current design, and name the
+decisions it would reverse. A decision records what was chosen and why at the time; it
+may have been wrong, or the situation may have changed, so say so when you see it.
+Reversing one goes through an amendment when the work lands, so a decision is never by
+itself a reason to rule an option out.
+
+When you change code, develop *to* them:
 
 - A decision with `status: active` is READ-ONLY to coding work. Do NOT edit it to make
   your change fit — your code conforms to the decision, not the reverse.
@@ -33,11 +42,16 @@ Decisions are **ratified constraints, not editable notes**. Develop *to* them:
   questions there, never `/ratify` it yourself, and never edit `.brief/RATIFICATIONS`. On
   `/reject`, revise the amendment to meet the reason, or withdraw it. Never bypass the
   commit hook.
+- If conforming takes workarounds (contorted code, duplicated paths, a feature you can't
+  build cleanly), still conform, but say so: tell the person you work for that the
+  decision may be out of date and what it is costing, or propose an amendment. Don't keep
+  coding in circles around a rule that no longer fits.
 - At each site that embodies a decision, leave a one-line comment:
   `// Context: doc://<project>/<doc-id>@latest#<anchor> — <the rule, in one line>`.
   The ref makes it checkable; the one-line rule puts the constraint in front of the next
   agent exactly where it touches the code. Keep the full reasoning in the decision doc.
-- If your memory, notes, or habits disagree with an active decision, the decision wins:
+- If your memory, notes, or habits disagree with an active decision about how the code
+  behaves, the decision wins:
   it is versioned and reviewed with the code, memory is not. Follow the decision and say
   which memory looked stale.
 
@@ -337,7 +351,7 @@ on:
   ratify:
     # The merge was the ratification; this records it: publish each decision the merge
     # changed and archive its amendment as ratified by the merger, or by the model when the
-    # automerge job merged (stamped `s1 <model> p=<a>/<b> (merge of #N)`, `ratified_via:
+    # automerge job merged (stamped `s1 <model> p=<p> (merge of #N)`, `ratified_via:
     # model`; only amendment versions the triage cleared). No loop: a push made with
     # GITHUB_TOKEN starts no workflow (which is also why this job follows automerge), the
     # bot's own pushes are skipped, and a re-run finds nothing pending.

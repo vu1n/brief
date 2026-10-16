@@ -21,8 +21,8 @@ DOC = "ADR-001-backend"
 WF = yaml.safe_load(CI_WORKFLOW)
 
 
-def _auto(repo, bd, base, fiat=0.01):
-    return verdict(triage_amendments(repo, bd, base, via=Fake(fiat, 0.02)))
+def _auto(repo, bd, base, review=0.02):
+    return verdict(triage_amendments(repo, bd, base, via=Fake(review)))
 
 
 # --- the template -------------------------------------------------------------------------
@@ -138,7 +138,7 @@ def _run(name, status="completed", conclusion="success", run_id=1):
             "details_url": f"https://github.com/o/r/actions/runs/{run_id}/job/9"}
 
 
-AUTO = {"verdict": "auto-ratifiable", "stamp": "s1 clef p=0.010/0.020", "amendments": [], "sha": "abc"}
+AUTO = {"verdict": "auto-ratifiable", "stamp": "s1 clef p=0.020", "amendments": [], "sha": "abc"}
 
 
 def _merge(tmp_path, pr=None, runs=None, status="0 pending", retrigger=None):
@@ -270,7 +270,7 @@ def test_model_ratification_is_stamped_as_the_model(tmp_path):
     out = _auto(repo, bd, base)
     [r] = ratify_pending(bd, by=f"{out['stamp']} (merge of #9)", model=out)
     archived = open(r.archived).read()
-    assert "ratified_by: s1 clef p=0.010/0.020 (merge of #9)" in archived
+    assert "ratified_by: s1 clef p=0.020 (merge of #9)" in archived
     assert "ratified_via: model" in archived
     assert versions.latest_rev(bd, DOC) == 2
 
@@ -299,8 +299,8 @@ def test_one_escalated_amendment_means_no_model_ratification(tmp_path):
     write(bd / "amendments" / "docker-flag.md", "# Amendment\nadd the flag\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "second anchor")
-    rated = triage_amendments(repo, bd, base, via=Fake(0.01, 0.02))
-    rated[0].fiat = 0.7  # the model would escalate one of the two
+    rated = triage_amendments(repo, bd, base, via=Fake(0.02))
+    rated[0].review = 0.7  # the model would escalate one of the two
     out = verdict(rated)
     assert out["verdict"] == "escalate" and out["stamp"] == ""
     assert "needs.govern.outputs.verdict == 'auto-ratifiable'" in WF["jobs"]["automerge"]["if"]
@@ -353,7 +353,7 @@ def test_ratify_and_push_commits_as_the_bot(tmp_path):
     done, held = ratify_and_push(repo, bd, f"{out['stamp']} (merge of #9)", out)
     assert [r.anchor for r in done] == [ANCHOR] and held == []
     assert _show(remote, "%ae %ce") == f"{verdicts.BOT_EMAIL} {verdicts.BOT_EMAIL}"
-    assert _show(remote, "%s") == "brief: ratify amendments (s1 clef p=0.010/0.020 (merge of #9))"
+    assert _show(remote, "%s") == "brief: ratify amendments (s1 clef p=0.020 (merge of #9))"
     assert ratify_and_push(repo, bd, "again") == ([], [])  # nothing pending: no commit
 
 

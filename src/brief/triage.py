@@ -6,9 +6,9 @@ the `conforms` line itself, tagged with the score, so the gate passes for the us
 and every model verdict is on record in SIGNOFF. Without the optional model (no
 `brief[s1]` or no key) it does nothing and every ask stays.
 
-`triage_amendments` (`brief triage --amendments`) rates each pending-ratification on a PR:
-does it reverse or weaken the decision, and is it high-impact. When every amendment is low on
-both, the PR is `auto-ratifiable`; anything else, including no opinion, escalates
+`triage_amendments` (`brief triage --amendments`) asks, per pending-ratification on a PR,
+whether the change should wait for the owner's eyes. When every amendment is below the
+threshold, the PR is `auto-ratifiable`; anything else, including no opinion, escalates
 (`needs-ratification`). The merge is the ratification either way. It never touches the gate.
 """
 from __future__ import annotations
@@ -93,46 +93,40 @@ def _append(text: str, lines: dict[str, str]) -> str:
 
 
 
-# Amendment triage: both P(reversal) and P(high impact) must sit below these for the model to
-# ratify by merging. Placeholders, set conservatively with no data yet: there is no amendment
-# eval behind them (unlike THRESHOLD above). Raise them only with one.
-FIAT_THRESHOLD = 0.05
-IMPACT_THRESHOLD = 0.05
+# Amendment triage: P(needs the owner's eyes) must sit below this for the model to ratify by
+# merging. eval/amend (93 labeled amendments, 58 a human should see): at 0.3 Clef auto-ratified
+# none of the 58 and 18 of the 35 harmless ones; the lowest-scoring should-see case was 0.35, so raising this needs a bigger eval first.
+REVIEW_THRESHOLD = 0.3
 
 
 @dataclass
 class AmendmentVerdict:
     doc_id: str
     anchor_id: str
-    fiat: float | None    # P(reverses/weakens the invariant or rewrites it to fit the code)
-    impact: float | None  # P(high impact: widens authority, removes a guarantee, reaches far)
+    review: float | None  # P(the owner should see it before it merges)
     model: str = ""
     key: str = ""  # this version of the amendment (`verdicts.amendment_key`)
     escalated: bool = False  # an earlier version was escalated on this PR: a human decides
 
     @property
     def auto(self) -> bool:
-        return (not self.escalated and self.fiat is not None and self.impact is not None
-                and self.fiat < FIAT_THRESHOLD and self.impact < IMPACT_THRESHOLD)
+        return not self.escalated and self.review is not None and self.review < REVIEW_THRESHOLD
 
     @property
     def why(self) -> str:
         if self.escalated:
             return "escalated earlier on this PR: once a human holds an amendment, its revisions stay with them"
-        if self.fiat is None or self.impact is None:
+        if self.review is None:
             return "no model opinion (model unset, failed, or the change was too large to judge)"
-        out = []
-        if self.fiat >= FIAT_THRESHOLD:
-            out.append(f"may reverse or weaken the decision (p={self.fiat:.3f} >= {FIAT_THRESHOLD})")
-        if self.impact >= IMPACT_THRESHOLD:
-            out.append(f"may be high-impact (p={self.impact:.3f} >= {IMPACT_THRESHOLD})")
-        return "; ".join(out) or "low risk on both questions"
+        if self.review >= REVIEW_THRESHOLD:
+            return f"the owner should see it (p={self.review:.3f} >= {REVIEW_THRESHOLD})"
+        return "safe to approve without the owner"
 
 
 def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
                       via: s1.Client | None = None) -> list[AmendmentVerdict]:
-    """Ask the model, per pending amendment, whether it reverses or weakens the decision (or
-    rewrites it to fit the code) and whether it is high-impact. Writes nothing; `verdict`
+    """Ask the model, per pending amendment, whether the change should wait for the owner's
+    eyes before it merges. Writes nothing; `verdict`
     turns the answers into auto-ratifiable or escalate. Any missing opinion escalates, and so
     does any anchor this PR already escalated (any version): revising an amendment a human
     holds must not turn it into one CI merges on the model's word."""
@@ -150,7 +144,7 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
     changed = gitutil.changed_files(repo, rng)
     out = []
     for v in pend:
-        fiat = impact = None
+        review = None
         model = ""
         d = index.get(v.doc_id)
         amendment = gitutil.content_after(
@@ -163,17 +157,17 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
             change = gitutil.diff(repo, code, rng) if code else ""
             if _has_body(edit) and len(edit) + len(change) + len(amendment) <= MAX_DIFF_CHARS:
                 a = s1.decide(s1.amendment_state(edit, amendment, change, d.related_code),
-                              {"fiat": s1.fiat_question(), "impact": s1.impact_question()}, via=client)
-                fiat, impact = s1.noul_p(a, "fiat"), s1.noul_p(a, "impact")
+                              {"review": s1.review_question()}, via=client)
+                review = s1.noul_p(a, "review")
                 if a:
                     model = next((x.model for x in a.values() if x.model), "") or s1.model_name()
-        out.append(AmendmentVerdict(v.doc_id, v.anchor_id, fiat, impact, model, key, v.anchor_id in held))
+        out.append(AmendmentVerdict(v.doc_id, v.anchor_id, review, model, key, v.anchor_id in held))
     return out
 
 
 def verdict(rated: list[AmendmentVerdict]) -> dict:
     """The PR-level call: `auto-ratifiable` only when every pending amendment is, else
-    `escalate`; `none` when nothing is pending. `stamp` (`s1 <model> p=<a>/<b>`) is the
+    `escalate`; `none` when nothing is pending. `stamp` (`s1 <model> p=<max>`) is the
     `ratified_by` prefix of a model-made merge: CI's automerge job merges on `auto-ratifiable`
     and `ratify --pending --triage` records the model as the ratifier."""
     if not rated:
@@ -182,13 +176,12 @@ def verdict(rated: list[AmendmentVerdict]) -> dict:
     stamp = ""
     if auto:
         models = sorted({a.model for a in rated})
-        stamp = (f"s1 {','.join(models)} p={max(a.fiat for a in rated):.3f}"
-                 f"/{max(a.impact for a in rated):.3f}")
+        stamp = f"s1 {','.join(models)} p={max(a.review for a in rated):.3f}"
     return {
         "verdict": "auto-ratifiable" if auto else "escalate",
         "stamp": stamp,
         "amendments": [
-            {"doc_id": a.doc_id, "anchor_id": a.anchor_id, "fiat": a.fiat, "impact": a.impact,
+            {"doc_id": a.doc_id, "anchor_id": a.anchor_id, "review": a.review,
              "model": a.model, "auto": a.auto, "why": a.why, "key": a.key}
             for a in rated
         ],

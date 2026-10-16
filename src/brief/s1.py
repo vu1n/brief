@@ -130,37 +130,26 @@ def amendment_state(decision_diff: str, amendment: str, code_diff: str, governed
             "governed_paths": list(governed)}
 
 
-def fiat_question() -> dict:
-    """noul over `amendment_state`: does the amendment reverse or weaken the decision, or
-    rewrite it to fit the code (reversal-by-fiat)? Feeds amendment triage."""
+def review_question() -> dict:
+    """noul over `amendment_state`: should this decision change wait for the owner's eyes
+    before it merges? Feeds amendment triage. One direct question beat a reversal + impact
+    pair on eval/amend: the pair flagged every tightening of a security rule and left a
+    disguised reversal 0.02 from its cutoff; this one keeps 0.05 between the riskiest change it
+    would pass and its cutoff."""
     return {
         "type": "noul",
         "instructions": (
             "The state holds an edit to a ratified engineering decision, the amendment that "
-            "argues for it, and the code change shipped with it. Does the edit reverse or "
-            "weaken the decision's invariant, or rewrite the decision to fit this code?"
+            "argues for it, the code change shipped with it, and the paths the decision governs. "
+            "The repo owner reviews decision changes only when it matters, to avoid "
+            "rubber-stamping. Should this change wait for the owner's eyes before it merges, "
+            "rather than being approved automatically?"
         ),
         "criteria": {
-            "true": "The new text drops or loosens a rule the old text enforced, or restates "
-                    "what the code diff does with no reason beyond the code needing it.",
-            "false": "The new text keeps every rule the old text enforced (it clarifies, "
-                     "tightens, or adds), for a reason that holds apart from this code.",
-        },
-    }
-
-
-def impact_question() -> dict:
-    """noul over `amendment_state`: is the amendment high-impact? Feeds amendment triage."""
-    return {
-        "type": "noul",
-        "instructions": (
-            "The state holds an edit to a ratified engineering decision, its amendment, the "
-            "code change, and the paths the decision governs. Is this change high-impact?"
-        ),
-        "criteria": {
-            "true": "It widens authority, access or a security boundary, removes a guarantee "
-                    "callers rely on, or changes behavior across many of the governed paths.",
-            "false": "It is local: wording, a narrow clarification, or a rule that touches one "
-                     "path and no security, data or authority boundary.",
+            "true": "A careful owner would want to look first: the change drops, loosens, retires "
+                    "or carves an exception into a rule, moves an authority, access or security "
+                    "boundary, or changes the decision's direction, however it is framed.",
+            "false": "A careful owner would wave it through unread: it rewords, adds an example, "
+                     "records what was built without loosening anything, or makes a rule stricter.",
         },
     }

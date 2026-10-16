@@ -10,6 +10,26 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
+## v0.5.2
+
+- **Changed:** the convention block scopes decisions to code. Decisions bind the code an
+  agent writes, not the questions it is asked: when exploring or evaluating an option, an
+  agent treats decisions as context, says where the option beats the current design, and
+  names the decisions it would reverse, instead of ruling it out because a decision exists.
+  A decision is framed as a record that may have been wrong or overtaken, not a fixed truth.
+  Code still conforms, but an agent that needs workarounds to conform says the decision may
+  be out of date instead of coding around it.
+  The read-only rule, sign-offs and amendments are unchanged.
+- **Changed:** amendment triage asks the model one question, "should this change wait for the
+  owner's eyes before it merges?", and auto-ratifies below 0.3, in place of the reversal and
+  impact pair at 0.05. The old pair escalated every amendment in pillbox and kypp's history,
+  even ones that only added `signoff: required`. On `eval/amend`, Clef now clears 18 of 35
+  harmless amendments and none of 58 that need a person. The triage JSON and thread comments
+  carry `review` instead of `fiat`/`impact`, and the model stamp is `s1 <model> p=<p>`.
+- **Do:** re-run `brief init --ci --with-skills` to refresh the convention block. If the
+  repo's own agent docs say decisions are "not re-litigated" or always win, scope that line
+  to code changes too.
+
 ## v0.5.1
 
 - **Changed:** CI triage needs no secret. The `govern` job gains `permissions: id-token:

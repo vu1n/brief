@@ -139,48 +139,47 @@ def test_ci_template_ratifies_on_push_to_main():
 
 
 class Fake:
-    def __init__(self, fiat, impact=0.01, model="clef"):
-        self.fiat, self.impact, self.model, self.calls = fiat, impact, model, []
+    def __init__(self, review, model="clef"):
+        self.review, self.model, self.calls = review, model, []
 
     def system_one(self, state, questions):
         self.calls.append((state, questions))
-        if self.fiat == "error":
+        if self.review == "error":
             raise OSError("down")
-        return NS(model=self.model, answers={"fiat": NS(type="noul", noul=self.fiat),
-                                             "impact": NS(type="noul", noul=self.impact)})
+        return NS(model=self.model, answers={"review": NS(type="noul", noul=self.review)})
 
 
 def test_amendment_triage_auto_ratifiable_writes_nothing(tmp_path):
     repo, bd, base = _amend_pr(tmp_path, code=True)
-    fake = Fake(0.01, 0.02)
+    fake = Fake(0.02)
     rated = triage_amendments(repo, bd, base, via=fake)
     [a] = rated
-    assert (a.anchor_id, a.fiat, a.impact, a.model) == (ANCHOR, 0.01, 0.02, "clef") and a.auto
+    assert (a.anchor_id, a.review, a.model) == (ANCHOR, 0.02, "clef") and a.auto
     out = verdict(rated)
-    assert out["verdict"] == "auto-ratifiable" and out["stamp"] == "s1 clef p=0.010/0.020"
+    assert out["verdict"] == "auto-ratifiable" and out["stamp"] == "s1 clef p=0.020"
     state, questions = fake.calls[0]
     assert "admitted behind a flag" in state["decision_change"]
     assert "a customer needs it" in state["amendment"] and "docker behind a flag" in state["code_diff"]
-    assert set(questions) == {"fiat", "impact"}
+    assert set(questions) == {"review"}
     assert subprocess.run(["git", "-C", str(repo), "status", "--porcelain"],
                           capture_output=True, text=True).stdout == ""
     # the stamp a model-made merge would record
     [r] = ratify_pending(bd, by=f"{out['stamp']} (merge of #9)")
-    assert "ratified_by: s1 clef p=0.010/0.020 (merge of #9)" in open(r.archived).read()
+    assert "ratified_by: s1 clef p=0.020 (merge of #9)" in open(r.archived).read()
 
 
-def test_amendment_triage_escalates_reversal_or_impact(tmp_path):
+def test_amendment_triage_escalates_what_the_owner_should_see(tmp_path):
     repo, bd, base = _amend_pr(tmp_path)
-    reversal = verdict(triage_amendments(repo, bd, base, via=Fake(0.7, 0.01)))
-    assert reversal["verdict"] == "escalate" and reversal["stamp"] == ""
-    assert "reverse or weaken" in reversal["amendments"][0]["why"]
-    impact = verdict(triage_amendments(repo, bd, base, via=Fake(0.01, 0.4)))
-    assert impact["verdict"] == "escalate" and "high-impact" in impact["amendments"][0]["why"]
+    out = verdict(triage_amendments(repo, bd, base, via=Fake(0.7)))
+    assert out["verdict"] == "escalate" and out["stamp"] == ""
+    assert "owner should see it" in out["amendments"][0]["why"]
+    edge = verdict(triage_amendments(repo, bd, base, via=Fake(0.3)))  # the threshold escalates
+    assert edge["verdict"] == "escalate"
 
 
 def test_amendment_triage_fails_closed(tmp_path, monkeypatch):
     repo, bd, base = _amend_pr(tmp_path)
-    for fake in (Fake("error"), Fake(None), Fake(0.01, float("nan")), Fake(0.01, None)):
+    for fake in (Fake("error"), Fake(None), Fake(float("nan")), Fake(-0.5)):
         out = verdict(triage_amendments(repo, bd, base, via=fake))
         assert out["verdict"] == "escalate", fake.__dict__
         assert "no model opinion" in out["amendments"][0]["why"]

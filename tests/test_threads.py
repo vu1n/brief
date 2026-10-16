@@ -206,16 +206,16 @@ def test_refusal_rules():
     assert "write" in refusal({"user": VU, "body": "/ratify"}, None)
 
 
-def _entry(key="a" * 12, auto=False, fiat=0.4):
-    return {"doc_id": DOC, "anchor_id": ANCHOR, "fiat": fiat, "impact": 0.01, "model": "clef",
-            "auto": auto, "why": "may reverse or weaken the decision", "key": key}
+def _entry(key="a" * 12, auto=False, review=0.4):
+    return {"doc_id": DOC, "anchor_id": ANCHOR, "review": review, "model": "clef",
+            "auto": auto, "why": "the owner should see it", "key": key}
 
 
 def test_thread_body_carries_marker_scores_and_commands():
     b = thread_body(_entry())
     assert b.startswith(f"<!-- brief:amendment {ANCHOR} {'a' * 12} -->")
-    assert "p(reverses or weakens)=0.400" in b and "`/ratify`" in b and "`/reject <reason>`" in b
-    assert "No model opinion" in thread_body(_entry(fiat=None))
+    assert "p(needs the owner's eyes)=0.400" in b and "`/ratify`" in b and "`/reject <reason>`" in b
+    assert "No model opinion" in thread_body(_entry(review=None))
     top = thread_body(_entry(), inline=False)
     assert f"`/ratify {ANCHOR}`" in top and f"`/reject {ANCHOR} <reason>`" in top
     assert "revised" in thread_body(_entry(), revised=True)

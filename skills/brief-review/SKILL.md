@@ -40,5 +40,5 @@ Record the verdict with the change (PR comment, or appended to the amendment fil
 `VIOLATES` or `REVERSAL_BY_FIAT` verdict means don't merge until the code is fixed or the
 amendment is reworked. **This skill advises; it never merges** — merging the amendment PR
 is the ratification (L3). The System One triage (`brief triage --amendments`) is the cheap
-first pass: it labels a reversal, a high-impact change, or anything it can't judge
+first pass: it labels anything the owner should see, or anything it can't judge
 `needs-ratification`, which is where this review earns its cost.
