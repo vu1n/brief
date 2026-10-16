@@ -174,7 +174,7 @@ def _amendment_summary(out: dict) -> str:
     }[out["verdict"]]
     lines = [head]
     for a in out["amendments"]:
-        p = "" if a["fiat"] is None or a["impact"] is None else f" p={a['fiat']:.3f}/{a['impact']:.3f}"
+        p = "" if a["review"] is None else f" p={a['review']:.3f}"
         lines.append(f"  - {a['doc_id']}#{a['anchor_id']}{p}: {a['why']}")
     return "\n".join(lines)
 

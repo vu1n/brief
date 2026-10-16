@@ -1,93 +1,93 @@
-{"id": "pillbox/agent-io-pty-free-contract-v0002", "source": "real", "category": "update-to-reality", "escalate": false, "fiat": 0.0701, "impact": 0.0708, "model": "clef", "note": ""}
-{"id": "pillbox/libkrun-env-fork-substrate-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0313, "impact": 0.0428, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway-v0002", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.2907, "impact": 0.529, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway-v0003", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.1674, "impact": 0.5913, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway-v0004", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0291, "impact": 0.0357, "model": "clef", "note": ""}
-{"id": "pillbox/secret-on-disk-0600-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0369, "impact": 0.0399, "model": "clef", "note": ""}
-{"id": "pillbox/vault-broker-oauth-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0316, "impact": 0.0438, "model": "clef", "note": ""}
-{"id": "pillbox/vault-egress-default-deny-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0482, "impact": 0.0525, "model": "clef", "note": ""}
-{"id": "pillbox/workspace-ingest-sovereignty-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0339, "impact": 0.043, "model": "clef", "note": ""}
-{"id": "kypp/additive-schema-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.6219, "impact": 0.2429, "model": "clef", "note": ""}
-{"id": "kypp/agnostic-shared-claims-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.5836, "impact": 0.3197, "model": "clef", "note": ""}
-{"id": "kypp/authority-dominates-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0858, "impact": 0.0846, "model": "clef", "note": ""}
-{"id": "kypp/authority-dominates-v0003", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0266, "impact": 0.0475, "model": "clef", "note": ""}
-{"id": "kypp/authority-dominates-v0004", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.1963, "impact": 0.7659, "model": "clef", "note": ""}
-{"id": "kypp/authority-dominates-v0005", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.0758, "impact": 0.1863, "model": "clef", "note": ""}
-{"id": "kypp/authority-dominates-v0006", "source": "real", "category": "reword-authority-boundary", "escalate": true, "fiat": 0.071, "impact": 0.055, "model": "clef", "note": ""}
-{"id": "kypp/authority-dominates-v0007", "source": "real", "category": "reword-authority-boundary", "escalate": true, "fiat": 0.1995, "impact": 0.3908, "model": "clef", "note": ""}
-{"id": "kypp/compose-surface-v0002", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.0962, "impact": 0.4939, "model": "clef", "note": ""}
-{"id": "kypp/independent-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.64, "impact": 0.3819, "model": "clef", "note": ""}
-{"id": "kypp/linear-scan-recall-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.3927, "impact": 0.1542, "model": "clef", "note": ""}
-{"id": "kypp/operator-only-human-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.2885, "impact": 0.1853, "model": "clef", "note": ""}
-{"id": "kypp/operator-only-verify-v0002", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.0233, "impact": 0.033, "model": "clef", "note": ""}
-{"id": "kypp/pointers-not-content-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.5917, "impact": 0.1353, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0002", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.4734, "impact": 0.8673, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0003", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.114, "impact": 0.5516, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0004", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.2619, "impact": 0.4786, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0005", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.0943, "impact": 0.3594, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0006", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.1072, "impact": 0.5816, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0007", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.141, "impact": 0.5756, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0008", "source": "real", "category": "widen-or-reverse", "escalate": true, "fiat": 0.2095, "impact": 0.7979, "model": "clef", "note": ""}
-{"id": "kypp/scope-keys-decay-v0009", "source": "real", "category": "tighten", "escalate": false, "fiat": 0.1016, "impact": 0.3974, "model": "clef", "note": ""}
-{"id": "kypp/seed-or-donate-never-both-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.5204, "impact": 0.3516, "model": "clef", "note": ""}
-{"id": "kypp/swarm-truth-gate-v0002", "source": "real", "category": "retire", "escalate": true, "fiat": 0.68, "impact": 0.4029, "model": "clef", "note": ""}
-{"id": "pillbox/adr-004-vault-broker-oauth/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0436, "impact": 0.03, "model": "clef", "note": ""}
-{"id": "pillbox/adr-004-vault-broker-oauth/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0375, "impact": 0.0597, "model": "clef", "note": ""}
-{"id": "pillbox/adr-004-vault-broker-oauth/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.384, "impact": 0.459, "model": "clef", "note": ""}
-{"id": "pillbox/adr-004-vault-broker-oauth/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.4873, "impact": 0.6257, "model": "clef", "note": ""}
-{"id": "pillbox/adr-004-vault-broker-oauth/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9229, "impact": 0.894, "model": "clef", "note": ""}
-{"id": "pillbox/secret-on-disk-0600/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0336, "impact": 0.0247, "model": "clef", "note": ""}
-{"id": "pillbox/secret-on-disk-0600/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0396, "impact": 0.0304, "model": "clef", "note": ""}
-{"id": "pillbox/secret-on-disk-0600/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.3401, "impact": 0.2206, "model": "clef", "note": ""}
-{"id": "pillbox/secret-on-disk-0600/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.4985, "impact": 0.5454, "model": "clef", "note": ""}
-{"id": "pillbox/secret-on-disk-0600/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9126, "impact": 0.8829, "model": "clef", "note": ""}
-{"id": "pillbox/vault-egress-default-deny/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0302, "impact": 0.0249, "model": "clef", "note": ""}
-{"id": "pillbox/vault-egress-default-deny/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0447, "impact": 0.03, "model": "clef", "note": ""}
-{"id": "pillbox/vault-egress-default-deny/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.4682, "impact": 0.2496, "model": "clef", "note": ""}
-{"id": "pillbox/vault-egress-default-deny/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.6213, "impact": 0.8032, "model": "clef", "note": ""}
-{"id": "pillbox/vault-egress-default-deny/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9324, "impact": 0.9185, "model": "clef", "note": ""}
-{"id": "pillbox/workspace-ingest-sovereignty/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0296, "impact": 0.0248, "model": "clef", "note": ""}
-{"id": "pillbox/workspace-ingest-sovereignty/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0508, "impact": 0.0571, "model": "clef", "note": ""}
-{"id": "pillbox/workspace-ingest-sovereignty/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.3924, "impact": 0.5473, "model": "clef", "note": ""}
-{"id": "pillbox/workspace-ingest-sovereignty/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.3988, "impact": 0.6812, "model": "clef", "note": ""}
-{"id": "pillbox/workspace-ingest-sovereignty/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9022, "impact": 0.9217, "model": "clef", "note": ""}
-{"id": "pillbox/managed-store-of-record/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0397, "impact": 0.0207, "model": "clef", "note": ""}
-{"id": "pillbox/managed-store-of-record/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0496, "impact": 0.0426, "model": "clef", "note": ""}
-{"id": "pillbox/managed-store-of-record/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.2691, "impact": 0.4993, "model": "clef", "note": ""}
-{"id": "pillbox/managed-store-of-record/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.4321, "impact": 0.5892, "model": "clef", "note": ""}
-{"id": "pillbox/managed-store-of-record/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.8503, "impact": 0.8712, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0346, "impact": 0.0206, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0703, "impact": 0.0264, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.2416, "impact": 0.1931, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.5007, "impact": 0.79, "model": "clef", "note": ""}
-{"id": "pillbox/managed-tier-do-gateway/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9241, "impact": 0.9398, "model": "clef", "note": ""}
-{"id": "kypp/append-only-history/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0392, "impact": 0.0624, "model": "clef", "note": ""}
-{"id": "kypp/append-only-history/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0484, "impact": 0.0427, "model": "clef", "note": ""}
-{"id": "kypp/append-only-history/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.5355, "impact": 0.6762, "model": "clef", "note": ""}
-{"id": "kypp/append-only-history/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.5577, "impact": 0.7922, "model": "clef", "note": ""}
-{"id": "kypp/append-only-history/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9016, "impact": 0.9311, "model": "clef", "note": ""}
-{"id": "kypp/authority-order/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0328, "impact": 0.0213, "model": "clef", "note": ""}
-{"id": "kypp/authority-order/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.1293, "impact": 0.1703, "model": "clef", "note": ""}
-{"id": "kypp/authority-order/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.4672, "impact": 0.1913, "model": "clef", "note": ""}
-{"id": "kypp/authority-order/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.1076, "impact": 0.4925, "model": "clef", "note": ""}
-{"id": "kypp/authority-order/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.91, "impact": 0.913, "model": "clef", "note": ""}
-{"id": "kypp/no-grader-leak/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0337, "impact": 0.0182, "model": "clef", "note": ""}
-{"id": "kypp/no-grader-leak/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.065, "impact": 0.0504, "model": "clef", "note": ""}
-{"id": "kypp/no-grader-leak/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.4057, "impact": 0.6818, "model": "clef", "note": ""}
-{"id": "kypp/no-grader-leak/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.4791, "impact": 0.7109, "model": "clef", "note": ""}
-{"id": "kypp/no-grader-leak/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9415, "impact": 0.9274, "model": "clef", "note": ""}
-{"id": "kypp/verify-operator-only/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0532, "impact": 0.037, "model": "clef", "note": ""}
-{"id": "kypp/verify-operator-only/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.048, "impact": 0.0393, "model": "clef", "note": ""}
-{"id": "kypp/verify-operator-only/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.1806, "impact": 0.3456, "model": "clef", "note": ""}
-{"id": "kypp/verify-operator-only/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.5665, "impact": 0.8577, "model": "clef", "note": ""}
-{"id": "kypp/verify-operator-only/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.901, "impact": 0.9093, "model": "clef", "note": ""}
-{"id": "kypp/agent-mcp-surface-compose/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0316, "impact": 0.021, "model": "clef", "note": ""}
-{"id": "kypp/agent-mcp-surface-compose/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0477, "impact": 0.1031, "model": "clef", "note": ""}
-{"id": "kypp/agent-mcp-surface-compose/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.1207, "impact": 0.3644, "model": "clef", "note": ""}
-{"id": "kypp/agent-mcp-surface-compose/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.441, "impact": 0.6999, "model": "clef", "note": ""}
-{"id": "kypp/agent-mcp-surface-compose/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.9144, "impact": 0.9179, "model": "clef", "note": ""}
-{"id": "kypp/memory-scope-decay/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "fiat": 0.0432, "impact": 0.0211, "model": "clef", "note": ""}
-{"id": "kypp/memory-scope-decay/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "fiat": 0.0631, "impact": 0.1095, "model": "clef", "note": ""}
-{"id": "kypp/memory-scope-decay/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "fiat": 0.3734, "impact": 0.4553, "model": "clef", "note": ""}
-{"id": "kypp/memory-scope-decay/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "fiat": 0.4578, "impact": 0.8866, "model": "clef", "note": ""}
-{"id": "kypp/memory-scope-decay/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "fiat": 0.7831, "impact": 0.9253, "model": "clef", "note": ""}
+{"id": "pillbox/agent-io-pty-free-contract-v0002", "source": "real", "category": "update-to-reality", "escalate": false, "review": 0.2006, "model": "clef", "note": ""}
+{"id": "pillbox/libkrun-env-fork-substrate-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.4064, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway-v0002", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.9458, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway-v0003", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8561, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway-v0004", "source": "real", "category": "tighten", "escalate": false, "review": 0.2082, "model": "clef", "note": ""}
+{"id": "pillbox/secret-on-disk-0600-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.2012, "model": "clef", "note": ""}
+{"id": "pillbox/vault-broker-oauth-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.4271, "model": "clef", "note": ""}
+{"id": "pillbox/vault-egress-default-deny-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.3881, "model": "clef", "note": ""}
+{"id": "pillbox/workspace-ingest-sovereignty-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.3192, "model": "clef", "note": ""}
+{"id": "kypp/additive-schema-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.8211, "model": "clef", "note": ""}
+{"id": "kypp/agnostic-shared-claims-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.8582, "model": "clef", "note": ""}
+{"id": "kypp/authority-dominates-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.8587, "model": "clef", "note": ""}
+{"id": "kypp/authority-dominates-v0003", "source": "real", "category": "tighten", "escalate": false, "review": 0.4453, "model": "clef", "note": ""}
+{"id": "kypp/authority-dominates-v0004", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.9299, "model": "clef", "note": ""}
+{"id": "kypp/authority-dominates-v0005", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.7053, "model": "clef", "note": ""}
+{"id": "kypp/authority-dominates-v0006", "source": "real", "category": "reword-authority-boundary", "escalate": true, "review": 0.3546, "model": "clef", "note": ""}
+{"id": "kypp/authority-dominates-v0007", "source": "real", "category": "reword-authority-boundary", "escalate": true, "review": 0.879, "model": "clef", "note": ""}
+{"id": "kypp/compose-surface-v0002", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.5034, "model": "clef", "note": ""}
+{"id": "kypp/independent-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.8487, "model": "clef", "note": ""}
+{"id": "kypp/linear-scan-recall-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.7707, "model": "clef", "note": ""}
+{"id": "kypp/operator-only-human-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.8086, "model": "clef", "note": ""}
+{"id": "kypp/operator-only-verify-v0002", "source": "real", "category": "tighten", "escalate": false, "review": 0.4824, "model": "clef", "note": ""}
+{"id": "kypp/pointers-not-content-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.8388, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0002", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8743, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0003", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.7673, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0004", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8132, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0005", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8051, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0006", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8412, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0007", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8479, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0008", "source": "real", "category": "widen-or-reverse", "escalate": true, "review": 0.8646, "model": "clef", "note": ""}
+{"id": "kypp/scope-keys-decay-v0009", "source": "real", "category": "tighten", "escalate": false, "review": 0.7335, "model": "clef", "note": ""}
+{"id": "kypp/seed-or-donate-never-both-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.8359, "model": "clef", "note": ""}
+{"id": "kypp/swarm-truth-gate-v0002", "source": "real", "category": "retire", "escalate": true, "review": 0.7943, "model": "clef", "note": ""}
+{"id": "pillbox/adr-004-vault-broker-oauth/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0814, "model": "clef", "note": ""}
+{"id": "pillbox/adr-004-vault-broker-oauth/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.5201, "model": "clef", "note": ""}
+{"id": "pillbox/adr-004-vault-broker-oauth/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.7697, "model": "clef", "note": ""}
+{"id": "pillbox/adr-004-vault-broker-oauth/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.9281, "model": "clef", "note": ""}
+{"id": "pillbox/adr-004-vault-broker-oauth/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.951, "model": "clef", "note": ""}
+{"id": "pillbox/secret-on-disk-0600/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0541, "model": "clef", "note": ""}
+{"id": "pillbox/secret-on-disk-0600/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.295, "model": "clef", "note": ""}
+{"id": "pillbox/secret-on-disk-0600/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.6435, "model": "clef", "note": ""}
+{"id": "pillbox/secret-on-disk-0600/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.914, "model": "clef", "note": ""}
+{"id": "pillbox/secret-on-disk-0600/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.95, "model": "clef", "note": ""}
+{"id": "pillbox/vault-egress-default-deny/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.1576, "model": "clef", "note": ""}
+{"id": "pillbox/vault-egress-default-deny/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.5025, "model": "clef", "note": ""}
+{"id": "pillbox/vault-egress-default-deny/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.8842, "model": "clef", "note": ""}
+{"id": "pillbox/vault-egress-default-deny/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.955, "model": "clef", "note": ""}
+{"id": "pillbox/vault-egress-default-deny/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9629, "model": "clef", "note": ""}
+{"id": "pillbox/workspace-ingest-sovereignty/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.1802, "model": "clef", "note": ""}
+{"id": "pillbox/workspace-ingest-sovereignty/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.7183, "model": "clef", "note": ""}
+{"id": "pillbox/workspace-ingest-sovereignty/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.9278, "model": "clef", "note": ""}
+{"id": "pillbox/workspace-ingest-sovereignty/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.931, "model": "clef", "note": ""}
+{"id": "pillbox/workspace-ingest-sovereignty/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9649, "model": "clef", "note": ""}
+{"id": "pillbox/managed-store-of-record/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0447, "model": "clef", "note": ""}
+{"id": "pillbox/managed-store-of-record/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.1712, "model": "clef", "note": ""}
+{"id": "pillbox/managed-store-of-record/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.6188, "model": "clef", "note": ""}
+{"id": "pillbox/managed-store-of-record/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.8693, "model": "clef", "note": ""}
+{"id": "pillbox/managed-store-of-record/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9491, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0434, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.5884, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.6669, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.9414, "model": "clef", "note": ""}
+{"id": "pillbox/managed-tier-do-gateway/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9666, "model": "clef", "note": ""}
+{"id": "kypp/append-only-history/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.2601, "model": "clef", "note": ""}
+{"id": "kypp/append-only-history/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.4387, "model": "clef", "note": ""}
+{"id": "kypp/append-only-history/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.9134, "model": "clef", "note": ""}
+{"id": "kypp/append-only-history/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.9029, "model": "clef", "note": ""}
+{"id": "kypp/append-only-history/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9294, "model": "clef", "note": ""}
+{"id": "kypp/authority-order/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0446, "model": "clef", "note": ""}
+{"id": "kypp/authority-order/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.4603, "model": "clef", "note": ""}
+{"id": "kypp/authority-order/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.5071, "model": "clef", "note": ""}
+{"id": "kypp/authority-order/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.5822, "model": "clef", "note": ""}
+{"id": "kypp/authority-order/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9569, "model": "clef", "note": ""}
+{"id": "kypp/no-grader-leak/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0379, "model": "clef", "note": ""}
+{"id": "kypp/no-grader-leak/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.3303, "model": "clef", "note": ""}
+{"id": "kypp/no-grader-leak/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.7925, "model": "clef", "note": ""}
+{"id": "kypp/no-grader-leak/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.9079, "model": "clef", "note": ""}
+{"id": "kypp/no-grader-leak/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9128, "model": "clef", "note": ""}
+{"id": "kypp/verify-operator-only/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.2849, "model": "clef", "note": ""}
+{"id": "kypp/verify-operator-only/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.5407, "model": "clef", "note": ""}
+{"id": "kypp/verify-operator-only/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.691, "model": "clef", "note": ""}
+{"id": "kypp/verify-operator-only/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.9479, "model": "clef", "note": ""}
+{"id": "kypp/verify-operator-only/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9575, "model": "clef", "note": ""}
+{"id": "kypp/agent-mcp-surface-compose/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0335, "model": "clef", "note": ""}
+{"id": "kypp/agent-mcp-surface-compose/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.2223, "model": "clef", "note": ""}
+{"id": "kypp/agent-mcp-surface-compose/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.3628, "model": "clef", "note": ""}
+{"id": "kypp/agent-mcp-surface-compose/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.8206, "model": "clef", "note": ""}
+{"id": "kypp/agent-mcp-surface-compose/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9241, "model": "clef", "note": ""}
+{"id": "kypp/memory-scope-decay/clarify", "source": "synthetic", "category": "clarify", "escalate": false, "review": 0.0782, "model": "clef", "note": ""}
+{"id": "kypp/memory-scope-decay/tighten", "source": "synthetic", "category": "tighten", "escalate": false, "review": 0.5731, "model": "clef", "note": ""}
+{"id": "kypp/memory-scope-decay/disguised-reversal", "source": "synthetic", "category": "disguised-reversal", "escalate": true, "review": 0.8131, "model": "clef", "note": ""}
+{"id": "kypp/memory-scope-decay/loophole", "source": "synthetic", "category": "loophole", "escalate": true, "review": 0.9439, "model": "clef", "note": ""}
+{"id": "kypp/memory-scope-decay/plain-reversal", "source": "synthetic", "category": "plain-reversal", "escalate": true, "review": 0.9563, "model": "clef", "note": ""}

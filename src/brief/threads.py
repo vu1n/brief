@@ -151,11 +151,10 @@ def attested(review_comments: list[dict], issue_comments: list[dict]) -> set[tup
 def thread_body(a: dict, inline: bool = True, revised: bool = False) -> str:
     """The escalation comment for one amendment entry of `triage.verdict()`."""
     anchor, key = a["anchor_id"], a["key"]
-    if a.get("fiat") is None or a.get("impact") is None:
+    if a.get("review") is None:
         model = "No model opinion: a human decides."
     else:
-        model = (f"Model ({a.get('model') or 's1'}): p(reverses or weakens)={a['fiat']:.3f}, "
-                 f"p(high impact)={a['impact']:.3f} — {a['why']}.")
+        model = f"Model ({a.get('model') or 's1'}): p(needs the owner's eyes)={a['review']:.3f} — {a['why']}."
     head = "revised" if revised else "needs a maintainer's ratification"
     ratify, reject = ("`/ratify`", "`/reject <reason>`") if inline else (
         f"`/ratify {anchor}`", f"`/reject {anchor} <reason>`")

@@ -20,11 +20,12 @@ one PR.
   Code still conforms, but an agent that needs workarounds to conform says the decision may
   be out of date instead of coding around it.
   The read-only rule, sign-offs and amendments are unchanged.
-- **Changed:** amendment triage's impact question asks whether a change *loosens* anything,
-  not whether it touches a security, data or authority area. Tightening a security decision
-  (adding `signoff: required`, a narrower allowance) used to escalate every time; now Clef
-  auto-ratifies most such changes, while disguised reversals and loopholes still escalate.
-  See `eval/amend/`.
+- **Changed:** amendment triage asks the model one question, "should this change wait for the
+  owner's eyes before it merges?", and auto-ratifies below 0.3, in place of the reversal and
+  impact pair at 0.05. The old pair escalated every amendment in pillbox and kypp's history,
+  even ones that only added `signoff: required`. On `eval/amend`, Clef now clears 18 of 35
+  harmless amendments and none of 58 that need a person. The triage JSON and thread comments
+  carry `review` instead of `fiat`/`impact`, and the model stamp is `s1 <model> p=<p>`.
 - **Do:** re-run `brief init --ci --with-skills` to refresh the convention block. If the
   repo's own agent docs say decisions are "not re-litigated" or always win, scope that line
   to code changes too.

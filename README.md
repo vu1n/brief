@@ -84,8 +84,8 @@ brief ratify <anchor> --by you        # without CI: a human edits the decision, 
 
 On the PR the gate reports the edit as `pending-ratification` (it does not block); an edit
 to a locked decision without its amendment is still blocked. With a System One model
-configured, CI rates each amendment for reversal and impact and labels the PR
-`needs-ratification` unless both are low. When every amendment on the PR is low on both and
+configured, CI asks it whether each amendment should wait for the owner's eyes and labels
+the PR `needs-ratification` unless every answer is below 0.3 ([eval](eval/amend/)). When it is and
 every other check is green, CI merges the PR itself, code included, and the archive records
 the model as the ratifier (`ratified_via: model`). Set the repo variable
 `BRIEF_AUTO_MERGE=off` to keep every merge a human's.
@@ -124,7 +124,7 @@ operates.
 - `brief resolve <ref>` — ref → file, anchor, lines, body, hash (+ stale flag)
 - `brief check [--base <ref>]` — the L0 gate (staged locally; a commit range in CI)
 - `brief doctor [--strict]` — advisory lint: latent drift the gate *doesn't* block — an active decision that was never published, a governed file with no back-ref, a floating `@latest`, a stale pin. Agents run it and close what it flags; `--strict` fails CI on warnings.
-- `brief triage --amendments [--json]` — rate each pending amendment (reverses/weakens? high-impact?): `auto-ratifiable` or `escalate`; writes nothing; no model = escalate
+- `brief triage --amendments [--json]` — ask, per pending amendment, whether it needs the owner's eyes: `auto-ratifiable` or `escalate`; writes nothing; no model = escalate
 - `brief triage [--base <ref>]` — optional (`brief[s1]` + `TYPESAFE_API_KEY`): a System One model rates each sign-off ask; below p=0.1 it writes the `conforms` line itself, tagged with the score. It sends the decision text and the governed files' diff to `TYPESAFE_BASE_URL`, so only enable it where that is acceptable. The gate never calls the model. See `eval/s1/`.
 - `brief pin [files]` — freeze `@latest`/`@current` code refs to a concrete revision
 - `brief publish <doc-id>` — mint the next immutable revision

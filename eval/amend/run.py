@@ -1,7 +1,7 @@
 """Score a System One model on labeled amendments: can it tell CI which ones to ratify by merging?
 
-`brief triage --amendments` asks two noul questions (reversal/fiat, high impact) and CI
-auto-ratifies only when both sit below FIAT_THRESHOLD/IMPACT_THRESHOLD. The failure that
+`brief triage --amendments` asks one noul question (should this wait for the owner's eyes?)
+and CI auto-ratifies only when it sits below REVIEW_THRESHOLD. The failure that
 matters is an amendment a human should have seen getting auto-ratified (a miss); the
 fatigue saved is the share of harmless amendments it clears.
 
@@ -26,7 +26,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parents[1] / "src"))
 from brief import s1  # noqa: E402
-from brief.triage import FIAT_THRESHOLD, IMPACT_THRESHOLD, MAX_DIFF_CHARS, _has_body  # noqa: E402
+from brief.triage import MAX_DIFF_CHARS, REVIEW_THRESHOLD, _has_body  # noqa: E402
 
 THRESHOLDS = (0.02, 0.05, 0.1, 0.2, 0.3, 0.5)
 CASES = ROOT / "cases.jsonl.gz"
@@ -58,19 +58,19 @@ def score(cases: list[dict], out: Path, client, jobs: int) -> None:
     def one(c):
         size = len(c["decision_change"]) + len(c["amendment"])
         if not _has_body(c["decision_change"]) or size > MAX_DIFF_CHARS:
-            return c, None, None, "", "too large or empty: triage escalates without asking"
+            return c, None, "", "too large or empty: triage escalates without asking"
         a = s1.decide(s1.amendment_state(c["decision_change"], c["amendment"], "", c.get("governed", [])),
-                      {"fiat": s1.fiat_question(), "impact": s1.impact_question()}, via=client)
+                      {"review": s1.review_question()}, via=client)
         model = next((x.model for x in (a or {}).values() if x.model), "")
-        return c, s1.noul_p(a, "fiat"), s1.noul_p(a, "impact"), model, ""
+        return c, s1.noul_p(a, "review"), model, ""
 
     with out.open("a") as f, ThreadPoolExecutor(jobs) as pool:
-        for c, fiat, impact, model, note in pool.map(one, todo):
-            if (fiat is None or impact is None) and not note:
+        for c, review, model, note in pool.map(one, todo):
+            if review is None and not note:
                 print(f"no answer for {c['id']}", file=sys.stderr)
                 continue
             f.write(json.dumps({"id": c["id"], "source": c["source"], "category": c["category"],
-                                "escalate": c["escalate"], "fiat": fiat, "impact": impact,
+                                "escalate": c["escalate"], "review": review,
                                 "model": model, "note": note}) + "\n")
             f.flush()
 
@@ -85,35 +85,32 @@ def _rows(path: Path) -> list[dict]:
     return rows
 
 
-def _auto(r: dict, t_fiat: float, t_impact: float) -> bool:
-    return r["fiat"] is not None and r["impact"] is not None and r["fiat"] < t_fiat and r["impact"] < t_impact
+def _auto(r: dict, t: float) -> bool:
+    return r["review"] is not None and r["review"] < t
 
 
 def report(rows: list[dict], label: str) -> str:
     bad = [r for r in rows if r["escalate"]]
     good = [r for r in rows if not r["escalate"]]
     lines = [f"{label}: {len(rows)} amendments ({len(bad)} a human should see, {len(good)} harmless)", "",
-             "| auto-ratify when both p < | should-see auto-ratified (misses) | harmless auto-ratified |",
+             "| auto-ratify when p < | should-see auto-ratified (misses) | harmless auto-ratified |",
              "|---|---|---|",
              f"| (no model: all escalate) | 0/{len(bad)} | 0/{len(good)} |"]
     for t in THRESHOLDS:
-        miss = sum(_auto(r, t, t) for r in bad)
-        ok = sum(_auto(r, t, t) for r in good)
-        mark = " (shipped)" if t == FIAT_THRESHOLD == IMPACT_THRESHOLD else ""
+        miss = sum(_auto(r, t) for r in bad)
+        ok = sum(_auto(r, t) for r in good)
+        mark = " (shipped)" if t == REVIEW_THRESHOLD else ""
         lines.append(f"| {t}{mark} | {miss}/{len(bad)} | {ok}/{len(good)} ({ok / max(len(good), 1):.0%}) |")
-    lines += ["", "| category | n | should see | median fiat | median impact | auto at shipped thresholds |",
-              "|---|---|---|---|---|---|"]
+    lines += ["", "| category | n | should see | median p | auto at the shipped threshold |", "|---|---|---|---|---|"]
     for cat in sorted({r["category"] for r in rows}):
         rs = [r for r in rows if r["category"] == cat]
-        med = lambda k: (sorted(x[k] for x in rs if x[k] is not None) or [None])[len([x for x in rs if x[k] is not None]) // 2]
-        fmt = lambda v: "n/a" if v is None else f"{v:.3f}"
-        auto = sum(_auto(r, FIAT_THRESHOLD, IMPACT_THRESHOLD) for r in rs)
-        lines.append(f"| {cat} | {len(rs)} | {'yes' if rs[0]['escalate'] else 'no'} | {fmt(med('fiat'))} | "
-                     f"{fmt(med('impact'))} | {auto}/{len(rs)} |")
-    misses = [r for r in bad if _auto(r, FIAT_THRESHOLD, IMPACT_THRESHOLD)]
-    if misses:
-        lines += ["", "Misses at the shipped thresholds: " + ", ".join(
-            f"{r['id']} ({r['fiat']:.3f}/{r['impact']:.3f})" for r in misses)]
+        ps = sorted(r["review"] for r in rs if r["review"] is not None)
+        med = f"{ps[len(ps) // 2]:.3f}" if ps else "n/a"
+        auto = sum(_auto(r, REVIEW_THRESHOLD) for r in rs)
+        lines.append(f"| {cat} | {len(rs)} | {'yes' if rs[0]['escalate'] else 'no'} | {med} | {auto}/{len(rs)} |")
+    scored = sorted((r for r in bad if r["review"] is not None), key=lambda r: r["review"])
+    if scored:
+        lines += ["", "Lowest should-see: " + ", ".join(f"{r['id']} ({r['review']:.3f})" for r in scored[:3])]
     return "\n".join(lines)
 
 

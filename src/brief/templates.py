@@ -351,7 +351,7 @@ on:
   ratify:
     # The merge was the ratification; this records it: publish each decision the merge
     # changed and archive its amendment as ratified by the merger, or by the model when the
-    # automerge job merged (stamped `s1 <model> p=<a>/<b> (merge of #N)`, `ratified_via:
+    # automerge job merged (stamped `s1 <model> p=<p> (merge of #N)`, `ratified_via:
     # model`; only amendment versions the triage cleared). No loop: a push made with
     # GITHUB_TOKEN starts no workflow (which is also why this job follows automerge), the
     # bot's own pushes are skipped, and a re-run finds nothing pending.
