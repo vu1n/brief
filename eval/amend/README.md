@@ -76,3 +76,23 @@ are that same rewording and two retirements.
 - There is no code diff in any case. In CI the model also sees the governed code change,
   which may push scores up (fewer auto-ratifications) or down.
 - Each result is a single pass.
+
+### One direct question instead of two (`review_question.py`, `results/review-question/`)
+
+Asked once, "should this wait for the owner's eyes before it merges?", with criteria naming
+what a careful owner would want to see (dropping, loosening, retiring or carving an exception
+into a rule, moving a boundary) and what they'd wave through (rewording, examples, recording
+what was built, tightening). Auto-ratify when p is below the threshold:
+
+| p < | Clef misses | Clef harmless cleared | Jev misses | Jev harmless cleared |
+|---|---|---|---|---|
+| 0.1 | 0/58 | 7/35 | 0/58 | 0/35 |
+| 0.2 | 0/58 | 11/35 | 0/58 | 8/35 |
+| **0.3** | **0/58** | **18/35 (51%)** | 0/58 | 12/35 (34%) |
+| 0.5 | 4/58 | 28/35 | 1/58 | 23/35 |
+
+Clef's lowest should-see case scores 0.35 (a disguised reversal) and Jev's 0.42, so the
+should-see cases sit further from the cutoff than with the two questions (0.071 against
+0.05). It clears fewer harmless amendments: tightening a security rule still scores around
+0.43 on Clef. The criteria were written after seeing the category labels, so the same
+optimism caveat applies.
