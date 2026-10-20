@@ -1,0 +1,2208 @@
+{
+ "cases": [
+  {
+   "id": "c01",
+   "doc": "libkrun-env-fork-substrate",
+   "old": "The real credential value never lands in the guest env",
+   "new": "- For OAuth providers the real token is passed in the guest env (simpler than the stub swap); API keys still stay host-side.",
+   "affected": [
+    "adr-004-vault-broker-oauth",
+    "vault-egress-default-deny"
+   ],
+   "linked": [
+    "adr-001-libkrun-is-the-backend",
+    "vault-egress-default-deny",
+    "workspace-ingest-sovereignty"
+   ]
+  },
+  {
+   "id": "c02",
+   "doc": "vault-egress-default-deny",
+   "old": "inspected). Treating an unmatched host as pass-through is a **correctness gap**,",
+   "new": "inspected). Treating an unmatched host as pass-through is the default; deny is opt-in per pillbox,",
+   "affected": [
+    "libkrun-env-fork-substrate",
+    "workspace-ingest-sovereignty"
+   ],
+   "linked": [
+    "adr-001-libkrun-is-the-backend",
+    "libkrun-env-fork-substrate"
+   ]
+  },
+  {
+   "id": "c03",
+   "doc": "session-event-log-spine",
+   "old": "- `seq` is monotonic **per session** (not per-emitter",
+   "new": "- `seq` is assigned per emitter; consumers merge emitters by timestamp (not per-session",
+   "affected": [
+    "gateway-no-daemon",
+    "dx-zero-config-local"
+   ],
+   "linked": [
+    "agent-io-pty-free-contract",
+    "dx-zero-config-local",
+    "optimization-external-substrate-primitives"
+   ]
+  },
+  {
+   "id": "c04",
+   "doc": "gateway-no-daemon",
+   "old": "- No always-on resident coordinator serves a session; the live-side process holds",
+   "new": "- A resident `pillboxd` daemon holds seq authority for every session on the host and",
+   "affected": [
+    "session-event-log-spine"
+   ],
+   "linked": [
+    "attach-frame-protocol",
+    "dx-zero-config-local",
+    "optimization-external-substrate-primitives",
+    "substrate-plane-livesession"
+   ]
+  },
+  {
+   "id": "c05",
+   "doc": "workspace-ingest-sovereignty",
+   "old": "workspace asking to keep a secret (a `.pillboxinclude`) has **zero effect** on",
+   "new": "workspace asking to keep a secret (a `.pillboxinclude`) may re-include paths from",
+   "affected": [],
+   "linked": [
+    "adr-001-libkrun-is-the-backend",
+    "libkrun-env-fork-substrate",
+    "workspace-cow-fork"
+   ]
+  },
+  {
+   "id": "c06",
+   "doc": "adr-001-libkrun-is-the-backend",
+   "old": "targets libkrun. Docker is demoted to the container-family compat backend, not",
+   "new": "targets libkrun and docker equally. Docker is restored as a co-equal backend held at parity, not",
+   "affected": [
+    "adr-002-docker-backend-deleted",
+    "adr-003-qemu-parked"
+   ],
+   "linked": [
+    "adr-002-docker-backend-deleted",
+    "adr-003-qemu-parked",
+    "libkrun-env-fork-substrate",
+    "managed-tier-do-gateway",
+    "remote-backend-plane-removed",
+    "substrate-plane-livesession",
+    "vault-egress-default-deny",
+    "workspace-ingest-sovereignty"
+   ]
+  },
+  {
+   "id": "c07",
+   "doc": "adr-006-rustic-cache-variant-gated",
+   "old": "differentiated when the S3 variant arrived. For S3 it is a perf footgun \u2014 every",
+   "new": "differentiated when the S3 variant arrived. For S3 it is a performance trap: every",
+   "affected": [],
+   "linked": [
+    "secret-on-disk-0600"
+   ]
+  },
+  {
+   "id": "c08",
+   "doc": "managed-store-of-record",
+   "old": "The managed tier's **store of record** is pillbox's own rustic-over-R2 repo \u2014 the same",
+   "new": "The managed tier's **store of record** is Cloudflare's createBackup snapshot; rustic-over-R2 is an optional mirror \u2014 the same",
+   "affected": [
+    "managed-tier-do-gateway",
+    "workspace-cow-fork"
+   ],
+   "linked": [
+    "managed-tier-do-gateway",
+    "workspace-cow-fork"
+   ]
+  },
+  {
+   "id": "c09",
+   "doc": "attach-frame-protocol",
+   "old": "- Raw PTY bytes (`Frame::Data`) are **ephemeral** and never enter the durable",
+   "new": "- Raw PTY bytes (`Frame::Data`) are persisted frame by frame into the durable",
+   "affected": [
+    "session-event-log-spine",
+    "agent-io-pty-free-contract",
+    "managed-tier-do-gateway"
+   ],
+   "linked": [
+    "gateway-no-daemon"
+   ]
+  },
+  {
+   "id": "c10",
+   "doc": "secret-on-disk-0600",
+   "old": "Callers do not hand-roll `OpenOptions`.",
+   "new": "Callers do not hand-roll `OpenOptions`, and the helper re-checks the mode after the write and fails if it is not 0600.",
+   "affected": [],
+   "linked": [
+    "adr-006-rustic-cache-variant-gated"
+   ]
+  },
+  {
+   "id": "c11",
+   "doc": "stable-exit-codes",
+   "old": "Config=3, Resource=4) that `PillboxError` maps to. Agents and shell scripts",
+   "new": "Config=3, Resource=4) that `PillboxError` maps onto. Agents and shell scripts",
+   "affected": [],
+   "linked": []
+  },
+  {
+   "id": "c12",
+   "doc": "workspace-cow-fork",
+   "old": "- The base-cache key MUST be a **stable content id** (e.g. a snapshot handle): the cache",
+   "new": "- The base-cache key may be the workspace path or a snapshot handle, whichever is at hand: the cache",
+   "affected": [
+    "managed-store-of-record"
+   ],
+   "linked": [
+    "managed-store-of-record",
+    "workspace-ingest-sovereignty"
+   ]
+  },
+  {
+   "id": "c13",
+   "doc": "dx-zero-config-local",
+   "old": "state dir + a local `Subscribe` WS), not OTLP-only.",
+   "new": "state dir + a local `Subscribe` WS) until 1.0; after 1.0 events are exported through an OTLP collector only.",
+   "affected": [
+    "session-event-log-spine"
+   ],
+   "linked": [
+    "gateway-no-daemon",
+    "optimization-external-substrate-primitives",
+    "session-event-log-spine",
+    "substrate-plane-livesession"
+   ]
+  },
+  {
+   "id": "c14",
+   "doc": "agent-io-pty-free-contract",
+   "old": "`serve` HTTP+SSE, codex `app-server` JSON-RPC, pi `--mode json`; codex's PTY",
+   "new": "`serve` HTTP+SSE, codex `app-server` JSON-RPC, pi `--mode json`, gemini `--output-format json`; codex's PTY",
+   "affected": [],
+   "linked": [
+    "optimization-external-substrate-primitives",
+    "session-event-log-spine"
+   ]
+  }
+ ],
+ "scores": [
+  {
+   "case": "c01",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.2207,
+   "latency": 1.0521833896636963
+  },
+  {
+   "case": "c01",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.3176,
+   "latency": 0.8875370025634766
+  },
+  {
+   "case": "c01",
+   "other": "adr-003-qemu-parked",
+   "p": 0.1113,
+   "latency": 0.80954909324646
+  },
+  {
+   "case": "c01",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.7488,
+   "latency": 0.9784317016601562
+  },
+  {
+   "case": "c01",
+   "other": "adr-005-docs-governance",
+   "p": 0.2245,
+   "latency": 1.198988437652588
+  },
+  {
+   "case": "c01",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0676,
+   "latency": 0.8513178825378418
+  },
+  {
+   "case": "c01",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.1822,
+   "latency": 0.9897482395172119
+  },
+  {
+   "case": "c01",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.169,
+   "latency": 0.9698233604431152
+  },
+  {
+   "case": "c01",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.1955,
+   "latency": 0.3815760612487793
+  },
+  {
+   "case": "c01",
+   "other": "attach-frame-protocol",
+   "p": 0.0995,
+   "latency": 0.39479756355285645
+  },
+  {
+   "case": "c01",
+   "other": "dx-zero-config-local",
+   "p": 0.1841,
+   "latency": 0.5296986103057861
+  },
+  {
+   "case": "c01",
+   "other": "gateway-no-daemon",
+   "p": 0.1758,
+   "latency": 0.5846545696258545
+  },
+  {
+   "case": "c01",
+   "other": "ghost-conductor-architecture",
+   "p": 0.1512,
+   "latency": 0.3697497844696045
+  },
+  {
+   "case": "c01",
+   "other": "managed-store-of-record",
+   "p": 0.3421,
+   "latency": 0.4557967185974121
+  },
+  {
+   "case": "c01",
+   "other": "managed-tier-do-gateway",
+   "p": 0.677,
+   "latency": 0.43788838386535645
+  },
+  {
+   "case": "c01",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.6303,
+   "latency": 0.34903812408447266
+  },
+  {
+   "case": "c01",
+   "other": "remote-backend-plane-removed",
+   "p": 0.1836,
+   "latency": 0.3706531524658203
+  },
+  {
+   "case": "c01",
+   "other": "secret-on-disk-0600",
+   "p": 0.1391,
+   "latency": 0.2818338871002197
+  },
+  {
+   "case": "c01",
+   "other": "session-event-log-spine",
+   "p": 0.1514,
+   "latency": 0.7927672863006592
+  },
+  {
+   "case": "c01",
+   "other": "stable-exit-codes",
+   "p": 0.077,
+   "latency": 0.6717514991760254
+  },
+  {
+   "case": "c01",
+   "other": "substrate-plane-livesession",
+   "p": 0.4318,
+   "latency": 0.5545399188995361
+  },
+  {
+   "case": "c01",
+   "other": "vault-egress-default-deny",
+   "p": 0.5618,
+   "latency": 0.4336411952972412
+  },
+  {
+   "case": "c01",
+   "other": "workspace-cow-fork",
+   "p": 0.3152,
+   "latency": 0.7828865051269531
+  },
+  {
+   "case": "c01",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.3314,
+   "latency": 0.24191904067993164
+  },
+  {
+   "case": "c02",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.3546,
+   "latency": 0.2914259433746338
+  },
+  {
+   "case": "c02",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.1796,
+   "latency": 0.2825639247894287
+  },
+  {
+   "case": "c02",
+   "other": "adr-003-qemu-parked",
+   "p": 0.1285,
+   "latency": 0.32383060455322266
+  },
+  {
+   "case": "c02",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.3972,
+   "latency": 0.3917379379272461
+  },
+  {
+   "case": "c02",
+   "other": "adr-005-docs-governance",
+   "p": 0.2686,
+   "latency": 0.4223637580871582
+  },
+  {
+   "case": "c02",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0993,
+   "latency": 0.23931479454040527
+  },
+  {
+   "case": "c02",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.1863,
+   "latency": 0.4019029140472412
+  },
+  {
+   "case": "c02",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.2235,
+   "latency": 0.34671759605407715
+  },
+  {
+   "case": "c02",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.1858,
+   "latency": 0.35735034942626953
+  },
+  {
+   "case": "c02",
+   "other": "attach-frame-protocol",
+   "p": 0.1224,
+   "latency": 0.34767627716064453
+  },
+  {
+   "case": "c02",
+   "other": "dx-zero-config-local",
+   "p": 0.1642,
+   "latency": 0.48946285247802734
+  },
+  {
+   "case": "c02",
+   "other": "gateway-no-daemon",
+   "p": 0.2709,
+   "latency": 0.4027290344238281
+  },
+  {
+   "case": "c02",
+   "other": "ghost-conductor-architecture",
+   "p": 0.3762,
+   "latency": 0.4835090637207031
+  },
+  {
+   "case": "c02",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.6936,
+   "latency": 0.4673755168914795
+  },
+  {
+   "case": "c02",
+   "other": "managed-store-of-record",
+   "p": 0.2879,
+   "latency": 0.4406852722167969
+  },
+  {
+   "case": "c02",
+   "other": "managed-tier-do-gateway",
+   "p": 0.3494,
+   "latency": 0.4503483772277832
+  },
+  {
+   "case": "c02",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.75,
+   "latency": 0.4490816593170166
+  },
+  {
+   "case": "c02",
+   "other": "remote-backend-plane-removed",
+   "p": 0.1337,
+   "latency": 0.5075109004974365
+  },
+  {
+   "case": "c02",
+   "other": "secret-on-disk-0600",
+   "p": 0.0838,
+   "latency": 0.6699378490447998
+  },
+  {
+   "case": "c02",
+   "other": "session-event-log-spine",
+   "p": 0.3221,
+   "latency": 0.30392885208129883
+  },
+  {
+   "case": "c02",
+   "other": "stable-exit-codes",
+   "p": 0.0624,
+   "latency": 0.5797314643859863
+  },
+  {
+   "case": "c02",
+   "other": "substrate-plane-livesession",
+   "p": 0.1337,
+   "latency": 0.46381473541259766
+  },
+  {
+   "case": "c02",
+   "other": "workspace-cow-fork",
+   "p": 0.225,
+   "latency": 0.48365235328674316
+  },
+  {
+   "case": "c02",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.2921,
+   "latency": 0.415402889251709
+  },
+  {
+   "case": "c03",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.1224,
+   "latency": 0.3134291172027588
+  },
+  {
+   "case": "c03",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.1627,
+   "latency": 0.43205881118774414
+  },
+  {
+   "case": "c03",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0744,
+   "latency": 0.4225468635559082
+  },
+  {
+   "case": "c03",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.2747,
+   "latency": 0.34311532974243164
+  },
+  {
+   "case": "c03",
+   "other": "adr-005-docs-governance",
+   "p": 0.1717,
+   "latency": 0.35375237464904785
+  },
+  {
+   "case": "c03",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0716,
+   "latency": 0.2928473949432373
+  },
+  {
+   "case": "c03",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.1376,
+   "latency": 0.32579517364501953
+  },
+  {
+   "case": "c03",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.2187,
+   "latency": 0.4813117980957031
+  },
+  {
+   "case": "c03",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.4483,
+   "latency": 0.3548128604888916
+  },
+  {
+   "case": "c03",
+   "other": "attach-frame-protocol",
+   "p": 0.2465,
+   "latency": 0.35416293144226074
+  },
+  {
+   "case": "c03",
+   "other": "dx-zero-config-local",
+   "p": 0.2722,
+   "latency": 0.9346511363983154
+  },
+  {
+   "case": "c03",
+   "other": "gateway-no-daemon",
+   "p": 0.5661,
+   "latency": 0.3082602024078369
+  },
+  {
+   "case": "c03",
+   "other": "ghost-conductor-architecture",
+   "p": 0.3044,
+   "latency": 0.30678367614746094
+  },
+  {
+   "case": "c03",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.5279,
+   "latency": 0.7723357677459717
+  },
+  {
+   "case": "c03",
+   "other": "managed-store-of-record",
+   "p": 0.4695,
+   "latency": 0.4861321449279785
+  },
+  {
+   "case": "c03",
+   "other": "managed-tier-do-gateway",
+   "p": 0.5428,
+   "latency": 0.6400208473205566
+  },
+  {
+   "case": "c03",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.4472,
+   "latency": 0.35645604133605957
+  },
+  {
+   "case": "c03",
+   "other": "remote-backend-plane-removed",
+   "p": 0.158,
+   "latency": 0.370408296585083
+  },
+  {
+   "case": "c03",
+   "other": "secret-on-disk-0600",
+   "p": 0.0489,
+   "latency": 0.3813045024871826
+  },
+  {
+   "case": "c03",
+   "other": "stable-exit-codes",
+   "p": 0.0568,
+   "latency": 0.3518507480621338
+  },
+  {
+   "case": "c03",
+   "other": "substrate-plane-livesession",
+   "p": 0.3458,
+   "latency": 0.4880824089050293
+  },
+  {
+   "case": "c03",
+   "other": "vault-egress-default-deny",
+   "p": 0.3377,
+   "latency": 0.5521996021270752
+  },
+  {
+   "case": "c03",
+   "other": "workspace-cow-fork",
+   "p": 0.2892,
+   "latency": 0.34163761138916016
+  },
+  {
+   "case": "c03",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.1099,
+   "latency": 0.5431821346282959
+  },
+  {
+   "case": "c04",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.4598,
+   "latency": 0.3190751075744629
+  },
+  {
+   "case": "c04",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.2523,
+   "latency": 0.4274635314941406
+  },
+  {
+   "case": "c04",
+   "other": "adr-003-qemu-parked",
+   "p": 0.1001,
+   "latency": 0.5673122406005859
+  },
+  {
+   "case": "c04",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.5001,
+   "latency": 0.5199527740478516
+  },
+  {
+   "case": "c04",
+   "other": "adr-005-docs-governance",
+   "p": 0.2582,
+   "latency": 0.6507291793823242
+  },
+  {
+   "case": "c04",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0999,
+   "latency": 0.21941328048706055
+  },
+  {
+   "case": "c04",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.2281,
+   "latency": 1.1524105072021484
+  },
+  {
+   "case": "c04",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.4397,
+   "latency": 0.24512863159179688
+  },
+  {
+   "case": "c04",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.5877,
+   "latency": 0.6272244453430176
+  },
+  {
+   "case": "c04",
+   "other": "attach-frame-protocol",
+   "p": 0.4567,
+   "latency": 0.36820530891418457
+  },
+  {
+   "case": "c04",
+   "other": "dx-zero-config-local",
+   "p": 0.6097,
+   "latency": 0.3480494022369385
+  },
+  {
+   "case": "c04",
+   "other": "ghost-conductor-architecture",
+   "p": 0.4924,
+   "latency": 0.3983767032623291
+  },
+  {
+   "case": "c04",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.5787,
+   "latency": 0.35445165634155273
+  },
+  {
+   "case": "c04",
+   "other": "managed-store-of-record",
+   "p": 0.5825,
+   "latency": 0.39201903343200684
+  },
+  {
+   "case": "c04",
+   "other": "managed-tier-do-gateway",
+   "p": 0.6379,
+   "latency": 0.3829843997955322
+  },
+  {
+   "case": "c04",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.6331,
+   "latency": 0.2553884983062744
+  },
+  {
+   "case": "c04",
+   "other": "remote-backend-plane-removed",
+   "p": 0.5398,
+   "latency": 0.419421911239624
+  },
+  {
+   "case": "c04",
+   "other": "secret-on-disk-0600",
+   "p": 0.0784,
+   "latency": 0.38527464866638184
+  },
+  {
+   "case": "c04",
+   "other": "session-event-log-spine",
+   "p": 0.6412,
+   "latency": 0.33274316787719727
+  },
+  {
+   "case": "c04",
+   "other": "stable-exit-codes",
+   "p": 0.1138,
+   "latency": 0.3592963218688965
+  },
+  {
+   "case": "c04",
+   "other": "substrate-plane-livesession",
+   "p": 0.5788,
+   "latency": 0.5823760032653809
+  },
+  {
+   "case": "c04",
+   "other": "vault-egress-default-deny",
+   "p": 0.5791,
+   "latency": 0.36071157455444336
+  },
+  {
+   "case": "c04",
+   "other": "workspace-cow-fork",
+   "p": 0.5625,
+   "latency": 0.3507070541381836
+  },
+  {
+   "case": "c04",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.2299,
+   "latency": 0.4724724292755127
+  },
+  {
+   "case": "c05",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.071,
+   "latency": 0.3716404438018799
+  },
+  {
+   "case": "c05",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.0703,
+   "latency": 0.5105485916137695
+  },
+  {
+   "case": "c05",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0988,
+   "latency": 0.2534489631652832
+  },
+  {
+   "case": "c05",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.1217,
+   "latency": 0.43657350540161133
+  },
+  {
+   "case": "c05",
+   "other": "adr-005-docs-governance",
+   "p": 0.1709,
+   "latency": 0.3779890537261963
+  },
+  {
+   "case": "c05",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0531,
+   "latency": 0.24472975730895996
+  },
+  {
+   "case": "c05",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.0858,
+   "latency": 0.49760937690734863
+  },
+  {
+   "case": "c05",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.2346,
+   "latency": 0.37960004806518555
+  },
+  {
+   "case": "c05",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.1074,
+   "latency": 0.5089712142944336
+  },
+  {
+   "case": "c05",
+   "other": "attach-frame-protocol",
+   "p": 0.0482,
+   "latency": 0.3531525135040283
+  },
+  {
+   "case": "c05",
+   "other": "dx-zero-config-local",
+   "p": 0.1224,
+   "latency": 0.5212373733520508
+  },
+  {
+   "case": "c05",
+   "other": "gateway-no-daemon",
+   "p": 0.092,
+   "latency": 0.2746138572692871
+  },
+  {
+   "case": "c05",
+   "other": "ghost-conductor-architecture",
+   "p": 0.1359,
+   "latency": 0.2854011058807373
+  },
+  {
+   "case": "c05",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.2367,
+   "latency": 0.33240509033203125
+  },
+  {
+   "case": "c05",
+   "other": "managed-store-of-record",
+   "p": 0.2098,
+   "latency": 0.7887630462646484
+  },
+  {
+   "case": "c05",
+   "other": "managed-tier-do-gateway",
+   "p": 0.1377,
+   "latency": 0.8934829235076904
+  },
+  {
+   "case": "c05",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.3049,
+   "latency": 0.3343014717102051
+  },
+  {
+   "case": "c05",
+   "other": "remote-backend-plane-removed",
+   "p": 0.0872,
+   "latency": 0.3645439147949219
+  },
+  {
+   "case": "c05",
+   "other": "secret-on-disk-0600",
+   "p": 0.0832,
+   "latency": 0.920212984085083
+  },
+  {
+   "case": "c05",
+   "other": "session-event-log-spine",
+   "p": 0.1001,
+   "latency": 0.3686788082122803
+  },
+  {
+   "case": "c05",
+   "other": "stable-exit-codes",
+   "p": 0.0473,
+   "latency": 0.4187929630279541
+  },
+  {
+   "case": "c05",
+   "other": "substrate-plane-livesession",
+   "p": 0.0764,
+   "latency": 0.2696695327758789
+  },
+  {
+   "case": "c05",
+   "other": "vault-egress-default-deny",
+   "p": 0.1615,
+   "latency": 0.4324202537536621
+  },
+  {
+   "case": "c05",
+   "other": "workspace-cow-fork",
+   "p": 0.2383,
+   "latency": 0.29251575469970703
+  },
+  {
+   "case": "c06",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.8608,
+   "latency": 0.36408281326293945
+  },
+  {
+   "case": "c06",
+   "other": "adr-003-qemu-parked",
+   "p": 0.4481,
+   "latency": 0.3202321529388428
+  },
+  {
+   "case": "c06",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.3233,
+   "latency": 0.6608326435089111
+  },
+  {
+   "case": "c06",
+   "other": "adr-005-docs-governance",
+   "p": 0.3399,
+   "latency": 0.24459171295166016
+  },
+  {
+   "case": "c06",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.1987,
+   "latency": 0.2440342903137207
+  },
+  {
+   "case": "c06",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.4164,
+   "latency": 0.3745279312133789
+  },
+  {
+   "case": "c06",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.3622,
+   "latency": 0.3099994659423828
+  },
+  {
+   "case": "c06",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.1775,
+   "latency": 0.5668549537658691
+  },
+  {
+   "case": "c06",
+   "other": "attach-frame-protocol",
+   "p": 0.3114,
+   "latency": 0.39333176612854004
+  },
+  {
+   "case": "c06",
+   "other": "dx-zero-config-local",
+   "p": 0.1615,
+   "latency": 0.2996809482574463
+  },
+  {
+   "case": "c06",
+   "other": "gateway-no-daemon",
+   "p": 0.2876,
+   "latency": 0.4224269390106201
+  },
+  {
+   "case": "c06",
+   "other": "ghost-conductor-architecture",
+   "p": 0.2609,
+   "latency": 0.5592508316040039
+  },
+  {
+   "case": "c06",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.5106,
+   "latency": 0.49143218994140625
+  },
+  {
+   "case": "c06",
+   "other": "managed-store-of-record",
+   "p": 0.3823,
+   "latency": 1.873746633529663
+  },
+  {
+   "case": "c06",
+   "other": "managed-tier-do-gateway",
+   "p": 0.2904,
+   "latency": 0.46045613288879395
+  },
+  {
+   "case": "c06",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.4098,
+   "latency": 0.3703899383544922
+  },
+  {
+   "case": "c06",
+   "other": "remote-backend-plane-removed",
+   "p": 0.5665,
+   "latency": 0.34665679931640625
+  },
+  {
+   "case": "c06",
+   "other": "secret-on-disk-0600",
+   "p": 0.1097,
+   "latency": 0.34377074241638184
+  },
+  {
+   "case": "c06",
+   "other": "session-event-log-spine",
+   "p": 0.181,
+   "latency": 0.35250186920166016
+  },
+  {
+   "case": "c06",
+   "other": "stable-exit-codes",
+   "p": 0.0911,
+   "latency": 0.3461918830871582
+  },
+  {
+   "case": "c06",
+   "other": "substrate-plane-livesession",
+   "p": 0.5333,
+   "latency": 0.3432433605194092
+  },
+  {
+   "case": "c06",
+   "other": "vault-egress-default-deny",
+   "p": 0.4248,
+   "latency": 0.254331111907959
+  },
+  {
+   "case": "c06",
+   "other": "workspace-cow-fork",
+   "p": 0.4671,
+   "latency": 0.28707218170166016
+  },
+  {
+   "case": "c06",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.1475,
+   "latency": 0.31345057487487793
+  },
+  {
+   "case": "c07",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.0485,
+   "latency": 0.2514073848724365
+  },
+  {
+   "case": "c07",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.0489,
+   "latency": 0.5728988647460938
+  },
+  {
+   "case": "c07",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0497,
+   "latency": 0.2816734313964844
+  },
+  {
+   "case": "c07",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.0547,
+   "latency": 0.44919848442077637
+  },
+  {
+   "case": "c07",
+   "other": "adr-005-docs-governance",
+   "p": 0.0502,
+   "latency": 0.3867509365081787
+  },
+  {
+   "case": "c07",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.0532,
+   "latency": 0.6989681720733643
+  },
+  {
+   "case": "c07",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.0603,
+   "latency": 0.4068446159362793
+  },
+  {
+   "case": "c07",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.0582,
+   "latency": 0.46288061141967773
+  },
+  {
+   "case": "c07",
+   "other": "attach-frame-protocol",
+   "p": 0.0454,
+   "latency": 0.49466657638549805
+  },
+  {
+   "case": "c07",
+   "other": "dx-zero-config-local",
+   "p": 0.0493,
+   "latency": 0.27486419677734375
+  },
+  {
+   "case": "c07",
+   "other": "gateway-no-daemon",
+   "p": 0.051,
+   "latency": 0.26877260208129883
+  },
+  {
+   "case": "c07",
+   "other": "ghost-conductor-architecture",
+   "p": 0.054,
+   "latency": 0.35021376609802246
+  },
+  {
+   "case": "c07",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.0581,
+   "latency": 0.2806670665740967
+  },
+  {
+   "case": "c07",
+   "other": "managed-store-of-record",
+   "p": 0.0766,
+   "latency": 0.36602044105529785
+  },
+  {
+   "case": "c07",
+   "other": "managed-tier-do-gateway",
+   "p": 0.0738,
+   "latency": 0.6014289855957031
+  },
+  {
+   "case": "c07",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.0614,
+   "latency": 0.3354921340942383
+  },
+  {
+   "case": "c07",
+   "other": "remote-backend-plane-removed",
+   "p": 0.0562,
+   "latency": 0.4728715419769287
+  },
+  {
+   "case": "c07",
+   "other": "secret-on-disk-0600",
+   "p": 0.038,
+   "latency": 0.35403919219970703
+  },
+  {
+   "case": "c07",
+   "other": "session-event-log-spine",
+   "p": 0.0577,
+   "latency": 0.8334314823150635
+  },
+  {
+   "case": "c07",
+   "other": "stable-exit-codes",
+   "p": 0.0352,
+   "latency": 0.3298642635345459
+  },
+  {
+   "case": "c07",
+   "other": "substrate-plane-livesession",
+   "p": 0.0473,
+   "latency": 0.6063992977142334
+  },
+  {
+   "case": "c07",
+   "other": "vault-egress-default-deny",
+   "p": 0.0648,
+   "latency": 0.4398918151855469
+  },
+  {
+   "case": "c07",
+   "other": "workspace-cow-fork",
+   "p": 0.0924,
+   "latency": 0.3860633373260498
+  },
+  {
+   "case": "c07",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.0412,
+   "latency": 0.27216100692749023
+  },
+  {
+   "case": "c08",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.0919,
+   "latency": 0.3380544185638428
+  },
+  {
+   "case": "c08",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.0872,
+   "latency": 0.27007222175598145
+  },
+  {
+   "case": "c08",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0628,
+   "latency": 0.27759265899658203
+  },
+  {
+   "case": "c08",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.159,
+   "latency": 0.49202942848205566
+  },
+  {
+   "case": "c08",
+   "other": "adr-005-docs-governance",
+   "p": 0.2244,
+   "latency": 0.43985652923583984
+  },
+  {
+   "case": "c08",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.1108,
+   "latency": 0.3440537452697754
+  },
+  {
+   "case": "c08",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.0764,
+   "latency": 0.684471845626831
+  },
+  {
+   "case": "c08",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.0905,
+   "latency": 0.28488850593566895
+  },
+  {
+   "case": "c08",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.1149,
+   "latency": 0.27663540840148926
+  },
+  {
+   "case": "c08",
+   "other": "attach-frame-protocol",
+   "p": 0.1139,
+   "latency": 0.3453328609466553
+  },
+  {
+   "case": "c08",
+   "other": "dx-zero-config-local",
+   "p": 0.1019,
+   "latency": 1.0088989734649658
+  },
+  {
+   "case": "c08",
+   "other": "gateway-no-daemon",
+   "p": 0.2122,
+   "latency": 0.627443790435791
+  },
+  {
+   "case": "c08",
+   "other": "ghost-conductor-architecture",
+   "p": 0.2133,
+   "latency": 0.2679481506347656
+  },
+  {
+   "case": "c08",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.1465,
+   "latency": 0.3004300594329834
+  },
+  {
+   "case": "c08",
+   "other": "managed-tier-do-gateway",
+   "p": 0.6881,
+   "latency": 0.6445045471191406
+  },
+  {
+   "case": "c08",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.3125,
+   "latency": 0.33988404273986816
+  },
+  {
+   "case": "c08",
+   "other": "remote-backend-plane-removed",
+   "p": 0.1971,
+   "latency": 0.278393030166626
+  },
+  {
+   "case": "c08",
+   "other": "secret-on-disk-0600",
+   "p": 0.0656,
+   "latency": 0.5237514972686768
+  },
+  {
+   "case": "c08",
+   "other": "session-event-log-spine",
+   "p": 0.1402,
+   "latency": 0.3456308841705322
+  },
+  {
+   "case": "c08",
+   "other": "stable-exit-codes",
+   "p": 0.054,
+   "latency": 0.5068726539611816
+  },
+  {
+   "case": "c08",
+   "other": "substrate-plane-livesession",
+   "p": 0.1907,
+   "latency": 0.3752105236053467
+  },
+  {
+   "case": "c08",
+   "other": "vault-egress-default-deny",
+   "p": 0.3158,
+   "latency": 0.40648317337036133
+  },
+  {
+   "case": "c08",
+   "other": "workspace-cow-fork",
+   "p": 0.3924,
+   "latency": 0.4003007411956787
+  },
+  {
+   "case": "c08",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.0755,
+   "latency": 0.2768723964691162
+  },
+  {
+   "case": "c09",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.0984,
+   "latency": 0.3624744415283203
+  },
+  {
+   "case": "c09",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.1096,
+   "latency": 0.4994821548461914
+  },
+  {
+   "case": "c09",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0979,
+   "latency": 0.5172402858734131
+  },
+  {
+   "case": "c09",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.1077,
+   "latency": 0.3602762222290039
+  },
+  {
+   "case": "c09",
+   "other": "adr-005-docs-governance",
+   "p": 0.3644,
+   "latency": 0.27915096282958984
+  },
+  {
+   "case": "c09",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0689,
+   "latency": 0.3303961753845215
+  },
+  {
+   "case": "c09",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.1266,
+   "latency": 0.43242406845092773
+  },
+  {
+   "case": "c09",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.1707,
+   "latency": 0.28325843811035156
+  },
+  {
+   "case": "c09",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.5262,
+   "latency": 0.29379892349243164
+  },
+  {
+   "case": "c09",
+   "other": "dx-zero-config-local",
+   "p": 0.5294,
+   "latency": 0.34955716133117676
+  },
+  {
+   "case": "c09",
+   "other": "gateway-no-daemon",
+   "p": 0.4375,
+   "latency": 0.6151237487792969
+  },
+  {
+   "case": "c09",
+   "other": "ghost-conductor-architecture",
+   "p": 0.2262,
+   "latency": 0.4958035945892334
+  },
+  {
+   "case": "c09",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.3679,
+   "latency": 0.32520127296447754
+  },
+  {
+   "case": "c09",
+   "other": "managed-store-of-record",
+   "p": 0.4239,
+   "latency": 0.40829992294311523
+  },
+  {
+   "case": "c09",
+   "other": "managed-tier-do-gateway",
+   "p": 0.4568,
+   "latency": 0.3278968334197998
+  },
+  {
+   "case": "c09",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.6812,
+   "latency": 0.4891688823699951
+  },
+  {
+   "case": "c09",
+   "other": "remote-backend-plane-removed",
+   "p": 0.1386,
+   "latency": 0.3654594421386719
+  },
+  {
+   "case": "c09",
+   "other": "secret-on-disk-0600",
+   "p": 0.0583,
+   "latency": 0.34259629249572754
+  },
+  {
+   "case": "c09",
+   "other": "session-event-log-spine",
+   "p": 0.5977,
+   "latency": 0.25328850746154785
+  },
+  {
+   "case": "c09",
+   "other": "stable-exit-codes",
+   "p": 0.0603,
+   "latency": 0.44815659523010254
+  },
+  {
+   "case": "c09",
+   "other": "substrate-plane-livesession",
+   "p": 0.1862,
+   "latency": 0.35820555686950684
+  },
+  {
+   "case": "c09",
+   "other": "vault-egress-default-deny",
+   "p": 0.4014,
+   "latency": 0.30367255210876465
+  },
+  {
+   "case": "c09",
+   "other": "workspace-cow-fork",
+   "p": 0.1837,
+   "latency": 0.6572339534759521
+  },
+  {
+   "case": "c09",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.1414,
+   "latency": 0.3541417121887207
+  },
+  {
+   "case": "c10",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.0399,
+   "latency": 0.3231205940246582
+  },
+  {
+   "case": "c10",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.0465,
+   "latency": 0.26820802688598633
+  },
+  {
+   "case": "c10",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0381,
+   "latency": 0.35503292083740234
+  },
+  {
+   "case": "c10",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.062,
+   "latency": 0.3943443298339844
+  },
+  {
+   "case": "c10",
+   "other": "adr-005-docs-governance",
+   "p": 0.0437,
+   "latency": 0.5893065929412842
+  },
+  {
+   "case": "c10",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0352,
+   "latency": 0.34589672088623047
+  },
+  {
+   "case": "c10",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.0407,
+   "latency": 0.7853803634643555
+  },
+  {
+   "case": "c10",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.056,
+   "latency": 0.5479941368103027
+  },
+  {
+   "case": "c10",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.0512,
+   "latency": 0.3541829586029053
+  },
+  {
+   "case": "c10",
+   "other": "attach-frame-protocol",
+   "p": 0.049,
+   "latency": 0.3504972457885742
+  },
+  {
+   "case": "c10",
+   "other": "dx-zero-config-local",
+   "p": 0.0457,
+   "latency": 0.33688855171203613
+  },
+  {
+   "case": "c10",
+   "other": "gateway-no-daemon",
+   "p": 0.055,
+   "latency": 0.34658169746398926
+  },
+  {
+   "case": "c10",
+   "other": "ghost-conductor-architecture",
+   "p": 0.0589,
+   "latency": 0.7023675441741943
+  },
+  {
+   "case": "c10",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.0752,
+   "latency": 0.34888553619384766
+  },
+  {
+   "case": "c10",
+   "other": "managed-store-of-record",
+   "p": 0.056,
+   "latency": 0.4762554168701172
+  },
+  {
+   "case": "c10",
+   "other": "managed-tier-do-gateway",
+   "p": 0.0677,
+   "latency": 0.5718626976013184
+  },
+  {
+   "case": "c10",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.0669,
+   "latency": 0.33509302139282227
+  },
+  {
+   "case": "c10",
+   "other": "remote-backend-plane-removed",
+   "p": 0.037,
+   "latency": 0.657942533493042
+  },
+  {
+   "case": "c10",
+   "other": "session-event-log-spine",
+   "p": 0.0505,
+   "latency": 0.34361886978149414
+  },
+  {
+   "case": "c10",
+   "other": "stable-exit-codes",
+   "p": 0.0285,
+   "latency": 0.47063326835632324
+  },
+  {
+   "case": "c10",
+   "other": "substrate-plane-livesession",
+   "p": 0.0513,
+   "latency": 0.27037477493286133
+  },
+  {
+   "case": "c10",
+   "other": "vault-egress-default-deny",
+   "p": 0.0607,
+   "latency": 0.34046006202697754
+  },
+  {
+   "case": "c10",
+   "other": "workspace-cow-fork",
+   "p": 0.0976,
+   "latency": 0.26340365409851074
+  },
+  {
+   "case": "c10",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.0462,
+   "latency": 0.30013227462768555
+  },
+  {
+   "case": "c11",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.0428,
+   "latency": 0.3552231788635254
+  },
+  {
+   "case": "c11",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.0454,
+   "latency": 0.4346034526824951
+  },
+  {
+   "case": "c11",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0433,
+   "latency": 0.40255308151245117
+  },
+  {
+   "case": "c11",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.0584,
+   "latency": 0.5555527210235596
+  },
+  {
+   "case": "c11",
+   "other": "adr-005-docs-governance",
+   "p": 0.0535,
+   "latency": 0.3867356777191162
+  },
+  {
+   "case": "c11",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0325,
+   "latency": 0.2932894229888916
+  },
+  {
+   "case": "c11",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.0404,
+   "latency": 0.37897491455078125
+  },
+  {
+   "case": "c11",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.0438,
+   "latency": 0.40294861793518066
+  },
+  {
+   "case": "c11",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.0469,
+   "latency": 0.42706942558288574
+  },
+  {
+   "case": "c11",
+   "other": "attach-frame-protocol",
+   "p": 0.049,
+   "latency": 0.34618425369262695
+  },
+  {
+   "case": "c11",
+   "other": "dx-zero-config-local",
+   "p": 0.0379,
+   "latency": 0.3814687728881836
+  },
+  {
+   "case": "c11",
+   "other": "gateway-no-daemon",
+   "p": 0.0483,
+   "latency": 0.3456411361694336
+  },
+  {
+   "case": "c11",
+   "other": "ghost-conductor-architecture",
+   "p": 0.0538,
+   "latency": 0.39434313774108887
+  },
+  {
+   "case": "c11",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.0452,
+   "latency": 0.45620203018188477
+  },
+  {
+   "case": "c11",
+   "other": "managed-store-of-record",
+   "p": 0.0541,
+   "latency": 0.33069372177124023
+  },
+  {
+   "case": "c11",
+   "other": "managed-tier-do-gateway",
+   "p": 0.0507,
+   "latency": 0.33629465103149414
+  },
+  {
+   "case": "c11",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.044,
+   "latency": 0.3743858337402344
+  },
+  {
+   "case": "c11",
+   "other": "remote-backend-plane-removed",
+   "p": 0.0382,
+   "latency": 0.5190834999084473
+  },
+  {
+   "case": "c11",
+   "other": "secret-on-disk-0600",
+   "p": 0.03,
+   "latency": 0.3230414390563965
+  },
+  {
+   "case": "c11",
+   "other": "session-event-log-spine",
+   "p": 0.0501,
+   "latency": 0.35671496391296387
+  },
+  {
+   "case": "c11",
+   "other": "substrate-plane-livesession",
+   "p": 0.0491,
+   "latency": 0.30936551094055176
+  },
+  {
+   "case": "c11",
+   "other": "vault-egress-default-deny",
+   "p": 0.0443,
+   "latency": 0.2704787254333496
+  },
+  {
+   "case": "c11",
+   "other": "workspace-cow-fork",
+   "p": 0.0425,
+   "latency": 0.4742741584777832
+  },
+  {
+   "case": "c11",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.0368,
+   "latency": 0.25062084197998047
+  },
+  {
+   "case": "c12",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.2344,
+   "latency": 0.3108229637145996
+  },
+  {
+   "case": "c12",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.2218,
+   "latency": 0.4302349090576172
+  },
+  {
+   "case": "c12",
+   "other": "adr-003-qemu-parked",
+   "p": 0.156,
+   "latency": 0.5860528945922852
+  },
+  {
+   "case": "c12",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.4029,
+   "latency": 0.6478114128112793
+  },
+  {
+   "case": "c12",
+   "other": "adr-005-docs-governance",
+   "p": 0.434,
+   "latency": 0.32378292083740234
+  },
+  {
+   "case": "c12",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.2618,
+   "latency": 0.3407278060913086
+  },
+  {
+   "case": "c12",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.2739,
+   "latency": 0.3250720500946045
+  },
+  {
+   "case": "c12",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.5278,
+   "latency": 0.5464189052581787
+  },
+  {
+   "case": "c12",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.3771,
+   "latency": 0.23718500137329102
+  },
+  {
+   "case": "c12",
+   "other": "attach-frame-protocol",
+   "p": 0.2748,
+   "latency": 0.3694305419921875
+  },
+  {
+   "case": "c12",
+   "other": "dx-zero-config-local",
+   "p": 0.2245,
+   "latency": 0.32097649574279785
+  },
+  {
+   "case": "c12",
+   "other": "gateway-no-daemon",
+   "p": 0.4057,
+   "latency": 0.28902339935302734
+  },
+  {
+   "case": "c12",
+   "other": "ghost-conductor-architecture",
+   "p": 0.3487,
+   "latency": 0.9681096076965332
+  },
+  {
+   "case": "c12",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.3488,
+   "latency": 0.3218367099761963
+  },
+  {
+   "case": "c12",
+   "other": "managed-store-of-record",
+   "p": 0.7957,
+   "latency": 0.4777085781097412
+  },
+  {
+   "case": "c12",
+   "other": "managed-tier-do-gateway",
+   "p": 0.6395,
+   "latency": 0.4991893768310547
+  },
+  {
+   "case": "c12",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.4269,
+   "latency": 0.7071952819824219
+  },
+  {
+   "case": "c12",
+   "other": "remote-backend-plane-removed",
+   "p": 0.3607,
+   "latency": 0.527599573135376
+  },
+  {
+   "case": "c12",
+   "other": "secret-on-disk-0600",
+   "p": 0.0716,
+   "latency": 0.49336886405944824
+  },
+  {
+   "case": "c12",
+   "other": "session-event-log-spine",
+   "p": 0.341,
+   "latency": 0.40728211402893066
+  },
+  {
+   "case": "c12",
+   "other": "stable-exit-codes",
+   "p": 0.0807,
+   "latency": 0.27936244010925293
+  },
+  {
+   "case": "c12",
+   "other": "substrate-plane-livesession",
+   "p": 0.2838,
+   "latency": 0.7070932388305664
+  },
+  {
+   "case": "c12",
+   "other": "vault-egress-default-deny",
+   "p": 0.5505,
+   "latency": 0.3828871250152588
+  },
+  {
+   "case": "c12",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.161,
+   "latency": 0.3167600631713867
+  },
+  {
+   "case": "c13",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.095,
+   "latency": 0.33313465118408203
+  },
+  {
+   "case": "c13",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.1134,
+   "latency": 0.2888925075531006
+  },
+  {
+   "case": "c13",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0721,
+   "latency": 0.29106640815734863
+  },
+  {
+   "case": "c13",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.1214,
+   "latency": 0.271608829498291
+  },
+  {
+   "case": "c13",
+   "other": "adr-005-docs-governance",
+   "p": 0.1902,
+   "latency": 0.38138270378112793
+  },
+  {
+   "case": "c13",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0817,
+   "latency": 0.3816354274749756
+  },
+  {
+   "case": "c13",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.1537,
+   "latency": 0.3987100124359131
+  },
+  {
+   "case": "c13",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.2745,
+   "latency": 0.35361313819885254
+  },
+  {
+   "case": "c13",
+   "other": "agent-io-pty-free-contract",
+   "p": 0.4221,
+   "latency": 0.2575387954711914
+  },
+  {
+   "case": "c13",
+   "other": "attach-frame-protocol",
+   "p": 0.1811,
+   "latency": 0.40231800079345703
+  },
+  {
+   "case": "c13",
+   "other": "gateway-no-daemon",
+   "p": 0.3502,
+   "latency": 0.407977819442749
+  },
+  {
+   "case": "c13",
+   "other": "ghost-conductor-architecture",
+   "p": 0.1698,
+   "latency": 0.42757439613342285
+  },
+  {
+   "case": "c13",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.2104,
+   "latency": 0.35158824920654297
+  },
+  {
+   "case": "c13",
+   "other": "managed-store-of-record",
+   "p": 0.3061,
+   "latency": 0.4993741512298584
+  },
+  {
+   "case": "c13",
+   "other": "managed-tier-do-gateway",
+   "p": 0.3628,
+   "latency": 0.5125682353973389
+  },
+  {
+   "case": "c13",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.5684,
+   "latency": 0.4687635898590088
+  },
+  {
+   "case": "c13",
+   "other": "remote-backend-plane-removed",
+   "p": 0.1262,
+   "latency": 0.3296384811401367
+  },
+  {
+   "case": "c13",
+   "other": "secret-on-disk-0600",
+   "p": 0.051,
+   "latency": 0.2644522190093994
+  },
+  {
+   "case": "c13",
+   "other": "session-event-log-spine",
+   "p": 0.5092,
+   "latency": 0.349271297454834
+  },
+  {
+   "case": "c13",
+   "other": "stable-exit-codes",
+   "p": 0.0689,
+   "latency": 0.31316566467285156
+  },
+  {
+   "case": "c13",
+   "other": "substrate-plane-livesession",
+   "p": 0.1749,
+   "latency": 0.49346041679382324
+  },
+  {
+   "case": "c13",
+   "other": "vault-egress-default-deny",
+   "p": 0.2308,
+   "latency": 0.4624965190887451
+  },
+  {
+   "case": "c13",
+   "other": "workspace-cow-fork",
+   "p": 0.3295,
+   "latency": 0.9890646934509277
+  },
+  {
+   "case": "c13",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.103,
+   "latency": 0.3415393829345703
+  },
+  {
+   "case": "c14",
+   "other": "adr-001-libkrun-is-the-backend",
+   "p": 0.0717,
+   "latency": 0.6352381706237793
+  },
+  {
+   "case": "c14",
+   "other": "adr-002-docker-backend-deleted",
+   "p": 0.0727,
+   "latency": 0.31530117988586426
+  },
+  {
+   "case": "c14",
+   "other": "adr-003-qemu-parked",
+   "p": 0.0493,
+   "latency": 0.5394906997680664
+  },
+  {
+   "case": "c14",
+   "other": "adr-004-vault-broker-oauth",
+   "p": 0.0787,
+   "latency": 0.42325830459594727
+  },
+  {
+   "case": "c14",
+   "other": "adr-005-docs-governance",
+   "p": 0.0526,
+   "latency": 0.28820347785949707
+  },
+  {
+   "case": "c14",
+   "other": "adr-006-rustic-cache-variant-gated",
+   "p": 0.0334,
+   "latency": 0.22314047813415527
+  },
+  {
+   "case": "c14",
+   "other": "adr-007-runner-image-tags-name-roles",
+   "p": 0.0543,
+   "latency": 0.3532743453979492
+  },
+  {
+   "case": "c14",
+   "other": "adr-008-ghost-extraction-trigger",
+   "p": 0.068,
+   "latency": 0.6746292114257812
+  },
+  {
+   "case": "c14",
+   "other": "attach-frame-protocol",
+   "p": 0.0791,
+   "latency": 0.5983529090881348
+  },
+  {
+   "case": "c14",
+   "other": "dx-zero-config-local",
+   "p": 0.0856,
+   "latency": 0.3531365394592285
+  },
+  {
+   "case": "c14",
+   "other": "gateway-no-daemon",
+   "p": 0.0852,
+   "latency": 0.4322855472564697
+  },
+  {
+   "case": "c14",
+   "other": "ghost-conductor-architecture",
+   "p": 0.0789,
+   "latency": 0.329042911529541
+  },
+  {
+   "case": "c14",
+   "other": "libkrun-env-fork-substrate",
+   "p": 0.0826,
+   "latency": 0.3067514896392822
+  },
+  {
+   "case": "c14",
+   "other": "managed-store-of-record",
+   "p": 0.0883,
+   "latency": 0.31908607482910156
+  },
+  {
+   "case": "c14",
+   "other": "managed-tier-do-gateway",
+   "p": 0.0888,
+   "latency": 0.4003429412841797
+  },
+  {
+   "case": "c14",
+   "other": "optimization-external-substrate-primitives",
+   "p": 0.0861,
+   "latency": 0.6698424816131592
+  },
+  {
+   "case": "c14",
+   "other": "remote-backend-plane-removed",
+   "p": 0.0592,
+   "latency": 0.7172689437866211
+  },
+  {
+   "case": "c14",
+   "other": "secret-on-disk-0600",
+   "p": 0.0357,
+   "latency": 0.4268355369567871
+  },
+  {
+   "case": "c14",
+   "other": "session-event-log-spine",
+   "p": 0.0888,
+   "latency": 0.5596747398376465
+  },
+  {
+   "case": "c14",
+   "other": "stable-exit-codes",
+   "p": 0.0366,
+   "latency": 0.40750575065612793
+  },
+  {
+   "case": "c14",
+   "other": "substrate-plane-livesession",
+   "p": 0.1548,
+   "latency": 0.2563059329986572
+  },
+  {
+   "case": "c14",
+   "other": "vault-egress-default-deny",
+   "p": 0.0856,
+   "latency": 0.41404294967651367
+  },
+  {
+   "case": "c14",
+   "other": "workspace-cow-fork",
+   "p": 0.0698,
+   "latency": 1.143195390701294
+  },
+  {
+   "case": "c14",
+   "other": "workspace-ingest-sovereignty",
+   "p": 0.0407,
+   "latency": 0.7310709953308105
+  }
+ ]
+}

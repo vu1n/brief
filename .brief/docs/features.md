@@ -263,6 +263,29 @@ sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold com
   without a person, so raise them only with an eval. An anchor escalated on the PR stays
   escalated (`AmendmentVerdict.escalated`), or rewording would launder a held amendment.
 
+<!-- brief:anchor evidence -->
+## Amendment evidence
+
+```yaml
+paths:
+  - "src/brief/evidence.py"
+  - "eval/evidence/**"
+```
+
+`brief evidence`: what a reviewer needs for each pending amendment, with sources. Exact
+changed lines and qualifiers, the amendment's sections, governed scope before/after, and
+decisions linked by refs or shared files; optionally Clef's shadow "may undermine" links.
+
+### Gotchas
+- Advisory only: the gate, triage, `ratify` and `threads` must never import it (a test
+  checks). Don't feed its links or scores into a verdict, a threshold or a label.
+- A missing model answer is "not checked", never "no impact"; model-only links stay
+  labeled as inferred and are never written into a decision's refs.
+- Scope is compared at the merge-base: a narrowing shows the files that leave governance
+  and which of them the PR edits. Amendment triage reads code under both sets of globs.
+- `MODEL_SHOW`/`MODEL_TOP` come from `eval/evidence` (14 cases chosen and labeled by one
+  author); treat them as development settings.
+
 <!-- brief:anchor eval -->
 ## Eval
 

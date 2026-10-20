@@ -382,6 +382,22 @@ def doctor(
 
 
 @app.command()
+def evidence(
+    repo: str = typer.Option(".", "--repo", help="repo root"),
+    brief: str = typer.Option(None, "--brief", help="path to .brief dir"),
+    base: str = typer.Option(None, "--base", help="the range base..HEAD instead of staged changes"),
+    json_out: bool = typer.Option(False, "--json", help="emit JSON"),
+    model: bool = typer.Option(True, "--model/--no-model", help="ask a configured System One model which unlinked decisions the edit may undermine (shadow)"),
+):
+    """Advisory: what changed in each pending amendment, with sources and linked decisions. Writes nothing."""
+    from . import evidence as ev_mod
+
+    repo_path = gitutil.toplevel(Path(repo).resolve())
+    evs = ev_mod.evidence(repo_path, _brief_dir(brief, repo_path), base, model=model)
+    typer.echo(json.dumps(ev_mod.to_dict(evs), indent=2) if json_out else ev_mod.render_md(evs))
+
+
+@app.command()
 def backfill(
     repo: str = typer.Option(".", "--repo", help="repo to scan"),
     json_out: bool = typer.Option(False, "--json", help="also write map.json"),
