@@ -24,6 +24,7 @@ convention + skills. The only thing that must be mechanical is the gate.
 | `versions.py` | `publish` frozen `vNNNN` snapshots + `aliases.yaml` (`latest`) |
 | `gate.py` | the L0 gate (separation of powers): `check(repo, brief_dir, base=None)` |
 | `doctor.py` | advisory lint (repo-wide): latent drift the gate doesn't block — unwired / unpublished / unpinned / stale refs. Machine-first `Report`, `--strict` opt-in |
+| `evidence.py` | `brief evidence`: advisory per-amendment view (exact changed lines, qualifiers, scope delta, linked decisions; optional shadow System One impact links). Read by nothing that decides |
 | `ratify.py` | the authorized decision change (publish new revision + archive amendment); `ratify_pending` records a merge (a person's, or CI's on an all-auto-ratifiable triage: `ratified_via: model`); `ratify_and_push` commits it as the bot |
 | `verdicts.py` | `.brief/RATIFICATIONS`: per-amendment escalated / ratified-by / rejected-by lines, keyed to one version of the amendment; bot-commit provenance for the gate |
 | `threads.py` | per-amendment PR threads (CI): escalation comments, `/ratify` / `/reject` commands, attestation check; the only code that calls GitHub (`gh`) |
