@@ -211,3 +211,27 @@ def test_moving_latest_in_the_pr_is_not_pending(tmp_path):
     (bd / "aliases.yaml").write_text("ADR-001-backend:\n  latest: 7\n")
     _git(repo, "commit", "-qam", "alias")
     assert "ratified-edit" in {x.kind for x in check(repo, bd, base=base)}
+
+
+def test_amendment_triage_sees_code_under_a_glob_the_amendment_drops(tmp_path):
+    # narrowing related_code must not hide the PR's edit under the dropped glob from the model
+    repo, bd = _published_repo(tmp_path)
+    write(repo / "src" / "docker.rs", "// base\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "docker.rs")
+    base = _head(repo)
+    live = versions.live_doc(bd, "ADR-001-backend")
+    live.write_text(live.read_text().replace('  - "src/docker.rs"\n', "").replace("is deleted", "is gone"))
+    write(bd / "amendments" / f"{ANCHOR}.md", "# Amendment\nreword; tidy related_code\n")
+    write(repo / "src" / "docker.rs", "// docker is back\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "narrow")
+    seen = []
+
+    class Spy:
+        def system_one(self, state, questions):
+            seen.append(state)
+            return NS(model="m", answers={"review": NS(type="noul", noul=0.01)})
+
+    triage_amendments(repo, bd, base, via=Spy())
+    assert "docker is back" in seen[0]["code_diff"]

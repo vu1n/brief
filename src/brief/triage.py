@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import gitutil, s1, verdicts
+from . import docs, gitutil, s1, verdicts
 from .docs import glob_match, load_index
 from .gate import CONFORMS_RE, check
 
@@ -152,7 +152,10 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
         anchor = d.anchor(v.anchor_id) if d else None
         key = verdicts.amendment_key(amendment, anchor.hash if anchor else "")
         if client and d:
-            code = [f for f in changed if any(glob_match(g, f) for g in d.related_code)]
+            # The globs before the edit count too: an amendment that drops a glob must not hide
+            # the code it changes under that glob from the model.
+            globs = set(d.related_code) | set(_baseline_globs(repo, v.files[0], rng or "HEAD", d.project))
+            code = [f for f in changed if any(glob_match(g, f) for g in globs)]
             edit = gitutil.diff(repo, v.files, rng)
             change = gitutil.diff(repo, code, rng) if code else ""
             if _has_body(edit) and len(edit) + len(change) + len(amendment) <= MAX_DIFF_CHARS:
@@ -163,6 +166,13 @@ def triage_amendments(repo: Path, brief_dir: Path, base: str | None = None,
                     model = next((x.model for x in a.values() if x.model), "") or s1.model_name()
         out.append(AmendmentVerdict(v.doc_id, v.anchor_id, review, model, key, v.anchor_id in held))
     return out
+
+
+def _baseline_globs(repo: Path, path: str, ref: str, project: str) -> list[str]:
+    try:
+        return docs.parse_text(gitutil.content_at(repo, path, ref), Path(path), project).related_code
+    except docs.DocError:
+        return []
 
 
 def verdict(rated: list[AmendmentVerdict]) -> dict:

@@ -249,6 +249,8 @@ sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold com
   "no opinion" and fall back to the mechanical rule, never as "no".
 - Out-of-range, non-finite, or wrong-type answers are dropped in `s1._answer`/`noul_p`:
   a confidence is not P(no), and -0.5 must not read as a confident "no".
+- Amendment triage selects the code diff by the decision's globs at the baseline *and* in
+  the PR: a narrowed `related_code` must not hide the code it un-governs from the model.
 - Amendment triage fails closed: no model, an error, or a missing/invalid answer on either
   question escalates. `FIAT_THRESHOLD`/`IMPACT_THRESHOLD` are placeholders with no eval yet.
 - The gate matches `conforms` on the bare anchor id across docs, so triage clears an id only
