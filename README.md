@@ -85,7 +85,7 @@ brief ratify <anchor> --by you        # without CI: a human edits the decision, 
 On the PR the gate reports the edit as `pending-ratification` (it does not block); an edit
 to a locked decision without its amendment is still blocked. With a System One model
 configured, CI asks it whether each amendment should wait for the owner's eyes and labels
-the PR `needs-ratification` unless every answer is below 0.3 ([eval](eval/amend/)). When it is and
+the PR `needs-ratification` unless every answer is below 0.25 ([eval](eval/amend/)). When it is and
 every other check is green, CI merges the PR itself, code included, and the archive records
 the model as the ratifier (`ratified_via: model`). Set the repo variable
 `BRIEF_AUTO_MERGE=off` to keep every merge a human's.

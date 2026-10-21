@@ -10,6 +10,16 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
+## Unreleased
+
+- **Changed:** amendment triage auto-ratifies below 0.25, down from 0.3. The cutoff is now
+  chosen by `eval/cutoff.py` from what a mistake costs (one should-see amendment merged
+  unseen = 20 needless reviews), cross-validated, instead of read off the lowest should-see
+  score. On `eval/amend`, Clef clears 15 of 35 harmless amendments instead of 18. When the
+  model that answered isn't the one the cutoff was tuned on (Clef), the triage's `why`
+  says so.
+- **Do:** nothing.
+
 ## v0.5.2
 
 - **Changed:** the convention block scopes decisions to code. Decisions bind the code an

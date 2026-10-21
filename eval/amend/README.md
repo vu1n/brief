@@ -42,8 +42,11 @@ wave through (rewording, examples, recording what was built, tightening).
 |---|---|---|---|---|
 | 0.1 | 0/58 | 8/35 | 0/58 | 0/35 |
 | 0.2 | 0/58 | 11/35 | 0/58 | 8/35 |
-| **0.3 (shipped)** | **0/58** | **18/35 (51%)** | 0/58 | 12/35 (34%) |
+| 0.25 (shipped) | 0/58 | 15/35 (43%) | 0/58 | 10/35 (29%) |
+| 0.3 (0.5.0 to 0.5.2) | 0/58 | 18/35 (51%) | 0/58 | 12/35 (34%) |
 | 0.5 | 2/58 | 27/35 | 1/58 | 20/35 |
+
+These counts are in-sample. See "Choosing the cutoff" below for why 0.25 and not 0.3.
 
 At 0.3 Clef clears every clarification and the update-to-reality case, and 5 of 22
 tightenings. Tightening a security rule still scores around 0.45: Clef wants a person to see
@@ -65,6 +68,38 @@ high-impact, and auto-ratified only when both were below 0.05.
   question. The single question replaced it because it asks what we actually care about
   ("does this need a person?") and its riskiest case sits further from the cutoff (0.355 vs
   0.3, against 0.071 vs 0.05).
+
+### Choosing the cutoff (`eval/cutoff.py`, 2026-10-21)
+
+The table above can't pick a cutoff by itself: every cutoff up to 0.35 shows 0 misses, and
+0 in 58 still allows a miss rate up to 5% (95% bound). `eval/cutoff.py` picks it the way
+Husain and Saha's [decision-model evals](https://hamel.dev/blog/posts/decision-model-evals/)
+do, from the saved scores with no model calls. State what each mistake costs (a needless
+review is 1; a miss is `--miss-cost` of them), let a rule pick the cutoff on training folds,
+and score it on held-out folds (200 repeats of stratified 5-fold).
+
+```
+python eval/cutoff.py eval/amend/results/clef.jsonl --shipped 0.25 --sweep 5,10,20,50,100
+```
+
+- **Learning the cutoff from the lowest should-see score leaks.** When the two lowest
+  should-see cases (0.355, 0.363) land in the same held-out fold, the training folds' lowest
+  is 0.50 and both get through: 0.7% of held-out should-see cases. The tail is two points.
+- **Clef is well calibrated here, unlike the post's Clef Flash.** Platt scaling moves the
+  out-of-fold Brier from 0.088 to 0.079 and keeps the order. It says a case scoring just
+  under 0.3 is should-see with P = 0.073, so clearing it pays only if a miss costs fewer
+  than about 13 needless reviews, and the Platt-implied miss rate at 0.3 is 0.37 per 100
+  amendments.
+- **At a miss cost of 20, the cutoff is 0.25** (calibrated P = 1/21). That clears 15 of 35
+  harmless amendments, and the Platt-implied miss rate halves to 0.18 per 100. Cost 50 gives
+  0.19 (11 of 35); cost 100 gives 0.14 (8 of 35).
+- **Jev 1.13's scores sit higher** (lowest should-see 0.43, Platt P = 0.005 at 0.3), so the
+  same cutoff on Jev is more cautious than on Clef. A cutoff belongs to the model and the
+  question it was tuned on; `REVIEW_TUNED_ON` names the model in `triage.py`.
+
+`eval/cutoff.py` reads any results file with `escalate`/`review` or `violates`/`p` rows, so
+it also checks the sign-off triage (`eval/s1`, Jev 1.13): its 0.1 clears 97% of conforming
+asks with no misses, where every learned rule leaks on the one violation scoring 0.21.
 
 ## Caveats
 
