@@ -42,6 +42,9 @@ def load(path: Path) -> list[tuple[float, bool]]:
     label, score = next((s for s in SHAPES if rows and set(s) <= rows[0].keys()), (None, None))
     if label is None:
         sys.exit(f"{path}: rows need one of {SHAPES}")
+    models = {r["model"] for r in rows if r.get("model")}
+    if len(models) > 1:  # a resumed run against another endpoint: scales don't compare
+        sys.exit(f"{path}: scores from more than one model ({', '.join(sorted(models))})")
     return [(float(r[score]), bool(r[label])) for r in rows if r.get(score) is not None]
 
 
@@ -136,18 +139,18 @@ def crossval(data, miss_cost: float, shipped: float | None, margin: float | None
             ab = platt(train)
             t_emp = empirical(train, miss_cost, margin)
             cuts["empirical"].append(t_emp)
-            # calibrated P < 1/(1+c) is a raw-score cutoff when a > 0 (Platt is monotone)
-            ok = [(calibrate(p, ab), y) for p, y in test]
-            oof += ok
-            thr = 1 / (1 + miss_cost)
-            cuts["calibrated"].append(_raw_for(thr, ab))
-            for rule, t in (("everything to a person", 0.0), ("empirical", t_emp), ("shipped", shipped)):
+            oof += [(calibrate(p, ab), y) for p, y in test]
+            # calibrated P < 1/(1+c) is the raw cutoff below, the rule brief deploys (p < cutoff).
+            # A flat or inverted fit has no such cutoff: fail closed and clear nothing.
+            t_cal = _raw_for(1 / (1 + miss_cost), ab)
+            t_cal = 0.0 if t_cal != t_cal else t_cal
+            cuts["calibrated"].append(t_cal)
+            for rule, t in (("everything to a person", 0.0), ("empirical", t_emp), ("calibrated", t_cal),
+                            ("shipped", shipped)):
                 if rule in tot:
                     m, r = counts(test, t)
                     tot[rule][0] += m
                     tot[rule][1] += r
-            tot["calibrated"][0] += sum(q < thr for q, y in ok if y)
-            tot["calibrated"][1] += sum(q >= thr for q, y in ok if not y)
     return {"totals": tot, "cuts": cuts, "oof": oof}
 
 
