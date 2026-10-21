@@ -1,0 +1,7 @@
+# Keys this repo reads through `tumbler run -- <cmd>`. Names only; values live in the broker.
+# Started from `tumbler auto`, which picked only GITHUB_PAT and ANTHROPIC_API_KEY.
+CLOUDFLARE_ACCOUNT_ID  # Clef/Clairic on Workers AI: eval/amend/run.py --clef, eval/evidence/run.py
+CLOUDFLARE_AI_TOKEN    # Workers AI bearer for the same
+OPENROUTER_API_KEY     # Jev runs (eval/s1, eval/amend): TYPESAFE_API_KEY=$OPENROUTER_API_KEY TYPESAFE_BASE_URL=https://openrouter.ai/api
+TYPESAFE_API_KEY       # `brief triage` locally (brief[s1])
+ANTHROPIC_API_KEY      # eval/run.py drives `claude -p` outside a Claude session
