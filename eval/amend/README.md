@@ -119,7 +119,8 @@ python eval/cutoff.py --pool eval/amend/results/clef.jsonl eval/amend/results/fe
 ```
 
 Only reactions from people with write access count, and a comment graders disagree on is
-dropped. These cases saw the governed code change, as CI's triage does, so they are closer
+dropped, as is a 👎 on an automerge comment naming several amendments (it doesn't say which
+one needed eyes). Each run rewrites `results/feedback/` from the current reactions. These cases saw the governed code change, as CI's triage does, so they are closer
 to production than `cases.jsonl.gz`. A 👎 on an automerge comment is the rarest and most
 useful label: it is a measured miss.
 

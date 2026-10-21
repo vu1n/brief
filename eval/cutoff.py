@@ -45,8 +45,8 @@ def load(paths: list[Path]) -> list[tuple[float, bool]]:
         label, score = next((s for s in SHAPES if rows and set(s) <= rows[0].keys()), (None, None))
         if label is None:
             sys.exit(f"{path}: rows need one of {SHAPES}")
-        # "@cf/cloudflare/clef" (CI) and "clef" (eval) are one model
-        models |= {r["model"].rsplit("/", 1)[-1] for r in rows if r.get("model")}
+        # "@cf/cloudflare/clef" (CI) and "clef" (eval) are one model; anything else stays whole
+        models |= {r["model"].removeprefix("@cf/cloudflare/") for r in rows if r.get("model")}
         out += [(float(r[score]), bool(r[label])) for r in rows if r.get(score) is not None]
     if len(models) > 1:  # a resumed run against another endpoint: scales don't compare
         sys.exit(f"{' + '.join(map(str, paths))}: scores from more than one model ({', '.join(sorted(models))})")

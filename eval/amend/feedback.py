@@ -44,10 +44,15 @@ def label(kind: str, reactions: list[dict], graders: set[str]) -> tuple[bool | N
 
 
 def rows(comment: dict, repo: str, should_see: bool, who: str) -> list[dict]:
+    """One row per marker. A 👎 on an automerge comment that names several amendments doesn't
+    say which one needed eyes, so it labels none of them (a 👍 clears them all)."""
     url = comment.get("pull_request_url") or comment.get("issue_url") or ""
     pr = url.rsplit("/", 1)[-1]
+    found = TRIAGE_RE.findall(comment.get("body") or "")
+    if should_see and len(found) > 1:
+        return []
     out = []
-    for kind, anchor, key, p, model in TRIAGE_RE.findall(comment.get("body") or ""):
+    for kind, anchor, key, p, model in found:
         out.append({"id": f"{repo}#{pr}/{anchor}/{key}", "source": "feedback", "category": kind,
                     "escalate": should_see, "review": None if p == "none" else float(p),
                     "model": model, "note": who})
@@ -95,6 +100,8 @@ def main() -> None:
     for r in found:
         by_model.setdefault(r["model"] or "unknown", []).append(r)
     a.out.mkdir(parents=True, exist_ok=True)
+    for old in a.out.glob("*.jsonl"):  # a snapshot of the current grades, never a log
+        old.unlink()
     for model, rs in by_model.items():
         path = a.out / f"{model.replace('/', '_')}.jsonl"
         path.write_text("".join(json.dumps(r) + "\n" for r in rs))
