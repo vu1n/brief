@@ -101,6 +101,29 @@ python eval/cutoff.py eval/amend/results/clef.jsonl --shipped 0.25 --sweep 5,10,
 it also checks the sign-off triage (`eval/s1`, Jev 1.13): its 0.1 clears 97% of conforming
 asks with no misses, where every learned rule leaks on the one violation scoring 0.21.
 
+### Owner feedback (`feedback.py`)
+
+The fastest way past 93 cases is the owner's own calls. Every triage call brief shows a person
+carries `<!-- brief:triage <escalated|automerged> <anchor> <key> p=<p> model=<m> -->`: the
+escalation thread, and the comment the automerge job leaves on a PR it merged. A 👍 means the
+bot got it right and a 👎 means it got it wrong:
+
+| comment | 👍 | 👎 |
+|---|---|---|
+| escalated | should see | harmless (could have merged) |
+| automerged | harmless | should see (a miss) |
+
+```
+GH_TOKEN=... python eval/amend/feedback.py vu1n/pillbox vu1n/kypp
+python eval/cutoff.py --pool eval/amend/results/clef.jsonl eval/amend/results/feedback/clef.jsonl --shipped 0.25
+```
+
+Only reactions from people with write access count, and a comment graders disagree on is
+dropped, as is a 👎 on an automerge comment naming several amendments (it doesn't say which
+one needed eyes). Each run rewrites `results/feedback/` from the current reactions. These cases saw the governed code change, as CI's triage does, so they are closer
+to production than `cases.jsonl.gz`. A 👎 on an automerge comment is the rarest and most
+useful label: it is a measured miss.
+
 ## Caveats
 
 - Both rewordings were written after seeing results on these same 93 cases, so treat the

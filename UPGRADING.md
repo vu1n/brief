@@ -18,7 +18,12 @@ one PR.
   score. On `eval/amend`, Clef clears 15 of 35 harmless amendments instead of 18. When the
   model that answered isn't the one the cutoff was tuned on (Clef), the triage's `why`
   says so.
-- **Do:** nothing.
+- **Changed:** every triage call shown to a person can be graded. The escalation thread asks
+  the owner to react 👍 (worth their eyes) or 👎 (could have merged on its own), and the
+  automerge job now comments on each PR it merges asking 👍 (fine) or 👎 (should have been
+  shown). Both comments carry a `<!-- brief:triage ... -->` marker with the score, and
+  `eval/amend/feedback.py` collects the graded calls as labeled cases for `eval/cutoff.py`.
+- **Do:** re-run `brief init --ci` so the automerge job posts its comment.
 
 ## v0.5.2
 
