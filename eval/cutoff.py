@@ -23,6 +23,7 @@ No model calls: it reads `eval/*/results/*.jsonl`. Stdlib only.
     python eval/cutoff.py eval/amend/results/clef.jsonl --miss-cost 20
     python eval/cutoff.py eval/amend/results/clef.jsonl --sweep 5,10,20,50,100
     python eval/cutoff.py eval/s1/results/typesafe_jev-1.13.jsonl --shipped 0.1
+    python eval/cutoff.py --pool eval/amend/results/clef.jsonl eval/amend/results/feedback/clef.jsonl
 """
 import argparse
 import json
@@ -35,17 +36,21 @@ from pathlib import Path
 SHAPES = (("escalate", "review"), ("violates", "p"))
 
 
-def load(path: Path) -> list[tuple[float, bool]]:
-    """(score, should_see) per scored row. A row with no score escalates in brief, so it is
-    neither a miss nor a saving at any cutoff and drops out."""
-    rows = [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
-    label, score = next((s for s in SHAPES if rows and set(s) <= rows[0].keys()), (None, None))
-    if label is None:
-        sys.exit(f"{path}: rows need one of {SHAPES}")
-    models = {r["model"] for r in rows if r.get("model")}
+def load(paths: list[Path]) -> list[tuple[float, bool]]:
+    """(score, should_see) per scored row of every file, pooled. A row with no score escalates
+    in brief, so it is neither a miss nor a saving at any cutoff and drops out."""
+    out, models = [], set()
+    for path in paths:
+        rows = [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
+        label, score = next((s for s in SHAPES if rows and set(s) <= rows[0].keys()), (None, None))
+        if label is None:
+            sys.exit(f"{path}: rows need one of {SHAPES}")
+        # "@cf/cloudflare/clef" (CI) and "clef" (eval) are one model
+        models |= {r["model"].rsplit("/", 1)[-1] for r in rows if r.get("model")}
+        out += [(float(r[score]), bool(r[label])) for r in rows if r.get(score) is not None]
     if len(models) > 1:  # a resumed run against another endpoint: scales don't compare
-        sys.exit(f"{path}: scores from more than one model ({', '.join(sorted(models))})")
-    return [(float(r[score]), bool(r[label])) for r in rows if r.get(score) is not None]
+        sys.exit(f"{' + '.join(map(str, paths))}: scores from more than one model ({', '.join(sorted(models))})")
+    return out
 
 
 def counts(data, t: float) -> tuple[int, int]:
@@ -174,9 +179,10 @@ def upper95(k: int, n: int) -> float:
     return hi
 
 
-def report(path: Path, miss_cost: float, shipped: float | None, margin: float | None,
+def report(paths: list[Path], miss_cost: float, shipped: float | None, margin: float | None,
            k: int, repeats: int, seed: int) -> str:
-    data = load(path)
+    data = load(paths)
+    path = " + ".join(map(str, paths))
     pos = sum(y for _, y in data)
     neg = len(data) - pos
     cv = crossval(data, miss_cost, shipped, margin, k, repeats, seed)
@@ -225,10 +231,11 @@ def report(path: Path, miss_cost: float, shipped: float | None, margin: float | 
     return "\n".join(lines)
 
 
-def sweep(path: Path, costs: list[float], shipped: float | None, margin: float | None,
+def sweep(paths: list[Path], costs: list[float], shipped: float | None, margin: float | None,
           k: int, repeats: int, seed: int) -> str:
     """One row per miss cost: which rule wins held out, and at what cutoff."""
-    data = load(path)
+    data = load(paths)
+    path = " + ".join(map(str, paths))
     n = len(data) * repeats
     lines = [f"{path}: held-out cost per 100 cases by miss cost ({repeats}x {k}-fold)", "",
              "| a miss costs | everything to a person | empirical (cutoff) | calibrated (cutoff) |"
@@ -249,6 +256,8 @@ def sweep(path: Path, costs: list[float], shipped: float | None, margin: float |
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("results", type=Path, nargs="+")
+    ap.add_argument("--pool", action="store_true",
+                    help="one dataset from every file (same model), e.g. eval cases + feedback/")
     ap.add_argument("--miss-cost", type=float, default=20.0,
                     help="a miss costs this many needless reviews (default 20)")
     ap.add_argument("--sweep", help="comma-separated miss costs: one table row each")
@@ -260,7 +269,7 @@ def main() -> None:
                     help="a miss needs its few lowest should-see cases held out together: repeat enough to see it")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args()
-    for path in a.results:
+    for path in ([a.results] if a.pool else [[p] for p in a.results]):
         if a.sweep:
             print(sweep(path, [float(x) for x in a.sweep.split(",")], a.shipped, a.margin,
                         a.folds, a.repeats, a.seed))

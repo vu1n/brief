@@ -13,6 +13,7 @@ import yaml
 from brief import verdicts, versions
 from brief.ratify import RatifyError, ratify_and_push, ratify_pending
 from brief.templates import CI_WORKFLOW, WATCH_SLOT, ci_workflow
+from brief.threads import TRIAGE_RE
 from brief.triage import triage_amendments, verdict
 from tests.test_amend_merge import ANCHOR, Fake, _amend_pr
 from tests.test_thin import _git, write
@@ -111,6 +112,8 @@ if a[:2] == ["pr", "view"]:
     print(json.dumps(st["pr"]))
 elif a[:2] == ["pr", "merge"]:
     st["merged"] = a; save()
+elif a[:2] == ["pr", "comment"]:
+    st["comment"] = sys.stdin.read(); save()
 elif a[:2] == ["run", "download"]:
     triage = st["artifacts"].get(a[2])
     if triage is None:
@@ -138,7 +141,8 @@ def _run(name, status="completed", conclusion="success", run_id=1):
             "details_url": f"https://github.com/o/r/actions/runs/{run_id}/job/9"}
 
 
-AUTO = {"verdict": "auto-ratifiable", "stamp": "s1 clef p=0.020", "amendments": [], "sha": "abc"}
+AUTO = {"verdict": "auto-ratifiable", "stamp": "s1 clef p=0.020", "sha": "abc",
+        "amendments": [{"anchor_id": "a-1", "key": "0123456789ab", "review": 0.02, "model": "clef"}]}
 
 
 def _merge(tmp_path, pr=None, runs=None, status="0 pending", retrigger=None):
@@ -187,6 +191,11 @@ def test_merge_step_merges_when_every_other_check_is_green(tmp_path):
     assert merged == MERGE
     assert "merged=true" in out and "pr=9" in out
     assert json.loads(out.split("triage=", 1)[1].splitlines()[0])["stamp"] == AUTO["stamp"]
+    # the owner grades the call on this comment; eval/amend/feedback.py pairs it with p
+    comment = json.loads((tmp_path / "gh.json").read_text())["comment"]
+    assert "React 👍" in comment
+    assert [m.groups() for m in TRIAGE_RE.finditer(comment)] == [
+        ("automerged", "a-1", "0123456789ab", "0.02", "clef")]
 
 
 def test_merge_step_exits_at_once_while_checks_run_and_ignores_its_own_run(tmp_path):

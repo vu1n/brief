@@ -113,6 +113,9 @@ Per-amendment verdicts. CI opens a PR thread for each escalated amendment; a mai
 - Trust has two halves: the gate's offline bot-commit check (`verdicts.provenance`) and
   CI's `brief thread verify` against the bot's unedited replies. Git identity alone is
   forgeable; don't drop `verify` from the template.
+- `<!-- brief:triage ... -->` (`threads.TRIAGE_RE`) is written by `thread_body` and by the
+  automerge job's comment (jq, in `templates.py`) and read by `eval/amend/feedback.py`.
+  Change its shape in all three, or graded calls silently stop being collected.
 - The key (`amendment_key`) must be computed the same way in triage, the gate, `command`
   and `ratify_pending`: amendment file text + the live anchor's body hash.
 - Bot commits set identity via `GIT_AUTHOR_*`/`GIT_COMMITTER_*` env (`bot_identity`), since

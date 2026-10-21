@@ -12,6 +12,7 @@ from brief.gate import check
 from brief.ratify import ratify_pending
 from brief.templates import CI_WORKFLOW
 from brief.threads import (
+    TRIAGE_RE,
     GHError,
     Marker,
     attested,
@@ -216,6 +217,9 @@ def test_thread_body_carries_marker_scores_and_commands():
     assert b.startswith(f"<!-- brief:amendment {ANCHOR} {'a' * 12} -->")
     assert "p(needs the owner's eyes)=0.400" in b and "`/ratify`" in b and "`/reject <reason>`" in b
     assert "No model opinion" in thread_body(_entry(review=None))
+    [m] = TRIAGE_RE.finditer(b)  # what eval/amend/feedback.py pairs with the owner's reaction
+    assert m.groups() == ("escalated", ANCHOR, "a" * 12, "0.4000", "clef") and "react 👍" in b
+    assert TRIAGE_RE.search(thread_body(_entry(review=None)))[4] == "none"
     top = thread_body(_entry(), inline=False)
     assert f"`/ratify {ANCHOR}`" in top and f"`/reject {ANCHOR} <reason>`" in top
     assert "revised" in thread_body(_entry(), revised=True)

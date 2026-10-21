@@ -344,6 +344,12 @@ on:
           fi
           gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --match-head-commit "$SHA" \\
             || {{ echo "::warning title=brief auto-merge failed::merge it by hand (branch protection may require a review)"; exit 0; }}
+          # One comment for the owner to grade the call: 👍 fine to merge, 👎 should have
+          # been shown to a person. eval/amend/feedback.py reads the markers and reactions.
+          {{ printf '**brief: merged on the model verdict** (%s).\\n\\nReact 👍 if that was fine, 👎 if you should have seen it first.\\n' "$(jq -r .stamp <<<"$TRIAGE")"
+            jq -r '.amendments[] | "<!-- brief:triage automerged \\(.anchor_id) \\(.key) p=\\(.review) model=\\(.model) -->"' <<<"$TRIAGE"
+          }} | gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file - \\
+            || echo "::warning title=brief feedback comment::could not comment on #$PR"
           echo "merged=true" >> "$GITHUB_OUTPUT"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
           echo "triage=$(jq -c . <<<"$TRIAGE")" >> "$GITHUB_OUTPUT"

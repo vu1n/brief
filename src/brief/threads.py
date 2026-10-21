@@ -13,6 +13,9 @@ GitHub Actions has no reaction trigger, so the verdict is a reply command:
   its owner's token looks like the owner), users without write access, fork PRs, and an
   amendment that changed since the bot last showed it. Posts an attesting reply with
   `<!-- brief:recorded ... -->`, then commits the record line to the PR head.
+- feedback: the escalation comment (and the automerge job's comment on a PR it merged)
+  carries `<!-- brief:triage ... -->` and asks the owner for 👍/👎 on the call;
+  `eval/amend/feedback.py` reads both back as labeled cases. Nothing in brief acts on them.
 - `verify` (CI, govern job): every ratified-by/rejected-by line the PR adds must match an
   unedited attesting reply from github-actions[bot]. A commit's author is self-asserted; a
   bot comment is not.
@@ -36,6 +39,10 @@ from .verdicts import bot_identity
 
 FOOTER_RE = re.compile(r"generated (?:by|with) \[claude code\]", re.IGNORECASE)
 MARKER_RE = re.compile(r"<!-- brief:amendment ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) -->")
+# One per bot comment that shows a triage call, so eval/amend/feedback.py can pair the
+# owner's 👍 (the call was right) or 👎 (it was wrong) with the score that made it.
+TRIAGE_RE = re.compile(r"<!-- brief:triage (escalated|automerged) ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) "
+                       r"p=(\S+) model=(\S*) -->")
 RECORDED_RE = re.compile(
     r"<!-- brief:recorded ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) (ratified|rejected) (\S+) (\d+) -->")
 COMMAND_RE = re.compile(r"^\s*/(ratify|reject)(?=\s|$)(.*)", re.DOTALL)
@@ -159,8 +166,10 @@ def thread_body(a: dict, inline: bool = True, revised: bool = False) -> str:
     ratify, reject = ("`/ratify`", "`/reject <reason>`") if inline else (
         f"`/ratify {anchor}`", f"`/reject {anchor} <reason>`")
     where = "Reply in this thread" if inline else "Comment on this PR"
+    p = "none" if a.get("review") is None else f"{a['review']:.4f}"
     return (
         f"<!-- brief:amendment {anchor} {key} -->\n"
+        f"<!-- brief:triage escalated {anchor} {key} p={p} model={a.get('model') or ''} -->\n"
         f"**brief: amendment `{a['doc_id']}#{anchor}` {head}** (version `{key}`)\n\n"
         f"{model}\n\n"
         f"{where}:\n"
@@ -169,7 +178,9 @@ def thread_body(a: dict, inline: bool = True, revised: bool = False) -> str:
         f"(a new version comes back here) or withdraws it.\n\n"
         f"Agents: answer questions here, but you can't ratify or reject. A command from a bot, "
         f"or carrying the Claude Code footer, is refused; editing the amendment or the decision "
-        f"text makes a new version that needs a new verdict."
+        f"text makes a new version that needs a new verdict.\n\n"
+        f"Owner: once you've decided, react 👍 if this was worth your eyes or 👎 if it could have "
+        f"merged on its own. `eval/amend/feedback.py` turns those into labeled cases for the cutoff."
     )
 
 
