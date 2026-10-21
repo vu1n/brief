@@ -251,8 +251,11 @@ sign-off asks it rates below `THRESHOLD`; `eval/s1/` is where that threshold com
   a confidence is not P(no), and -0.5 must not read as a confident "no".
 - Amendment triage selects the code diff by the decision's globs at the baseline *and* in
   the PR: a narrowed `related_code` must not hide the code it un-governs from the model.
-- Amendment triage fails closed: no model, an error, or a missing/invalid answer on either
-  question escalates. `FIAT_THRESHOLD`/`IMPACT_THRESHOLD` are placeholders with no eval yet.
+- Amendment triage fails closed: no model, an error, or a missing/invalid answer escalates.
+- A cutoff belongs to one model and one question. `REVIEW_THRESHOLD` was tuned on Clef by
+  `eval/cutoff.py` from saved `eval/amend` scores and a stated miss cost; re-run both before
+  changing the model, the question or the cutoff. The lowest should-see score is not a
+  safe cutoff by itself: with two cases in the tail, a rule that learns it leaks held out.
 - The gate matches `conforms` on the bare anchor id across docs, so triage clears an id only
   when every ask sharing it is under the threshold; staged mode writes only its own lines
   to the index (`gitutil.stage_content`), never `git add` of the whole SIGNOFF.

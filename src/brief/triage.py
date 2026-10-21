@@ -94,9 +94,13 @@ def _append(text: str, lines: dict[str, str]) -> str:
 
 
 # Amendment triage: P(needs the owner's eyes) must sit below this for the model to ratify by
-# merging. eval/amend (93 labeled amendments, 58 a human should see): at 0.3 Clef auto-ratified
-# none of the 58 and 18 of the 35 harmless ones; the lowest-scoring should-see case was 0.35, so raising this needs a bigger eval first.
-REVIEW_THRESHOLD = 0.3
+# merging. Tuned on Clef (eval/amend, 93 labeled amendments, 58 a human should see) by
+# eval/cutoff.py with a miss (a should-see amendment auto-merged) costing 20 needless reviews:
+# Clef's calibrated P reaches 1/21 at 0.25. It clears 15 of the 35 harmless ones and none of
+# the 58; Platt puts the miss rate near 0.2 per 100 amendments. A cutoff belongs to a model:
+# re-run eval/amend and eval/cutoff.py before trusting it on another one.
+REVIEW_THRESHOLD = 0.25
+REVIEW_TUNED_ON = "clef"
 
 
 @dataclass
@@ -120,6 +124,8 @@ class AmendmentVerdict:
             return "no model opinion (model unset, failed, or the change was too large to judge)"
         if self.review >= REVIEW_THRESHOLD:
             return f"the owner should see it (p={self.review:.3f} >= {REVIEW_THRESHOLD})"
+        if self.model and self.model.rsplit("/", 1)[-1] != REVIEW_TUNED_ON:
+            return f"safe to approve without the owner (cutoff tuned on {REVIEW_TUNED_ON}, not {self.model})"
         return "safe to approve without the owner"
 
 

@@ -10,7 +10,7 @@ from brief import versions
 from brief.gate import check
 from brief.ratify import ratify_pending
 from brief.templates import CI_WORKFLOW
-from brief.triage import triage_amendments, verdict
+from brief.triage import REVIEW_THRESHOLD, triage_amendments, verdict
 
 from tests.test_thin import _git, _published_repo, write
 
@@ -173,7 +173,7 @@ def test_amendment_triage_escalates_what_the_owner_should_see(tmp_path):
     out = verdict(triage_amendments(repo, bd, base, via=Fake(0.7)))
     assert out["verdict"] == "escalate" and out["stamp"] == ""
     assert "owner should see it" in out["amendments"][0]["why"]
-    edge = verdict(triage_amendments(repo, bd, base, via=Fake(0.3)))  # the threshold escalates
+    edge = verdict(triage_amendments(repo, bd, base, via=Fake(REVIEW_THRESHOLD)))  # the threshold escalates
     assert edge["verdict"] == "escalate"
 
 
@@ -235,3 +235,11 @@ def test_amendment_triage_sees_code_under_a_glob_the_amendment_drops(tmp_path):
 
     triage_amendments(repo, bd, base, via=Spy())
     assert "docker is back" in seen[0]["code_diff"]
+
+
+def test_amendment_verdict_names_a_model_the_cutoff_was_not_tuned_on():
+    from brief.triage import REVIEW_TUNED_ON, AmendmentVerdict
+    low = REVIEW_THRESHOLD / 2
+    assert AmendmentVerdict("d", "a", low, f"@cf/cloudflare/{REVIEW_TUNED_ON}").why == "safe to approve without the owner"
+    other = AmendmentVerdict("d", "a", low, "typesafe/jev-1.13")
+    assert other.auto and f"tuned on {REVIEW_TUNED_ON}, not typesafe/jev-1.13" in other.why

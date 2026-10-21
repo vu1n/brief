@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT.parents[1] / "src"))
 from brief import s1  # noqa: E402
 from brief.triage import MAX_DIFF_CHARS, REVIEW_THRESHOLD, _has_body  # noqa: E402
 
-THRESHOLDS = (0.02, 0.05, 0.1, 0.2, 0.3, 0.5)
+THRESHOLDS = (0.02, 0.05, 0.1, 0.2, 0.25, 0.3, 0.5)
 CASES = ROOT / "cases.jsonl.gz"
 
 
