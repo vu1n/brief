@@ -84,14 +84,86 @@ def test_minting_a_revision_in_the_pr_is_not_pending(tmp_path):
     assert "ratified-edit" in {x.kind for x in check(repo, bd, base=base)}
 
 
-def test_staged_amendment_edit_still_blocks(tmp_path):
+def _staged_amendment_edit(tmp_path, branch):
     repo, bd = _published_repo(tmp_path)
+    _git(repo, "checkout", "-qB", branch)
     live = versions.live_doc(bd, "ADR-001-backend")
     live.write_text(live.read_text().replace("is deleted", "is back"))
     write(bd / "amendments" / f"{ANCHOR}.md", "# Amendment\n")
     _git(repo, "add", "-A")
     [p] = [x for x in check(repo, bd) if x.kind == "pending-ratification"]
+    return repo, p
+
+
+def test_staged_amendment_edit_blocks_on_the_default_branch(tmp_path):
+    # a commit on main can't ratify: nothing would review it
+    assert _staged_amendment_edit(tmp_path, "main")[1].blocking
+
+
+def test_staged_amendment_edit_blocks_on_a_detached_head(tmp_path):
+    repo, _ = _staged_amendment_edit(tmp_path, "amend-backend")
+    _git(repo, "checkout", "-q", "--detach")
+    [p] = [x for x in check(repo, repo / ".brief") if x.kind == "pending-ratification"]
     assert p.blocking
+
+
+def test_staged_amendment_edit_commits_on_a_branch(tmp_path):
+    # the commit goes to a PR, whose merge ratifies it: an agent can carry the text
+    repo, p = _staged_amendment_edit(tmp_path, "amend-backend")
+    assert not p.blocking
+    r = subprocess.run(["brief", "check", "--repo", str(repo)], capture_output=True, text=True)
+    assert r.returncode == 0 and "pending ratification" in r.stdout
+
+
+def _proposal_pr(tmp_path, anchor=ANCHOR):
+    repo, bd = _published_repo(tmp_path)
+    base = _head(repo)
+    write(bd / "amendments" / f"{anchor}.md", "# Amendment\nadmit docker behind a flag\n")
+    write(bd / "SIGNOFF", f"{anchor} amend-proposed: admit docker behind a flag\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "propose")
+    return repo, bd, base
+
+
+def test_proposal_without_decision_text_blocks_the_pr(tmp_path):
+    # its merge would ratify nothing (ratify --pending leaves it), so CI says so up front
+    repo, bd, base = _proposal_pr(tmp_path)
+    [v] = check(repo, bd, base=base)
+    assert (v.kind, v.doc_id, v.anchor_id, v.blocking) == ("proposal-only", "ADR-001-backend", ANCHOR, True)
+    assert v.files == [f".brief/amendments/{ANCHOR}.md"]
+    r = subprocess.run(["brief", "check", "--repo", str(repo), "--base", base], capture_output=True, text=True)
+    assert r.returncode == 1 and "so the merge ratifies it" in r.stderr
+
+
+def test_proposal_for_an_unknown_anchor_blocks_the_pr(tmp_path):
+    repo, bd, base = _proposal_pr(tmp_path, anchor="no-such-anchor")
+    [v] = check(repo, bd, base=base)
+    assert (v.kind, v.doc_id, v.anchor_id) == ("proposal-only", "", "no-such-anchor")
+
+
+def test_proposal_only_is_a_pr_check_not_a_commit_check(tmp_path):
+    # committing the proposal first, then the text, is fine; the PR needs both
+    repo, bd = _published_repo(tmp_path)
+    write(bd / "amendments" / f"{ANCHOR}.md", "# Amendment\n")
+    _git(repo, "add", "-A")
+    assert check(repo, bd) == []
+
+
+def test_untouched_or_withdrawn_proposals_are_not_this_prs(tmp_path):
+    repo, bd, _ = _proposal_pr(tmp_path)
+    base = _head(repo)
+    write(repo / "README.md", "unrelated\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "unrelated")
+    assert check(repo, bd, base=base) == []  # a proposal merged earlier isn't this PR's
+    _git(repo, "rm", "-q", f".brief/amendments/{ANCHOR}.md")
+    _git(repo, "commit", "-qm", "withdraw")
+    assert not any(v.kind == "proposal-only" for v in check(repo, bd, base=base))
+
+
+def test_proposal_with_its_decision_text_is_pending_not_proposal_only(tmp_path):
+    repo, bd, base = _amend_pr(tmp_path)
+    assert {x.kind for x in check(repo, bd, base=base)} == {"pending-ratification"}
 
 
 def test_cli_exit_codes(tmp_path):

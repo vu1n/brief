@@ -60,8 +60,9 @@ paths:
 
 Separation of powers over a staged diff or a `base..HEAD` range: ratified-edit,
 needs-conformance, amendment-required, broken-ref, empty-glob for the feature map,
-pending-ratification (a locked edit carrying its amendments; non-blocking on a range only,
-unless escalated and unanswered), amendment-rejected and untrusted-verdict.
+pending-ratification (a locked edit carrying its amendments; non-blocking on a range or a
+staged feature branch, unless escalated and unanswered), amendment-rejected,
+untrusted-verdict, and proposal-only (a range adds an amendment but not its decision text).
 
 ### Gotchas
 - Locked status is read from the baseline tree and `changed_files` uses `--no-renames`;
@@ -72,6 +73,9 @@ unless escalated and unanswered), amendment-rejected and untrusted-verdict.
 - Content diffs go through `gitutil._CONTENT` (`--text --no-ext-diff --no-textconv`): a
   `-diff` attribute or a diff driver must not hide lines, or a change reads as comment-only.
 - `glob_match` lives in `docs.py` so `gate` and `features` don't import each other.
+- `proposal-only` and `ratify_pending` must agree: a merge ratifies only decision text it
+  carried, so the gate blocks a PR whose proposal `_pending` doesn't cover. Loosening one
+  without the other brings back the merged-but-unratified amendment (huddles-up #105).
 
 <!-- brief:anchor ratify -->
 ## Ratification

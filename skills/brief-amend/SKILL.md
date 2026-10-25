@@ -42,12 +42,14 @@ ratify your own code is the one failure this system exists to prevent.)
    <what else the decision protects; what breaks if it changes; migration notes.>
    ```
 3. Record `<anchor-id> amend-proposed: <one-line reason>` in `.brief/SIGNOFF`.
-4. Optionally, put the proposed text in the live decision doc in the same PR. Every anchor
+4. Put the proposed text in the live decision doc in the same PR. The merge ratifies
+   exactly that text, so CI blocks a proposal without it (`proposal-only`): that merge
+   would ratify nothing and leave a person to run `brief ratify` by hand. Every anchor
    you change needs its own `.brief/amendments/<anchor>.md`, or CI blocks the edit as
    `ratified-edit`. Never touch `versions/` or run `brief publish`/`brief ratify` yourself.
-   Locally `brief check` still blocks this edit (a commit can't ratify); that is expected,
-   and if the repo has a pre-commit hook, leave the text out and keep it in the amendment.
-5. Commit the amendment + SIGNOFF (+ the proposed text). Never `--no-verify`. Open the PR.
+   Work on a branch: there `brief check` reports the edit as pending and lets the commit
+   through; on the default branch it blocks (a commit there can't ratify).
+5. Commit the amendment + SIGNOFF + the proposed text. Never `--no-verify`. Open the PR.
 6. **Stop and report** the task is blocked pending ratification. Do not merge, do not keep
    trying to land the code, and do not look for a workaround.
 

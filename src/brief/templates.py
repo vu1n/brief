@@ -35,9 +35,10 @@ When you change code, develop *to* them:
 - If the task CANNOT be done without changing a ratified decision, you may NOT change it
   on your own authority. Write `.brief/amendments/<anchor-id>.md` (what should change and
   why), record `<anchor-id> amend-proposed: <reason>` in `.brief/SIGNOFF`, and STOP — it
-  needs ratification before code can land. The amendment PR may also carry the
-  proposed decision text (one amendment per anchor it changes); merging that PR is the
-  ratification (a human's, or CI's when the model rates every amendment low-risk; you
+  needs ratification before code can land. The amendment PR must also carry the
+  proposed decision text, edited into the live decision on your branch (one amendment
+  per anchor it changes): CI blocks a proposal without it, since that merge would
+  ratify nothing. Merging that PR is the ratification, and CI publishes it (a human's, or CI's when the model rates every amendment low-risk; you
   never merge it). If CI escalates an amendment, it opens a PR thread for it: answer
   questions there, never `/ratify` it yourself, and never edit `.brief/RATIFICATIONS`. On
   `/reject`, revise the amendment to meet the reason, or withdraw it. Never bypass the

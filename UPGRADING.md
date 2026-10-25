@@ -10,7 +10,20 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
-## Unreleased
+## v0.5.3
+
+- **Changed:** merging an amendment PR now always ratifies it. The gate blocks a PR that
+  adds or edits `.brief/amendments/<anchor>.md` without editing that anchor in the live
+  decision (`proposal-only`), because CI's ratify job only publishes decision text the
+  merge carried; a proposal merged alone left a person to run `brief ratify` by hand.
+  Locally, `brief check` on a feature branch reports a decision edit with its amendment as
+  pending instead of blocking the commit, so an agent can commit the proposed text. On the
+  default branch (or a detached HEAD) it still blocks.
+- **Do:** re-run `brief init --ci` so CI pins this version, and re-inject the convention
+  (`brief init`) so it says the amendment PR must carry the decision text. If the repo's
+  workflow predates the ratify job (no `push` trigger), this is also what adds it: the job
+  needs `contents: write` to commit the published revision to the default branch. A live
+  proposal from before the upgrade that has no decision text needs it added in its own PR.
 
 - **Changed:** amendment triage auto-ratifies below 0.25, down from 0.3. The cutoff is now
   chosen by `eval/cutoff.py` from what a mistake costs (one should-see amendment merged
