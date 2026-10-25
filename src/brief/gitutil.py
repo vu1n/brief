@@ -125,17 +125,16 @@ def files_at(repo: Path, ref: str, prefix: str) -> list[str]:
 
 
 def on_default_branch(repo: Path) -> bool:
-    """True unless HEAD is on a branch other than the default (origin's HEAD, else main or
-    master). A detached HEAD or an unreadable branch counts as the default: fail closed."""
+    """False only when HEAD is on a branch other than origin's default (`origin/HEAD`).
+    A detached HEAD, or no `origin/HEAD` to tell which branch is the default (no remote,
+    or one added by hand: `git remote set-head origin --auto` sets it), counts as the
+    default: fail closed."""
     try:
         branch = _git(repo, "symbolic-ref", "--quiet", "--short", "HEAD").strip()
+        default = _git(repo, "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD").strip()
     except subprocess.CalledProcessError:
         return True
-    try:
-        default = {_git(repo, "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD").strip().split("/", 1)[-1]}
-    except subprocess.CalledProcessError:
-        default = {"main", "master"}
-    return not branch or branch in default
+    return not branch or branch == default.split("/", 1)[-1]
 
 
 def toplevel(path: Path) -> Path:

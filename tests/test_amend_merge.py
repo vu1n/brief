@@ -84,8 +84,11 @@ def test_minting_a_revision_in_the_pr_is_not_pending(tmp_path):
     assert "ratified-edit" in {x.kind for x in check(repo, bd, base=base)}
 
 
-def _staged_amendment_edit(tmp_path, branch):
+def _staged_amendment_edit(tmp_path, branch, origin=True):
     repo, bd = _published_repo(tmp_path)
+    if origin:  # origin/HEAD names the default branch, as a clone sets it
+        _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+        _git(repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
     _git(repo, "checkout", "-qB", branch)
     live = versions.live_doc(bd, "ADR-001-backend")
     live.write_text(live.read_text().replace("is deleted", "is back"))
@@ -105,6 +108,11 @@ def test_staged_amendment_edit_blocks_on_a_detached_head(tmp_path):
     _git(repo, "checkout", "-q", "--detach")
     [p] = [x for x in check(repo, repo / ".brief") if x.kind == "pending-ratification"]
     assert p.blocking
+
+
+def test_staged_amendment_edit_blocks_without_a_known_default(tmp_path):
+    # no origin/HEAD: `trunk` may be the default, so fail closed
+    assert _staged_amendment_edit(tmp_path, "trunk", origin=False)[1].blocking
 
 
 def test_staged_amendment_edit_commits_on_a_branch(tmp_path):

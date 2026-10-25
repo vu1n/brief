@@ -28,8 +28,8 @@ the coding loop may rewrite. So the gate enforces:
                      Merging the PR is the ratification (CI's `brief ratify --pending`
                      publishes it), so on a PR range it does not block. Staged on a
                      feature branch it does not block either: the commit goes to a PR,
-                     whose merge ratifies it. Staged on the default branch (or a detached
-                     HEAD) it blocks: a commit there can't ratify, and nothing would
+                     whose merge ratifies it. Staged on the default branch (origin/HEAD; a
+                     detached HEAD or no origin/HEAD counts as it) it blocks: a commit there can't ratify, and nothing would
                      review it. An edit without its amendment stays ratified-edit.
                      Once CI escalated it to a human (`escalated` in .brief/RATIFICATIONS
                      for this version of the amendment), it blocks until a maintainer

@@ -104,6 +104,7 @@ def check(
             typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — decision edit with its amendment on the default branch: a commit can't ratify it.", err=True)
             typer.echo(
                 "      commit it on a branch and open a PR: CI reports it as pending, and merging the PR ratifies it.\n"
+                "      (already on a branch? brief reads the default from origin/HEAD: `git remote set-head origin --auto`.)\n"
                 "      (without CI, a human ratifies it locally: `brief ratify <anchor> --by <name>`.)",
                 err=True,
             )

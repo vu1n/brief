@@ -18,7 +18,8 @@ one PR.
   merge carried; a proposal merged alone left a person to run `brief ratify` by hand.
   Locally, `brief check` on a feature branch reports a decision edit with its amendment as
   pending instead of blocking the commit, so an agent can commit the proposed text. On the
-  default branch (or a detached HEAD) it still blocks.
+  default branch, a detached HEAD, or a clone without `origin/HEAD` (brief can't tell
+  which branch is the default) it still blocks.
 - **Do:** re-run `brief init --ci` so CI pins this version, and re-inject the convention
   (`brief init`) so it says the amendment PR must carry the decision text. If the repo's
   workflow predates the ratify job (no `push` trigger), this is also what adds it: the job
