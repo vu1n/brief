@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T6-rate",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-user/f5305884-5186-5314-8c48-d54912b32d5f/scratchpad/evalwork/claude-sonnet-5-5/B.T6-rate.1",
+ "seconds": 17.2,
+ "cost_usd": 0.067076,
+ "turns": 4,
+ "final": "I added `Money.apply_rate(rate: Decimal) -> Money` in `ledger/money.py`. The 4 existing tests pass. I didn't add a test for the new method, and I didn't run `brief check`.\n\nIt multiplies the cents by the `Decimal` rate and rounds to a whole cent with `ROUND_HALF_UP`, with no floats involved. That follows the active `rounding-half-up` decision, which requires half-up rounding for rate math so amounts match the partner banks' statements. It also follows `money-integer-cents`, which requires integer cents.\n\nI checked a few values by hand:\n- 5 cents \u00d7 0.5 gives 0.03.\n- 25 cents \u00d7 0.1 gives 0.03.\n- -5 cents \u00d7 0.5 gives -0.03.\n\nExact halves round away from zero, because that is how Python's `ROUND_HALF_UP` behaves for negatives. If the banks round negative halves toward zero instead, that would need a separate decision.\n\nI didn't edit any decision docs, and the existing `// Context:` comments above `Money` already cover this code, so I added no new ones.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_half_up_on_exact_halves": true,
+  "test_correct_plain_cases": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "rules_test_edited": false,
+ "rules_ok": null,
+ "signoff": "",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\tledger/money.py"
+ ]
+}

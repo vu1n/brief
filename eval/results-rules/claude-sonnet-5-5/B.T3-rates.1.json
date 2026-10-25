@@ -1,0 +1,33 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T3-rates",
+ "seed": 1,
+ "workspace": "/tmp/claude-0/-home-user/f5305884-5186-5314-8c48-d54912b32d5f/scratchpad/evalwork/claude-sonnet-5-5/B.T3-rates.1",
+ "seconds": 18.8,
+ "cost_usd": 0.06797539999999999,
+ "turns": 4,
+ "final": "I added `ledger/rates.py` with `fetch_rates(cfg, transport, sleep=time.sleep)`. It GETs `cfg.rates_url` and returns `{code: Decimal}`. Tests pass (5) and `brief check` reports no violations.\n\n- **Retries:** the request goes through `http.Client` with the default `RetryPolicy`: 5 attempts, with sleeps of 0.5s, 1s, 2s and 4s between them. That covers the endpoint failing a few times in a row. If every attempt fails, the `TransientError` is raised to the caller. I did not use `legacy_retry`, because the `retries-via-client` decision allows only `Client` for new code, and `ledger/rates.py` is already listed in that decision's governed code.\n- **Rates:** each rate is parsed with `Decimal(str)`, so no float is involved. The `money-integer-cents` rule is about amounts, not rates, so it doesn't apply here.\n- **Decision comment:** I put a `# Context:` line pointing at the retries decision above `fetch_rates`.\n- **Test:** I added `test_fetch_rates_retries_transient` to `tests/test_basic.py`. It fails three times and then succeeds, and it checks the parsed result and the backoff sleeps.\n\nMalformed JSON or a non-numeric rate will raise `json.JSONDecodeError` or `decimal.InvalidOperation`, because only transient transport errors are retried.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_survives_three_failures": true,
+  "test_correct_uses_backoff_policy": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "rules_test_edited": false,
+ "rules_ok": null,
+ "signoff": "",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "A\tledger/rates.py",
+  "M\ttests/test_basic.py"
+ ]
+}

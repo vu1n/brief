@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T7-log",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-user/f5305884-5186-5314-8c48-d54912b32d5f/scratchpad/evalwork/claude-sonnet-5-5/B.T7-log.0",
+ "seconds": 18.1,
+ "cost_usd": 0.0515317,
+ "turns": 3,
+ "final": "`Ledger.post` in `ledger/entries.py` now emits one INFO record on the `ledger` logger for each posted entry. The 4 existing tests pass and `brief check` reports no violations. I didn't add a test for the new log line.\n\nThe record reads `posted entry account=<redacted> amount_cents=<int>`.\n\nThe account is not logged as the raw id. The `logs-redact-account-ids` decision says raw account ids must never be logged, so the id goes through `redact()` first. That keeps only its last 4 characters, so `acct-12345678` is logged as `*********5678`. I put the decision's `// Context:` comment on the logging line.\n\nI logged the amount as integer cents, which is how `Money` stores it. If you'd rather have a decimal string like `12.34`, that's a small change.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "rules_test_edited": false,
+ "rules_ok": null,
+ "signoff": "",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}
