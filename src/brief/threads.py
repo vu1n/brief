@@ -46,6 +46,7 @@ TRIAGE_RE = re.compile(r"<!-- brief:triage (escalated|automerged) ([a-z0-9][a-z0
 RECORDED_RE = re.compile(
     r"<!-- brief:recorded ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) (ratified|rejected) (\S+) (\d+) -->")
 COMMAND_RE = re.compile(r"^\s*/(ratify|reject)(?=\s|$)(.*)", re.DOTALL)
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 ANCHOR_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 WRITE_ROLES = {"admin", "maintain", "write"}
 WORKFLOW = "brief.yml"
@@ -93,11 +94,15 @@ class Command:
 
 def _own_lines(body: str) -> list[str]:
     """The comment's own lines: quoted (`>`) lines and fenced code are someone else's text."""
-    out, fenced = [], False
+    out, fence = [], ""  # the open fence's run of ``` or ~~~, closed by one at least as long
     for ln in (body or "").splitlines():
-        if ln.lstrip().startswith("```"):
-            fenced = not fenced
-        elif not fenced and not ln.lstrip().startswith(">"):
+        run = m[1] if (m := FENCE_RE.match(ln)) else ""
+        if fence:
+            if run[:1] == fence[0] and len(run) >= len(fence) and not ln.strip()[len(run):]:
+                fence = ""
+        elif run:
+            fence = run
+        elif not ln.lstrip().startswith(">"):
             out.append(ln)
     return out
 
