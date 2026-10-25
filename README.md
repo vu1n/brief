@@ -45,7 +45,7 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.5.2   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.5.3   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 
@@ -77,13 +77,14 @@ When a task can't be done without changing a ratified decision:
 
 ```sh
 # write .brief/amendments/<anchor>.md + "<anchor> amend-proposed: ..." in .brief/SIGNOFF,
-# optionally put the proposed decision text in the same PR, then STOP
+# put the proposed decision text in the live decision in the same PR, then STOP
 # merging the PR ratifies it: CI runs `brief ratify --pending` and commits the new revision
 brief ratify <anchor> --by you        # without CI: a human edits the decision, then ratifies by hand
 ```
 
 On the PR the gate reports the edit as `pending-ratification` (it does not block); an edit
-to a locked decision without its amendment is still blocked. With a System One model
+to a locked decision without its amendment is still blocked, and so is an amendment without
+its decision text (`proposal-only`: that merge would ratify nothing). With a System One model
 configured, CI asks it whether each amendment should wait for the owner's eyes and labels
 the PR `needs-ratification` unless every answer is below 0.25 ([eval](eval/amend/)). When it is and
 every other check is green, CI merges the PR itself, code included, and the archive records

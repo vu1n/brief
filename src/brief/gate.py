@@ -26,9 +26,11 @@ the coding loop may rewrite. So the gate enforces:
                      the edit changes has `.brief/amendments/<anchor>.md`, the doc is
                      published and stays where it is, and no revision is minted by hand.
                      Merging the PR is the ratification (CI's `brief ratify --pending`
-                     publishes it), so on a PR range it does not block. Staged, it still
-                     blocks: a commit can't ratify, and a repo without CI has no merge
-                     step that would. An edit without its amendment stays ratified-edit.
+                     publishes it), so on a PR range it does not block. Staged on a
+                     feature branch it does not block either: the commit goes to a PR,
+                     whose merge ratifies it. Staged on the default branch (origin/HEAD; a
+                     detached HEAD or no origin/HEAD counts as it) it blocks: a commit there can't ratify, and nothing would
+                     review it. An edit without its amendment stays ratified-edit.
                      Once CI escalated it to a human (`escalated` in .brief/RATIFICATIONS
                      for this version of the amendment), it blocks until a maintainer
                      replies `/ratify` in its PR thread.
@@ -39,6 +41,11 @@ the coding loop may rewrite. So the gate enforces:
                      commit, or any line removed: the log is the bot's, append-only. (CI's
                      `brief thread verify` also checks each verdict against the bot's own
                      PR comment, since a commit's identity is self-asserted.)
+9. proposal-only   — on a PR range, a `.brief/amendments/<anchor>.md` this change adds or
+                     edits for a locked decision whose text the change leaves alone. The
+                     merge is the ratification only when the PR carries the proposed
+                     decision text, so merging this would ratify nothing and leave a human
+                     to run `brief ratify` by hand afterwards. Put the text in the PR.
 
 Whether code *conforms* to a standing decision is semantic (L1 sampling / L2 tests);
 the gate does not attempt it. But because the decision is read-only, a "conforms"
@@ -108,12 +115,12 @@ def _unwired(added: list[str], removed: list[str]) -> set[tuple[str, str | None]
 @dataclass
 class Violation:
     kind: str  # ratified-edit | needs-conformance | amendment-required | broken-ref | empty-glob
-    #            | pending-ratification | amendment-rejected | untrusted-verdict
+    #            | pending-ratification | amendment-rejected | untrusted-verdict | proposal-only
     doc_id: str = ""
     anchor_id: str = ""
     files: list[str] = field(default_factory=list)
     detail: str = ""
-    blocking: bool = True  # only pending-ratification on a PR range is reported without blocking
+    blocking: bool = True  # only pending-ratification (on a PR range or a feature branch) is reported without blocking
 
 
 # anchors of `doc` a change to `file` touches: None = all of them, empty = none
@@ -319,6 +326,37 @@ def _pending(
     return out
 
 
+def _proposal_only(
+    repo: Path,
+    brief_dir: Path,
+    index: list[Decision],
+    changed: list[str],
+    pending: dict[str, list[str]],
+    rng: str | None,
+) -> list[Violation]:
+    """Proposals this PR adds or edits that its merge can't ratify: no decision edit
+    carries them (see `_pending`). An anchor of an unlocked doc is left alone (a draft
+    needs no amendment); one no doc has is flagged, since only an edit adding it could
+    carry it."""
+    covered = {a for anchors in pending.values() for a in anchors}
+    unlocked = {a.anchor_id for d in index if not _is_locked(d.meta.get("status")) for a in d.anchors}
+    prefix = _relpath(brief_dir / "amendments", repo) + "/"
+    out: list[Violation] = []
+    for f in changed:
+        name = f[len(prefix):] if f.startswith(prefix) else ""
+        if not name.endswith(".md") or "/" in name or not gitutil.content_after(repo, f, rng):
+            continue  # not a live proposal (archived, withdrawn, or elsewhere)
+        anchor = name[:-3]
+        if anchor in covered or anchor in unlocked:
+            continue
+        doc = next((d.doc_id for d in index if d.anchor(anchor)), "")
+        out.append(Violation(
+            kind="proposal-only", doc_id=doc, anchor_id=anchor, files=[f],
+            detail="amendment without its decision text — merging this PR would ratify nothing",
+        ))
+    return out
+
+
 def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violation]:
     """Evaluate the gate over staged changes (base=None, local) or base..HEAD (CI)."""
     repo = repo.resolve()
@@ -382,10 +420,13 @@ def check(repo: Path, brief_dir: Path, base: str | None = None) -> list[Violatio
         changed, locked_edits, index, conforms, amend, bad_refs, exempt,
         scope=_context_scope(repo, rng), pending=pending,
     )
+    staged_blocks = base is None and gitutil.on_default_branch(repo)
     for v in violations:
         if v.kind == "pending-ratification":
             v.files = [_relpath(next(d.path for d in index if d.doc_id == v.doc_id), repo)]
-            v.blocking = base is None  # staged: a commit can't ratify; only a merge does
+            v.blocking = staged_blocks  # a commit can't ratify; only a PR's merge does
+    if base:
+        violations += _proposal_only(repo, brief_dir, index, changed, pending, rng)
     violations += _verdict_log(repo, brief_dir, index, violations, changed_set, base, rng)
     return violations + _empty_globs(repo, brief_dir, index, base)
 

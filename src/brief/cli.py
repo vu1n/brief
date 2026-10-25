@@ -89,13 +89,22 @@ def check(
                 "      never edit .brief/RATIFICATIONS.",
                 err=True,
             )
+        elif v.kind == "proposal-only":
+            typer.echo(f"  ✗ {v.doc_id or '?'}#{v.anchor_id} — {v.detail}", err=True)
+            typer.echo(
+                f"      put the proposed text in the live decision in this PR (every anchor it changes needs its\n"
+                f"      amendment), so the merge ratifies it; or withdraw {v.files[0]}.\n"
+                "      never touch versions/ or run `brief ratify` yourself.",
+                err=True,
+            )
         elif v.kind == "untrusted-verdict":
             typer.echo(f"  ✗ untrusted-verdict — {v.detail}", err=True)
             typer.echo("      .brief/RATIFICATIONS is written only by CI; restore it.", err=True)
         elif v.kind == "pending-ratification":
-            typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — decision edit with its amendment: a commit can't ratify it.", err=True)
+            typer.echo(f"  ⚠ {v.doc_id}#{v.anchor_id} — decision edit with its amendment on the default branch: a commit can't ratify it.", err=True)
             typer.echo(
-                "      push the branch and open a PR: CI reports it as pending, and merging the PR ratifies it.\n"
+                "      commit it on a branch and open a PR: CI reports it as pending, and merging the PR ratifies it.\n"
+                "      (already on a branch? brief reads the default from origin/HEAD: `git remote set-head origin --auto`.)\n"
                 "      (without CI, a human ratifies it locally: `brief ratify <anchor> --by <name>`.)",
                 err=True,
             )
