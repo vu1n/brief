@@ -202,12 +202,12 @@ def test_parse_command_below_a_quote():
     assert parse_command(quoted + f"/ratify {ANCHOR}", False).anchor == ANCHOR
     c = parse_command(quoted + f"/reject {ANCHOR} too broad\nand untested", False)
     assert (c.verb, c.reason) == ("reject", "too broad and untested")
+    # anywhere but the start (after the quote) it is an example, however it renders
     for body in (quoted, f"> /ratify {ANCHOR}", f"```\n/ratify {ANCHOR}\n```", "comment `/ratify x` to ratify",
-                 f"~~~\n/ratify {ANCHOR}\n~~~", f"````\n```\n/ratify {ANCHOR}\n```\n````",
-                 f"```\n~~~\n/ratify {ANCHOR}\n```", f"Example:\n\n    /ratify {ANCHOR}", f"\t/ratify {ANCHOR}",
-                 f"> Example only:\n/ratify {ANCHOR}"):  # a lazy continuation is still the quote
+                 f"~~~\n/ratify {ANCHOR}\n~~~", f"Example:\n\n    /ratify {ANCHOR}", f"    /ratify {ANCHOR}",
+                 f"\t/ratify {ANCHOR}", f"> Example only:\n/ratify {ANCHOR}", f"Still reviewing.\n\n<!--\n/ratify\n-->",
+                 f"```\nexample\n```\n/ratify {ANCHOR}"):
         assert parse_command(body, False) is None, body
-    assert parse_command(f"```\nexample\n```\n/ratify {ANCHOR}", False).anchor == ANCHOR
 
 
 def test_refusal_rules():

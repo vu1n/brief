@@ -126,7 +126,9 @@ Per-amendment verdicts. CI opens a PR thread for each escalated amendment; a mai
   change as code lands. `key_in_tree` once took whichever doc loaded first, so every
   `/ratify` on huddles-up #109 was refused as stale.
 - A `/ratify` may sit below a quote of the bot's comment (GitHub's Quote reply): the
-  `verdict` job's `if:` uses `contains`, and `parse_command` skips quoted and fenced lines.
+  `verdict` job's `if:` uses `contains`, and `parse_command` skips one leading quote. The
+  command must then open the text: don't widen it to "any line", which turns code, HTML
+  comments and lazy quote continuations into verdicts (Codex found each on brief#24).
 - Bot commits set identity via `GIT_AUTHOR_*`/`GIT_COMMITTER_*` env (`bot_identity`), since
   those env vars beat `-c user.*` when the runner sets them.
 - A push with GITHUB_TOKEN starts no workflow: `escalate` and `command` dispatch `brief.yml`
