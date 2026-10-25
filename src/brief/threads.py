@@ -46,6 +46,7 @@ TRIAGE_RE = re.compile(r"<!-- brief:triage (escalated|automerged) ([a-z0-9][a-z0
 RECORDED_RE = re.compile(
     r"<!-- brief:recorded ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) (ratified|rejected) (\S+) (\d+) -->")
 COMMAND_RE = re.compile(r"^\s*/(ratify|reject)(?=\s|$)(.*)", re.DOTALL)
+COMMAND_LINE_RE = re.compile(r"^ {0,3}/(ratify|reject)(?=\s|$)")  # 4 spaces or a tab: indented code
 ANCHOR_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 WRITE_ROLES = {"admin", "maintain", "write"}
 WORKFLOW = "brief.yml"
@@ -91,10 +92,22 @@ class Command:
     reason: str
 
 
+def _after_quote(body: str) -> str:
+    """The body past a leading quote (GitHub's Quote reply: `>` lines up to a blank line)."""
+    lines = (body or "").lstrip("\n").splitlines()
+    if lines and lines[0].lstrip().startswith(">"):
+        blank = next((i for i, ln in enumerate(lines) if not ln.strip()), len(lines))
+        lines = lines[blank:]
+    return "\n".join(lines).lstrip("\n")
+
+
 def parse_command(body: str, in_thread: bool) -> Command | None:
     """`/ratify`, `/reject <reason>` in a thread; `/ratify <anchor>`, `/reject <anchor>
-    <reason>` top-level. None when the body is not a command."""
-    m = COMMAND_RE.match(body or "")
+    <reason>` top-level. The command opens the comment, or the text right after a leading
+    quote of the bot's comment. Anywhere else (code, a later line, an HTML comment) it is
+    an example, not a verdict. None when there is no command."""
+    text = _after_quote(body)
+    m = COMMAND_RE.match(text) if COMMAND_LINE_RE.match(text) else None
     if not m:
         return None
     rest = m[2].strip()

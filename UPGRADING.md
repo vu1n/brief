@@ -10,6 +10,17 @@ The upgrade itself is always the same: run
 do every **Do** step below, run `brief check` and `brief doctor`, and commit everything in
 one PR.
 
+## v0.5.4
+
+- **Changed:** a maintainer's `/ratify` records on the first try. The version check
+  computed the key from the feature map's section when the map names a feature after the
+  amendment's anchor (as huddles-up's does), so every `/ratify` was refused as "the
+  amendment changed since this thread showed version …". A `/ratify` or `/reject` below a
+  quote of the bot's comment (GitHub's Quote reply) now counts too; before, the verdict job
+  never started and the comment got no answer.
+- **Do:** re-run `brief init --ci` so the verdict job starts for quoted commands. An
+  amendment refused as stale before the upgrade needs its `/ratify` posted again.
+
 ## v0.5.3
 
 - **Changed:** merging an amendment PR now always ratifies it. The gate blocks a PR that

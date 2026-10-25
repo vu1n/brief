@@ -8,6 +8,7 @@ import subprocess
 import yaml
 
 from brief import verdicts, versions
+from brief.docs import load_index
 from brief.gate import check
 from brief.ratify import ratify_pending
 from brief.templates import CI_WORKFLOW
@@ -195,6 +196,20 @@ def test_parse_command():
         assert parse_command(body, True) is None
 
 
+def test_parse_command_below_a_quote():
+    # GitHub's "Quote reply" puts the bot's comment, with its own `/ratify` lines, first
+    quoted = f"> **brief: amendment needs a maintainer's ratification**\n>\n> * `/ratify {ANCHOR}`\n\n"
+    assert parse_command(quoted + f"/ratify {ANCHOR}", False).anchor == ANCHOR
+    c = parse_command(quoted + f"/reject {ANCHOR} too broad\nand untested", False)
+    assert (c.verb, c.reason) == ("reject", "too broad and untested")
+    # anywhere but the start (after the quote) it is an example, however it renders
+    for body in (quoted, f"> /ratify {ANCHOR}", f"```\n/ratify {ANCHOR}\n```", "comment `/ratify x` to ratify",
+                 f"~~~\n/ratify {ANCHOR}\n~~~", f"Example:\n\n    /ratify {ANCHOR}", f"    /ratify {ANCHOR}",
+                 f"\t/ratify {ANCHOR}", f"> Example only:\n/ratify {ANCHOR}", f"Still reviewing.\n\n<!--\n/ratify\n-->",
+                 f"```\nexample\n```\n/ratify {ANCHOR}"):
+        assert parse_command(body, False) is None, body
+
+
 def test_refusal_rules():
     ok = {"permission": "write", "role_name": "write"}
     assert refusal({"user": VU, "body": "/ratify"}, ok) is None
@@ -352,6 +367,27 @@ def test_ratify_in_thread_records_attests_and_passes_verify(tmp_path):
     assert len(verify(gh, "o/r", 7, repo, bd, base)) == 1
 
 
+def test_ratify_when_the_feature_map_names_a_feature_after_the_anchor(tmp_path):
+    # the key is the decision anchor's: editing the feature's Gotchas is not a new version.
+    # The map sorts before the decision, as huddles-up's features.md does before native-bots.md.
+    repo, bd, base = _amend_pr(tmp_path)
+    fmap = bd / "docs" / "0-features.md"
+    write(fmap, "---\nid: features\ntype: features\nstatus: active\n---\n"
+          f"<!-- brief:anchor {ANCHOR} -->\n## Sandbox\n\n```yaml\npaths:\n  - \"src/sandbox/**\"\n```\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "map")
+    remote = _with_remote(repo)
+    decision = next(d for d in load_index(bd) if d.doc_id == DOC)
+    key = verdicts.amendment_key((bd / "amendments" / f"{ANCHOR}.md").read_text(), decision.anchor(ANCHOR).hash)
+    assert verdicts.key_in_tree(bd, ANCHOR) == key
+    gh = FakeGH()
+    escalate(gh, "o/r", 7, {"amendments": [_entry(key)]}, repo, bd)
+    fmap.write_text(fmap.read_text() + "\n### Gotchas\n- new\n")
+    _git(repo, "commit", "-qam", "gotcha")
+    assert command(gh, "o/r", _event(gh, "/ratify"), repo, bd).startswith("recorded ")
+    assert f"ratified-by: vu1n amendment={key}" in _remote_log(remote)
+
+
 def test_reject_top_level_blocks_the_gate(tmp_path):
     repo, bd, base, remote, gh, key = _escalated(tmp_path)
     out = command(gh, "o/r", _event(gh, f"/reject {ANCHOR} needs a migration plan", top=True), repo, bd)
@@ -398,8 +434,8 @@ def test_ci_template_threads_and_commands():
     assert any("brief thread verify" in s.get("run", "") for s in gov)
     assert "brief thread escalate" in wf["jobs"]["escalate"]["steps"][-1]["run"]
     job = wf["jobs"]["verdict"]
-    assert "startsWith(github.event.comment.body, '/ratify')" in job["if"]
-    assert "startsWith(github.event.comment.body, '/reject')" in job["if"]
+    assert "contains(github.event.comment.body, '/ratify')" in job["if"]
+    assert "contains(github.event.comment.body, '/reject')" in job["if"]
     assert job["permissions"]["contents"] == "write" and job["permissions"]["actions"] == "write"
     assert "brief thread command --event" in job["steps"][-1]["run"]
     assert job["steps"][0]["with"]["ref"].startswith("refs/pull/")

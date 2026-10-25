@@ -45,7 +45,7 @@ comparing stale agent memory, plain in-repo docs and brief
 ## Install
 
 ```sh
-uv tool install git+https://github.com/vu1n/brief@v0.5.3   # not on PyPI; `brief` there is unrelated
+uv tool install git+https://github.com/vu1n/brief@v0.5.4   # not on PyPI; `brief` there is unrelated
 brief --help
 ```
 

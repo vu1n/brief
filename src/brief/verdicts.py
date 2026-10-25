@@ -83,13 +83,17 @@ def amendment_key(amendment: str, anchor_hash: str) -> str:
 
 
 def key_in_tree(brief_dir: Path, anchor_id: str) -> str | None:
-    """The key of the working tree's amendment for `anchor_id`; None when there is none."""
+    """The key of the working tree's amendment for `anchor_id`; None when there is none.
+    The anchor is the decision's: a feature map that names a feature after the same anchor
+    is not what the amendment changes, and its Gotchas move as code lands."""
     from .docs import load_index
+    from .features import is_feature_map
 
     proposal = brief_dir / "amendments" / f"{anchor_id}.md"
     if not proposal.exists():
         return None
-    a = next((x for d in load_index(brief_dir) if (x := d.anchor(anchor_id))), None)
+    docs = sorted(load_index(brief_dir), key=is_feature_map)  # decisions first
+    a = next((x for d in docs if (x := d.anchor(anchor_id))), None)
     return amendment_key(proposal.read_text(encoding="utf-8"), a.hash if a else "")
 
 

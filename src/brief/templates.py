@@ -227,11 +227,12 @@ on:
           printf '%s' "$TRIAGE" > "$RUNNER_TEMP/triage.json"
           uvx --from {BRIEF_SOURCE} brief thread escalate --pr "$PR" --triage "$RUNNER_TEMP/triage.json"
   verdict:
-    # A maintainer's /ratify or /reject. Every other comment skips this job without a runner.
+    # A maintainer's /ratify or /reject, possibly below a quote of the bot's comment (the job
+    # finds the command line). Every comment without one skips this job without a runner.
     if: >-
       (github.event_name == 'pull_request_review_comment'
       || (github.event_name == 'issue_comment' && github.event.issue.pull_request))
-      && (startsWith(github.event.comment.body, '/ratify') || startsWith(github.event.comment.body, '/reject'))
+      && (contains(github.event.comment.body, '/ratify') || contains(github.event.comment.body, '/reject'))
     runs-on: ubuntu-latest
     permissions:
       actions: write
