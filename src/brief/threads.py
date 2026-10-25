@@ -46,6 +46,7 @@ TRIAGE_RE = re.compile(r"<!-- brief:triage (escalated|automerged) ([a-z0-9][a-z0
 RECORDED_RE = re.compile(
     r"<!-- brief:recorded ([a-z0-9][a-z0-9-]*) ([0-9a-f]{12}) (ratified|rejected) (\S+) (\d+) -->")
 COMMAND_RE = re.compile(r"^\s*/(ratify|reject)(?=\s|$)(.*)", re.DOTALL)
+COMMAND_LINE_RE = re.compile(r"^ {0,3}/(ratify|reject)(?=\s|$)")  # 4 spaces or a tab: indented code
 FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 ANCHOR_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 WRITE_ROLES = {"admin", "maintain", "write"}
@@ -112,7 +113,7 @@ def parse_command(body: str, in_thread: bool) -> Command | None:
     <reason>` top-level. The command starts a line of the comment's own text, so a reply
     that quotes the bot's comment first still counts. None when there is no command."""
     lines = _own_lines(body)
-    start = next((i for i, ln in enumerate(lines) if COMMAND_RE.match(ln)), None)
+    start = next((i for i, ln in enumerate(lines) if COMMAND_LINE_RE.match(ln)), None)
     m = COMMAND_RE.match("\n".join(lines[start:])) if start is not None else None
     if not m:
         return None
