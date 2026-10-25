@@ -204,7 +204,8 @@ def test_parse_command_below_a_quote():
     assert (c.verb, c.reason) == ("reject", "too broad and untested")
     for body in (quoted, f"> /ratify {ANCHOR}", f"```\n/ratify {ANCHOR}\n```", "comment `/ratify x` to ratify",
                  f"~~~\n/ratify {ANCHOR}\n~~~", f"````\n```\n/ratify {ANCHOR}\n```\n````",
-                 f"```\n~~~\n/ratify {ANCHOR}\n```", f"Example:\n\n    /ratify {ANCHOR}", f"\t/ratify {ANCHOR}"):
+                 f"```\n~~~\n/ratify {ANCHOR}\n```", f"Example:\n\n    /ratify {ANCHOR}", f"\t/ratify {ANCHOR}",
+                 f"> Example only:\n/ratify {ANCHOR}"):  # a lazy continuation is still the quote
         assert parse_command(body, False) is None, body
     assert parse_command(f"```\nexample\n```\n/ratify {ANCHOR}", False).anchor == ANCHOR
 

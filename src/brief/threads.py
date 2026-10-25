@@ -94,8 +94,9 @@ class Command:
 
 
 def _own_lines(body: str) -> list[str]:
-    """The comment's own lines: quoted (`>`) lines and fenced code are someone else's text."""
-    out, fence = [], ""  # the open fence's run of ``` or ~~~, closed by one at least as long
+    """The comment's own lines: a quote (`>` lines and the lines that continue them up to a
+    blank line) and fenced code are someone else's text, or an example."""
+    out, fence, quoted = [], "", False  # fence: the open run of ``` or ~~~, closed by one as long
     for ln in (body or "").splitlines():
         run = m[1] if (m := FENCE_RE.match(ln)) else ""
         if fence:
@@ -103,7 +104,11 @@ def _own_lines(body: str) -> list[str]:
                 fence = ""
         elif run:
             fence = run
-        elif not ln.lstrip().startswith(">"):
+        elif ln.lstrip().startswith(">"):
+            quoted = True
+        elif not ln.strip():
+            quoted = False
+        elif not quoted:
             out.append(ln)
     return out
 
