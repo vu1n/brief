@@ -250,11 +250,12 @@ def _added(ws: Path, f: str) -> str:
 
 
 def one(cond: str, task_id: str, seed: int, model: str, work: Path, out: Path, timeout: int) -> str:
+    # Workspaces live under the results set's name too, so two result sets never share one.
     dest = out / f"{cond}.{task_id}.{seed}.json"
     if dest.exists():
         return f"skip {dest.name}"
-    ws = work / model / f"{cond}.{task_id}.{seed}"
-    home = work / "home" / f"{cond}.{task_id}.{seed}"
+    ws = work / out.parent.name / model / f"{cond}.{task_id}.{seed}"
+    home = work / out.parent.name / "home" / model / f"{cond}.{task_id}.{seed}"
     shutil.rmtree(ws, ignore_errors=True)
     home.mkdir(parents=True, exist_ok=True)
     env = agent_env(home)
