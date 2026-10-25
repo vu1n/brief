@@ -91,10 +91,24 @@ class Command:
     reason: str
 
 
+def _own_lines(body: str) -> list[str]:
+    """The comment's own lines: quoted (`>`) lines and fenced code are someone else's text."""
+    out, fenced = [], False
+    for ln in (body or "").splitlines():
+        if ln.lstrip().startswith("```"):
+            fenced = not fenced
+        elif not fenced and not ln.lstrip().startswith(">"):
+            out.append(ln)
+    return out
+
+
 def parse_command(body: str, in_thread: bool) -> Command | None:
     """`/ratify`, `/reject <reason>` in a thread; `/ratify <anchor>`, `/reject <anchor>
-    <reason>` top-level. None when the body is not a command."""
-    m = COMMAND_RE.match(body or "")
+    <reason>` top-level. The command starts a line of the comment's own text, so a reply
+    that quotes the bot's comment first still counts. None when there is no command."""
+    lines = _own_lines(body)
+    start = next((i for i, ln in enumerate(lines) if COMMAND_RE.match(ln)), None)
+    m = COMMAND_RE.match("\n".join(lines[start:])) if start is not None else None
     if not m:
         return None
     rest = m[2].strip()

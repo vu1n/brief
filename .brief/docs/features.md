@@ -121,7 +121,12 @@ Per-amendment verdicts. CI opens a PR thread for each escalated amendment; a mai
   automerge job's comment (jq, in `templates.py`) and read by `eval/amend/feedback.py`.
   Change its shape in all three, or graded calls silently stop being collected.
 - The key (`amendment_key`) must be computed the same way in triage, the gate, `command`
-  and `ratify_pending`: amendment file text + the live anchor's body hash.
+  and `ratify_pending`: amendment file text + the live anchor's body hash. The anchor is
+  the decision's: a feature map often names a feature after the same id, and its Gotchas
+  change as code lands. `key_in_tree` once took whichever doc loaded first, so every
+  `/ratify` on huddles-up #109 was refused as stale.
+- A `/ratify` may sit below a quote of the bot's comment (GitHub's Quote reply): the
+  `verdict` job's `if:` uses `contains`, and `parse_command` skips quoted and fenced lines.
 - Bot commits set identity via `GIT_AUTHOR_*`/`GIT_COMMITTER_*` env (`bot_identity`), since
   those env vars beat `-c user.*` when the runner sets them.
 - A push with GITHUB_TOKEN starts no workflow: `escalate` and `command` dispatch `brief.yml`
