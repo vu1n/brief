@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T7-log",
+ "seed": 2,
+ "workspace": "/tmp/claude-0/-home-user/f5305884-5186-5314-8c48-d54912b32d5f/scratchpad/evalwork/claude-sonnet-5-5/B.T7-log.2",
+ "seconds": 13.5,
+ "cost_usd": 0.06160890000000001,
+ "turns": 6,
+ "final": "`Ledger.post` now emits one INFO record on the `ledger` logger for each posted entry. The record looks like `posted entry account=****1234 amount=12.34`. The 4 tests pass, and `brief check` reports no violations. I didn't add a test that checks the log record itself.\n\nThe account is not logged raw. The active decision `logs-redact-account-ids` requires every logged account id to go through `redact()`, so the log shows only the last 4 characters. I put the required `// Context:` comment at the log call in `ledger/entries.py`. The amount is logged through `Money.__str__`, which prints it as a decimal.\n\nIf you wanted the full account id in the log, that would need an amendment to the decision first.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "rules_test_edited": false,
+ "rules_ok": null,
+ "signoff": "",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

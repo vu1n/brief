@@ -32,7 +32,10 @@ from brief.templates import AGENTS_SNIPPET  # noqa: E402
 # N: code only. M: + stale memory. C/B: + plain docs / Brief. MC/MB: memory + docs.
 # U: plain docs framed the common way — "the source of truth, keep it up to date" — the
 # framing Brief's original pilot found invites rewriting a decision to fit the code.
-CONDITIONS = ["N", "M", "C", "MC", "B", "MB", "U"]
+# W/MW: the one-line rule as a `# Rule:` comment only, no decisions doc. K/MK: the same
+# comment naming a test in tests/test_rules.py that enforces it. They ask whether the doc
+# body earns anything over the comment, and what an enforcing test adds.
+CONDITIONS = ["N", "M", "C", "MC", "B", "MB", "U", "W", "MW", "K", "MK"]
 BASE_CLAUDE_MD = "# ledger\n\nA small ledger library. Run tests with `python -m pytest -q`.\n"
 UPDATE_DOCS_NOTE = (
     "\n## Design decisions\n\n`docs/DECISIONS.md` is the source of truth for design decisions, "
@@ -43,13 +46,18 @@ PLAIN_DOCS_NOTE = (
     "\n## Design decisions\n\nDesign decisions are documented in `docs/DECISIONS.md` and in "
     "`# Why:` comments next to the code they govern.\n"
 )
+RULES_NOTE = (
+    "\n## Rules\n\nRules the code alone doesn't show are `# Rule:` comments next to the code "
+    "they cover{tests}. They describe the code as it is. If a task needs a rule changed, change "
+    "the rule{and_test} and the code together, and say so in your summary.\n"
+)
 
 
 def docs_of(cond: str) -> str:
     """"C" (plain docs), "B" (Brief) or "" (no docs) for a condition."""
     if cond == "U":
         return "C"
-    return cond[-1] if cond[-1] in "CB" else ""
+    return cond[-1] if cond[-1] in "CBWK" else ""
 
 
 def _git(ws: Path, *args: str) -> str:
@@ -65,6 +73,10 @@ def _render(text: str, cond: str) -> str:
             line = f'# Why: {d["summary"]} (see docs/DECISIONS.md, "{d["title"]}")'
         elif docs == "B":
             line = f'# Context: doc://ledger/{d["anchor"]}@0001#{d["anchor"]} — {d["summary"]}'
+        elif docs == "W":
+            line = f'# Rule: {d["summary"]}'
+        elif docs == "K":
+            line = f'# Rule: {d["summary"]} (test: tests/test_rules.py::test_rule_{d["key"]})'
         else:
             text = text.replace(marker + "\n", "")
             continue
@@ -84,6 +96,13 @@ def build(ws: Path, cond: str, env: dict) -> None:
             f'## {d["title"]}\n\n{d["body"]}' for d in DECISIONS) + "\n"
         (ws / "docs").mkdir()
         (ws / "docs" / "DECISIONS.md").write_text(body)
+    if docs in ("W", "K"):
+        k = docs == "K"
+        claude_md += RULES_NOTE.format(
+            tests=", each enforced by a test in `tests/test_rules.py`" if k else "",
+            and_test=", its test" if k else "")
+        if k:
+            shutil.copy(HERE / "rules_test.py", ws / "tests" / "test_rules.py")
     if docs == "B":
         claude_md += "\n" + AGENTS_SNIPPET
         bd = ws / ".brief" / "docs"
@@ -175,6 +194,11 @@ def grade(ws: Path, task_id: str, task: dict, cond: str, env: dict) -> dict:
               if (ws / p).exists() is False or _git(ws, "diff", "--cached", base, "--", p).strip()]
     comment_gone = bool(docs_of(cond)) and decision["summary"] not in "".join(
         (ws / f).read_text() for f in decision["related_code"] if (ws / f).exists())
+    rules_test_edited = (ws / "tests" / "test_rules.py").exists() and docs_of(cond) == "K" and bool(
+        _git(ws, "diff", "--cached", base, "--", "tests/test_rules.py").strip())
+    rules_ok = None
+    if docs_of(cond) == "K":
+        rules_ok = all(_pytest(ws, env, "tests/test_rules.py").values())
     amendments = sorted(str(p.relative_to(ws)) for p in (ws / ".brief" / "amendments").glob("*.md")) \
         if (ws / ".brief" / "amendments").exists() else []
     signoff = (ws / ".brief" / "SIGNOFF").read_text() if (ws / ".brief" / "SIGNOFF").exists() else ""
@@ -197,6 +221,8 @@ def grade(ws: Path, task_id: str, task: dict, cond: str, env: dict) -> dict:
         "decision_doc_edited": edited,
         "decision_comment_removed": comment_gone,
         "amendments": amendments,
+        "rules_test_edited": rules_test_edited,
+        "rules_ok": rules_ok,
         "signoff": signoff[-1500:],
         "brief_check": gate,
         "changed_files": changed,
@@ -224,11 +250,12 @@ def _added(ws: Path, f: str) -> str:
 
 
 def one(cond: str, task_id: str, seed: int, model: str, work: Path, out: Path, timeout: int) -> str:
+    # Workspaces live under the results set's name too, so two result sets never share one.
     dest = out / f"{cond}.{task_id}.{seed}.json"
     if dest.exists():
         return f"skip {dest.name}"
-    ws = work / model / f"{cond}.{task_id}.{seed}"
-    home = work / "home" / f"{cond}.{task_id}.{seed}"
+    ws = work / out.parent.name / model / f"{cond}.{task_id}.{seed}"
+    home = work / out.parent.name / "home" / model / f"{cond}.{task_id}.{seed}"
     shutil.rmtree(ws, ignore_errors=True)
     home.mkdir(parents=True, exist_ok=True)
     env = agent_env(home)
@@ -250,10 +277,11 @@ def main() -> None:
     ap.add_argument("--jobs", type=int, default=6)
     ap.add_argument("--timeout", type=int, default=900)
     ap.add_argument("--work", default=str(Path(tempfile.gettempdir()) / "brief-eval"))
+    ap.add_argument("--results", default="results", help="results dir under eval/")
     ap.add_argument("--regrade", action="store_true", help="re-grade existing results from their workspaces")
     a = ap.parse_args()
     if a.regrade:
-        for p in sorted((HERE / "results" / a.model).glob("*.json")):
+        for p in sorted((HERE / a.results / a.model).glob("*.json")):
             r = json.loads(p.read_text())
             ws = Path(r["workspace"])
             env = agent_env(Path(a.work) / "home" / p.stem)
@@ -261,7 +289,7 @@ def main() -> None:
             p.write_text(json.dumps(r, indent=1))
         print("regraded")
         return
-    out = HERE / "results" / a.model
+    out = HERE / a.results / a.model
     out.mkdir(parents=True, exist_ok=True)
     work = Path(a.work)
     jobs = [(c, t, s) for s in range(a.seeds) for c in a.conds.split(",") for t in a.tasks.split(",")]

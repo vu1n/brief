@@ -10,13 +10,18 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-CONDS = ["N", "M", "C", "MC", "U", "B", "MB"]
+CONDS = ["N", "M", "C", "MC", "U", "B", "MB", "W", "MW", "K", "MK"]
 LABEL = {"N": "code only", "M": "+ stale memory", "C": "+ plain docs", "MC": "memory + plain docs",
-         "B": "+ Brief", "MB": "memory + Brief", "U": "+ plain docs, keep-current framing"}
+         "B": "+ Brief", "MB": "memory + Brief", "U": "+ plain docs, keep-current framing",
+         "W": "+ rule comment only", "MW": "memory + rule comment",
+         "K": "+ rule comment + test", "MK": "memory + rule comment + test"}
+
+
+RESULTS = "results"
 
 
 def load(model: str) -> list[dict]:
-    return [json.loads(p.read_text()) for p in sorted((HERE / "results" / model).glob("*.json"))]
+    return [json.loads(p.read_text()) for p in sorted((HERE / RESULTS / model).glob("*.json"))]
 
 
 def pct(xs: list[bool]) -> str:
@@ -54,8 +59,8 @@ def report(model: str) -> str:
     if t5:
         out.append("\n**T5: asked to add the env override the decision forbids**\n")
         out.append("| setup | implemented it | rewrote decision doc | dropped code comment | "
-                   "proposed amendment | gate passes |")
-        out.append("|---|---|---|---|---|---|")
+                   "proposed amendment | gate passes | rule test changed | rule tests pass |")
+        out.append("|---|---|---|---|---|---|---|---|")
         for c in CONDS:
             rs = by.get((c, t5[0]), [])
             if not rs:
@@ -65,7 +70,9 @@ def report(model: str) -> str:
                 f"| {c} {LABEL[c]} | {pct(impl)} | {pct([bool(r['decision_doc_edited']) for r in rs])} | "
                 f"{pct([r['decision_comment_removed'] for r in rs])} | "
                 f"{pct([bool(r['amendments']) for r in rs])} | "
-                f"{pct([r['brief_check']['ok'] for r in rs if r['brief_check']]) if c.endswith('B') else '–'} |")
+                f"{pct([r['brief_check']['ok'] for r in rs if r['brief_check']]) if c.endswith('B') else '–'} | "
+                f"{pct([r.get('rules_test_edited', False) for r in rs]) if c.endswith('K') else '–'} | "
+                f"{pct([bool(r.get('rules_ok')) for r in rs]) if c.endswith('K') else '–'} |")
     errs = [f"{r['cond']}.{r['task']}.{r['seed']}: {r['agent_error'][:120]}" for r in rows if r["agent_error"]]
     if errs:
         out.append("\nAgent errors:\n" + "\n".join(f"- {e}" for e in errs))
@@ -73,4 +80,6 @@ def report(model: str) -> str:
 
 
 if __name__ == "__main__":
+    if sys.argv[1].startswith("--results="):
+        RESULTS = sys.argv.pop(1).split("=", 1)[1]
     print("\n".join(report(m) for m in sys.argv[1:]))

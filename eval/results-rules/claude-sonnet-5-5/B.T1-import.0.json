@@ -1,0 +1,31 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "B",
+ "task": "T1-import",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-user/f5305884-5186-5314-8c48-d54912b32d5f/scratchpad/evalwork/claude-sonnet-5-5/B.T1-import.0",
+ "seconds": 21.2,
+ "cost_usd": 0.0584975,
+ "turns": 3,
+ "final": "I added `ledger/importer.py` with `import_csv(text, ledger) -> int`. The existing tests pass (4 passed) and `brief check` is clean. I also ran it on `a,12.34`, a blank line, then `a,-0.29`. It returned 2 and the balance came out as 12.05.\n\n- **Parsing:** Each non-blank line becomes one `ledger.post(account, Money.from_str(amount))`. That follows the `money-integer-cents` decision, so amounts never go through float.\n- **Timestamps:** I didn't set `at`. `Ledger.post` already stamps entries with a timezone-aware UTC time, which is what the `timestamps-utc-aware` decision requires.\n- **Splitting:** A line is split on its last comma, so account names containing commas still work. The account and amount are whitespace-stripped.\n- **Bad lines:** A line with no comma or an empty account raises `ValueError` naming the line number. A bad amount raises the `ValueError` from `Money.from_str`, which doesn't include the line number.\n- **Partial imports:** Lines are posted as they're read, so an error partway through leaves the earlier entries in the ledger. I didn't add rollback because you didn't ask for it. Say if you want it validated up front instead.\n- **Decisions:** I left a `// Context:` comment at the amount-parsing site, as the repo instructions require. No decision needed changing, and I made no amendments.\n- **Tests:** I didn't add any tests for the importer.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_exact_cents": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "rules_test_edited": false,
+ "rules_ok": null,
+ "signoff": "",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "A\tledger/importer.py"
+ ]
+}

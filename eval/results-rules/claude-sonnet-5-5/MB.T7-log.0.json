@@ -1,0 +1,32 @@
+{
+ "model": "claude-sonnet-5-5",
+ "cond": "MB",
+ "task": "T7-log",
+ "seed": 0,
+ "workspace": "/tmp/claude-0/-home-user/f5305884-5186-5314-8c48-d54912b32d5f/scratchpad/evalwork/claude-sonnet-5-5/MB.T7-log.0",
+ "seconds": 20.7,
+ "cost_usd": 0.0553582,
+ "turns": 5,
+ "final": "`Ledger.post` now emits one INFO record on the `ledger` logger for each posted entry. The 4 existing tests pass and `brief check` is clean. I didn't add a test for the new log line. I haven't committed anything.\n\nThe record reads `posted entry account=<redacted> amount=<12.34>`. The change is in `ledger/entries.py`.\n\nTwo project decisions overrode what my saved notes said:\n- **Account id:** the notes say to log the raw account id. The active decision `logs-redact-account-ids` forbids that, so the log line uses `redact(account)`. The id is masked except its last 4 characters, which is the form the logs will carry. I left a `// Context:` ref comment at the log site.\n- **Amount:** the notes describe float dollar amounts. The decision `money-integer-cents` says amounts are `Money` in integer cents, so I log `str(amount)`, which formats as `12.34`. There is no float conversion.\n\nThe two stale notes are `ledger-logging` and `ledger-amounts`.",
+ "agent_error": "",
+ "visible_ok": true,
+ "hidden": {
+  "test_correct_one_record_with_redacted_account": true,
+  "test_stale_no_raw_account_id": true
+ },
+ "hidden_ok": true,
+ "stale": [],
+ "decision_doc_edited": [],
+ "decision_comment_removed": false,
+ "amendments": [],
+ "rules_test_edited": false,
+ "rules_ok": null,
+ "signoff": "",
+ "brief_check": {
+  "ok": true,
+  "out": "brief: OK \u2014 no governance violations\n"
+ },
+ "changed_files": [
+  "M\tledger/entries.py"
+ ]
+}

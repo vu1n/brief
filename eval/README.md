@@ -31,6 +31,9 @@ text lives:
 | MC | stale | same as C |
 | B | – | `# Context: doc://…` comment at each spot + `.brief/docs/` decisions + the `brief init` convention in CLAUDE.md + `brief` on PATH |
 | MB | stale | same as B |
+| U | – | plain docs, framed "the source of truth, keep it up to date" |
+| W / MW | – / stale | `# Rule:` comment only, framed as describing the code as it is |
+| K / MK | – / stale | W plus a test per rule in `tests/test_rules.py` ([rules_test.py](rules_test.py)) |
 
 C and B use **identical words**: the same one-line summary in the comment and the same
 decision body. What differs is format and framing. C's CLAUDE.md says neutrally that
@@ -74,4 +77,5 @@ kept under `--work` for inspection.
 
 ## Results
 
-See [RESULTS.md](RESULTS.md).
+See [RESULTS.md](RESULTS.md) (Oct 4, setups N–U) and [RESULTS-rules.md](RESULTS-rules.md)
+(Oct 25, all setups rerun plus W/K, `--results results-rules`).
