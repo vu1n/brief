@@ -1,5 +1,13 @@
 # brief
 
+> **Retired.** brief is no longer maintained, and the repos that used it have moved off it.
+> Decision docs and ratification are gone. What survived is a feature map: one file per
+> feature under `docs/features/`, linking what the feature does to its code, entry points and
+> functional tests, with a stdlib check that fails CI on a dead pointer. It lives as the
+> `feature-map` skill in [vu1n/dev](https://github.com/vu1n/dev/tree/main/skills/feature-map).
+> A rule the code must keep goes in a one-line comment where the code applies it, with no
+> pointer to a doc. The rest of this README describes brief as it was.
+
 **Doc-driven development as a governance system.** Architectural decisions become
 versioned, addressable, and *read-only to the coding loop* — so your design docs stay
 true instead of rotting.
